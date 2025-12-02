@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "github-markdown-css": "^5.8.1",
     "vue": "^3.3.0",
     "x-markdown": "workspace:*"
   },

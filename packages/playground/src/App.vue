@@ -107,7 +107,7 @@
           <h2>👁️ 实时预览</h2>
           <span v-if="useCustomSlots" class="slot-badge">✨ 自定义渲染</span>
         </div>
-        <div class="preview-content">
+        <div class="preview-content markdown-body">
           <MarkdownRenderer
             :markdown="markdown"
             :enable-latex="enableLatex"
@@ -127,7 +127,9 @@
                 </div>
               </blockquote>
             </template>
-
+            <template #self-btn>
+              <button>点击button</button>
+            </template>
             <!-- 自定义链接：添加外链图标 -->
             <template v-if="useCustomSlots" #a="{ node, children }">
               <a
@@ -149,6 +151,7 @@
 
 <script setup lang="ts">
 import 'katex/dist/katex.min.css'
+import 'github-markdown-css/github-markdown.css'
 import { ref, computed, h, onUnmounted } from 'vue'
 import { MarkdownRenderer } from 'x-markdown'
 
@@ -273,6 +276,10 @@ graph LR
 - [x] Mermaid 图表
 - [x] 流式渲染支持
 - [x] 自定义插槽渲染
+
+
+## 🔤 插槽示例
+<self-btn>这是button</self-btn>
 
 ## 🔗 相关链接
 
@@ -740,8 +747,42 @@ onUnmounted(() => {
   background: white;
 }
 
+/* GitHub Markdown 样式适配 */
+.preview-content.markdown-body {
+  box-sizing: border-box;
+  min-width: 200px;
+  max-width: 100%;
+  background-color: transparent;
+}
+
+/* 亮色主题 - 强制覆盖 */
+.preview-content.markdown-body {
+  color-scheme: light;
+  --fgColor-default: #1f2328;
+  --fgColor-muted: #59636e;
+  --fgColor-accent: #0969da;
+  --bgColor-default: #ffffff;
+  --bgColor-muted: #f6f8fa;
+  --borderColor-default: #d1d9e0;
+  --borderColor-muted: #d1d9e0b3;
+  color: var(--fgColor-default);
+}
+
+/* 暗色主题 - 强制覆盖 */
 .app-dark .preview-content {
-  background: #1e2a4a;
+  background: #0d1117;
+}
+
+.app-dark .preview-content.markdown-body {
+  color-scheme: dark;
+  --fgColor-default: #f0f6fc;
+  --fgColor-muted: #9198a1;
+  --fgColor-accent: #4493f8;
+  --bgColor-default: #0d1117;
+  --bgColor-muted: #151b23;
+  --borderColor-default: #3d444d;
+  --borderColor-muted: #3d444db3;
+  color: var(--fgColor-default);
 }
 
 /* ==================== 自定义渲染样式 ==================== */

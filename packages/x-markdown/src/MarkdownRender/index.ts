@@ -100,7 +100,7 @@ const MarkdownRenderer = defineComponent({
       h(
         'div',
         {
-          class: ['elx-xmarkdown-renderer', { 'is-dark': props.isDark }],
+          class: ['x-md-renderer', { 'is-dark': props.isDark }],
           style: {
             backgroundColor: props.isDark ? '#1e1e1e' : '#ffffff',
             color: props.isDark ? '#e5e5e5' : '#333333',
@@ -166,7 +166,7 @@ const MarkdownRendererAsync = defineComponent({
       h(
         'div',
         {
-          class: ['elx-xmarkdown-renderer', { 'is-dark': props.isDark }],
+          class: ['x-md-renderer', { 'is-dark': props.isDark }],
           style: {
             backgroundColor: props.isDark ? '#1e1e1e' : '#ffffff',
             color: props.isDark ? '#e5e5e5' : '#333333',

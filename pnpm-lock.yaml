@@ -14,6 +14,9 @@ importers:
 
   packages/playground:
     dependencies:
+      github-markdown-css:
+        specifier: ^5.8.1
+        version: 5.8.1
       vue:
         specifier: ^3.3.0
         version: 3.5.25(typescript@5.9.3)
@@ -932,6 +935,10 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  github-markdown-css@5.8.1:
+    resolution: {integrity: sha512-8G+PFvqigBQSWLQjyzgpa2ThD9bo7+kDsriUIidGcRhXgmcaAWUIpCZf8DavJgc+xifjbCG+GvMyWr0XMXmc7g==}
+    engines: {node: '>=10'}
 
   hast-util-from-dom@5.0.1:
     resolution: {integrity: sha512-N+LqofjR2zuzTjCPzyDUdSshy4Ma6li7p/c3pA78uTwzFgENbgbUrm2ugwsOdcjI1muO+o6Dgzp9p8WHtn/39Q==}
@@ -2344,6 +2351,8 @@ snapshots:
 
   fsevents@2.3.3:
     optional: true
+
+  github-markdown-css@5.8.1: {}
 
   hast-util-from-dom@5.0.1:
     dependencies:
