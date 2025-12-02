@@ -27,20 +27,20 @@ const content = ref('# Hello World')
 
 ## Props 属性
 
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `markdown` | `string` | `''` | Markdown 内容 |
-| `allowHtml` | `boolean` | `false` | 是否允许 HTML |
-| `enableLatex` | `boolean` | `true` | 是否启用 LaTeX |
-| `enableAnimate` | `boolean` | `false` | 是否启用流式动画 |
-| `enableBreaks` | `boolean` | `true` | 换行转 `<br>` |
-| `isDark` | `boolean` | `false` | 深色模式 |
-| `codeXProps` | `CodeXProps` | `{}` | 代码块配置 |
-| `codeXRender` | `object` | `{}` | 自定义代码块渲染 |
-| `codeXSlots` | `object` | `{}` | 代码块插槽 |
-| `customAttrs` | `CustomAttrs` | `{}` | 自定义属性 |
-| `remarkPlugins` | `PluggableList` | `[]` | remark 插件 |
-| `rehypePlugins` | `PluggableList` | `[]` | rehype 插件 |
+| 属性            | 类型            | 默认值  | 说明             |
+| --------------- | --------------- | ------- | ---------------- |
+| `markdown`      | `string`        | `''`    | Markdown 内容    |
+| `allowHtml`     | `boolean`       | `false` | 是否允许 HTML    |
+| `enableLatex`   | `boolean`       | `true`  | 是否启用 LaTeX   |
+| `enableAnimate` | `boolean`       | `false` | 是否启用流式动画 |
+| `enableBreaks`  | `boolean`       | `true`  | 换行转 `<br>`    |
+| `isDark`        | `boolean`       | `false` | 深色模式         |
+| `codeXProps`    | `CodeXProps`    | `{}`    | 代码块配置       |
+| `codeXRender`   | `object`        | `{}`    | 自定义代码块渲染 |
+| `codeXSlots`    | `object`        | `{}`    | 代码块插槽       |
+| `customAttrs`   | `CustomAttrs`   | `{}`    | 自定义属性       |
+| `remarkPlugins` | `PluggableList` | `[]`    | remark 插件      |
+| `rehypePlugins` | `PluggableList` | `[]`    | rehype 插件      |
 
 ## 自定义属性
 
@@ -91,7 +91,7 @@ const customAttrs = {
     codeLightTheme: 'github-light',
     codeDarkTheme: 'github-dark',
     showCodeBlockHeader: true,
-    codeMaxHeight: '400px'
+    codeMaxHeight: '400px',
   }"
 />
 ```
@@ -111,9 +111,15 @@ const codeXRender = {
 
 ```ts
 const codeXSlots = {
-  'header': ({ language, code, copy, copied }) => { /* 自定义头部 */ },
-  'header-left': ({ language }) => { /* 左侧区域 */ },
-  'header-right': ({ code, copy }) => { /* 右侧区域 */ },
+  header: ({ language, code, copy, copied }) => {
+    /* 自定义头部 */
+  },
+  'header-left': ({ language }) => {
+    /* 左侧区域 */
+  },
+  'header-right': ({ code, copy }) => {
+    /* 右侧区域 */
+  },
 }
 ```
 
