@@ -8,5 +8,5 @@
 }
 
 .x-md-animated-word {
-  animation: fadeIn 1s ease-in-out;
+  animation: fadeIn .3s ease-in-out;
 }

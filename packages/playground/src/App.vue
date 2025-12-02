@@ -190,7 +190,7 @@ const fullContent = `# 🎉 X-Markdown 功能演示
 - 🔧 **自定义插槽** - 灵活定制渲染样式
 
 ## 💻 代码高亮示例
-
+\`const a = 2\` \`const b = 2\` \`const c = 2\` \`const d = 2\` \`const e = 2\`
 \`\`\`typescript
 // TypeScript 示例 - 实时语法高亮
 interface User {

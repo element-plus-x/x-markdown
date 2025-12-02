@@ -1,3 +1,5 @@
+import type { BuiltinTheme } from 'shiki';
+
 /**
  * CodeLine 组件的 Props 类型定义
  */
@@ -6,6 +8,21 @@ export interface CodeLineProps {
    * 原始数据对象，包含行内代码的完整信息
    */
   raw?: CodeLineRaw;
+  /**
+   * 是否为暗色模式
+   * @default false
+   */
+  isDark?: boolean;
+  /**
+   * 亮色主题
+   * @default 'vitesse-light'
+   */
+  codeLightTheme?: BuiltinTheme;
+  /**
+   * 暗色主题
+   * @default 'vitesse-dark'
+   */
+  codeDarkTheme?: BuiltinTheme;
   /**
    * 是否启用动画效果
    * 启用后会给行内代码添加 x-md-animated-word class

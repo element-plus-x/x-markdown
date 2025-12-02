@@ -67,7 +67,14 @@ export default defineComponent({
           }
           return h(renderer, props);
         }
-        return h(CodeLine, { ...props, enableAnimate: props.enableAnimate });
+        // 传递完整的配置给 CodeLine，包括主题和动画设置
+        return h(CodeLine, { 
+          raw: props.raw,
+          isDark: props.isDark,
+          codeLightTheme: props.codeLightTheme,
+          codeDarkTheme: props.codeDarkTheme,
+          enableAnimate: props.enableAnimate 
+        });
       }
 
       const { language } = props.raw;
