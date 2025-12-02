@@ -1,6 +1,6 @@
 import { ref, watch, onUnmounted, computed, isRef, toValue, type Ref, type MaybeRef, type CSSProperties } from 'vue'
 import type { BuiltinTheme, ThemedToken } from 'shiki'
-import { ShikiStreamTokenizer } from 'shiki-stream'
+import { ShikiStreamTokenizer, ShikiStreamTokenizerOptions } from 'shiki-stream'
 import type { getSingletonHighlighter } from 'shiki'
 
 // 流式高亮结果接口
@@ -192,7 +192,7 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
 
       // 创建流式 tokenizer
       tokenizer = new ShikiStreamTokenizer({
-        highlighter,
+        highlighter: highlighter as unknown as ShikiStreamTokenizerOptions['highlighter'],
         lang: currentLang,
         theme: currentTheme,
       })

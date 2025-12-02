@@ -247,7 +247,7 @@ graph LR
 
 > 这是一个自定义样式的引用块。
 > 当启用"自定义插槽"时，会显示特殊的引用图标。
-> 
+>
 > — X-Markdown 团队
 
 ## ✅ 任务列表
@@ -384,6 +384,11 @@ onUnmounted(() => {
   stopStreaming()
 })
 </script>
+<style>
+body {
+  margin: 0 !important;
+}
+</style>
 
 <style scoped>
 /* ==================== 全局样式 ==================== */
