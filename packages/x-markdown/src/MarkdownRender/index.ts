@@ -2,8 +2,6 @@ import type { PropType } from 'vue';
 import type { PluggableList } from 'unified';
 import type { CodeXProps } from '../components/CodeX/types';
 import type { CustomAttrs, SanitizeOptions } from '../core/types';
-import type { BuiltinTheme } from 'shiki';
-import deepmerge from 'deepmerge';
 import { computed, defineComponent, h, toValue } from 'vue';
 import { VueMarkdown, VueMarkdownAsync } from '../core';
 import { useComponents, usePlugins, useProcessMarkdown } from '../hooks';
@@ -20,19 +18,20 @@ const markdownRendererProps = {
   enableAnimate: { type: Boolean, default: false },
   // 是否启用换行符转 <br>
   enableBreaks: { type: Boolean, default: true },
-  // 是否为深色模式
+  // 是否为深色模式（控制整体 UI 主题）
   isDark: { type: Boolean, default: false },
-  // Shiki 主题
-  theme: { type: String as PropType<BuiltinTheme>, default: 'vitesse-light' },
-  // 代码块 CodeX 组件 props
+  // 代码块 CodeX 组件 props（包含 codeLightTheme、codeDarkTheme）
   codeXProps: {
     type: Object as PropType<CodeXProps>,
-    default: () => ({ enableCodeCopy: true, enableThemeToggle: false, enableCodeLineNumber: false })
+    default: () => ({
+      codeLightTheme: 'vitesse-light',
+      codeDarkTheme: 'vitesse-dark'
+    })
   },
   // 自定义代码块渲染函数
   codeXRender: { type: Object, default: () => ({}) },
-  // 自定义代码块插槽
-  codeXSlot: { type: Object, default: () => ({}) },
+  // 自定义代码块插槽（用于 CodeBlock 组件的 header、header-left、header-right 插槽）
+  codeXSlots: { type: Object, default: () => ({}) },
   // 自定义属性对象
   customAttrs: { type: Object as PropType<CustomAttrs>, default: () => ({}) },
   // remark 插件列表
@@ -73,29 +72,29 @@ const MarkdownRenderer = defineComponent({
       }
     });
 
-    // 处理后的 props，合并默认 codeXProps
-    const processProps = computed(() => {
-      return {
-        ...props,
-        codeXProps: Object.assign(
-          {},
-          markdownRendererProps.codeXProps.default(),
-          props.codeXProps
-        ),
-        markdown: markdown.value
-      };
-    });
+    // 合并后的 codeXProps（带默认值）
+    const mergedCodeXProps = computed(() => ({
+      ...markdownRendererProps.codeXProps.default(),
+      ...props.codeXProps
+    }));
 
-    // 最终渲染 props，深度合并插件配置
-    const renderProps = computed(() => {
-      return deepmerge(
-        {
-          rehypePlugins: toValue(rehypePlugins),
-          remarkPlugins: toValue(remarkPlugins),
-        },
-        processProps.value
-      );
-    });
+    // 最终渲染 props，只提取需要的属性避免循环引用
+    const renderProps = computed(() => ({
+      markdown: markdown.value,
+      allowHtml: props.allowHtml,
+      enableLatex: props.enableLatex,
+      enableAnimate: props.enableAnimate,
+      enableBreaks: props.enableBreaks,
+      codeXProps: mergedCodeXProps.value,
+      codeXRender: props.codeXRender,
+      codeXSlots: props.codeXSlots,
+      customAttrs: props.customAttrs,
+      rehypePlugins: toValue(rehypePlugins),
+      remarkPlugins: toValue(remarkPlugins),
+      rehypeOptions: props.rehypeOptions,
+      sanitize: props.sanitize,
+      sanitizeOptions: props.sanitizeOptions
+    }));
 
     return () =>
       h(
@@ -139,29 +138,29 @@ const MarkdownRendererAsync = defineComponent({
       }
     });
 
-    // 处理后的 props，合并默认 codeXProps
-    const processProps = computed(() => {
-      return {
-        ...props,
-        codeXProps: Object.assign(
-          {},
-          markdownRendererProps.codeXProps.default(),
-          props.codeXProps
-        ),
-        markdown: markdown.value
-      };
-    });
+    // 合并后的 codeXProps（带默认值）
+    const mergedCodeXProps = computed(() => ({
+      ...markdownRendererProps.codeXProps.default(),
+      ...props.codeXProps
+    }));
 
-    // 最终渲染 props，深度合并插件配置
-    const renderProps = computed(() => {
-      return deepmerge(
-        {
-          rehypePlugins: toValue(rehypePlugins),
-          remarkPlugins: toValue(remarkPlugins),
-        },
-        processProps.value
-      );
-    });
+    // 最终渲染 props，只提取需要的属性避免循环引用
+    const renderProps = computed(() => ({
+      markdown: markdown.value,
+      allowHtml: props.allowHtml,
+      enableLatex: props.enableLatex,
+      enableAnimate: props.enableAnimate,
+      enableBreaks: props.enableBreaks,
+      codeXProps: mergedCodeXProps.value,
+      codeXRender: props.codeXRender,
+      codeXSlots: props.codeXSlots,
+      customAttrs: props.customAttrs,
+      rehypePlugins: toValue(rehypePlugins),
+      remarkPlugins: toValue(remarkPlugins),
+      rehypeOptions: props.rehypeOptions,
+      sanitize: props.sanitize,
+      sanitizeOptions: props.sanitizeOptions
+    }));
 
     return () =>
       h(

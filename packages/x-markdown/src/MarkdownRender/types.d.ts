@@ -1,5 +1,6 @@
 import type { PluggableList } from 'unified';
 import type { CustomAttrs, SanitizeOptions } from '../core/types';
+import type { CodeXProps } from '../components/CodeX/types';
 
 /**
  * MarkdownRenderer 上下文类型
@@ -10,8 +11,6 @@ export interface MarkdownContext {
   markdown?: string;
   // 是否允许 HTML
   allowHtml?: boolean;
-  // 是否启用代码行号
-  enableCodeLineNumber?: boolean;
   // 是否启用 LaTeX 支持
   enableLatex?: boolean;
   // 是否开启动画
@@ -20,10 +19,10 @@ export interface MarkdownContext {
   enableBreaks?: boolean;
   // 自定义代码块渲染函数
   codeXRender?: Record<string, any>;
-  // 自定义代码块插槽
-  codeXSlot?: Record<string, any>;
+  // 自定义代码块插槽（用于 CodeBlock 组件的 header、header-left、header-right 插槽）
+  codeXSlots?: Record<string, any>;
   // 自定义代码块属性
-  codeXProps?: Record<string, any>;
+  codeXProps?: CodeXProps;
   // 自定义属性对象
   customAttrs?: CustomAttrs;
   // remark 插件列表

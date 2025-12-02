@@ -51,11 +51,6 @@
             :enable-breaks="enableBreaks"
             :sanitize="sanitize"
             :is-dark="isDark"
-            :code-x-props="{
-              enableCodeCopy: true,
-              enableThemeToggle: false,
-              enableCodeLineNumber: true
-            }"
           />
         </div>
       </div>

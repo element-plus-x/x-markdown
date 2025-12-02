@@ -1,11 +1,14 @@
 <script lang="ts">
-import { defineComponent, h, type PropType } from 'vue';
+import { defineComponent, h, type PropType, type VNode } from 'vue';
 import type { BuiltinTheme } from 'shiki';
 // @ts-ignore
 import CodeBlock from '../CodeBlock/index.vue';
 // @ts-ignore
 import CodeLine from '../CodeLine/index.vue';
 import Mermaid from '../Mermaid/index.vue';
+
+type SlotFn = (props: any) => VNode | VNode[];
+
 export default defineComponent({
   props: {
     raw: {
@@ -16,13 +19,21 @@ export default defineComponent({
       type: Object,
       default: () => ({})
     },
+    codeXSlots: {
+      type: Object as PropType<Record<string, SlotFn>>,
+      default: () => ({})
+    },
     isDark: {
       type: Boolean,
       default: false
     },
-    theme: {
+    codeLightTheme: {
       type: String as PropType<BuiltinTheme>,
       default: 'vitesse-light'
+    },
+    codeDarkTheme: {
+      type: String as PropType<BuiltinTheme>,
+      default: 'vitesse-dark'
     }
   },
   setup(props) {
@@ -54,10 +65,12 @@ export default defineComponent({
       }
 
       return h(CodeBlock, {
-        raw: props.raw,
+        code: props.raw.content || '',
+        language: props.raw.language || 'text',
         isDark: props.isDark,
-        theme: props.theme
-      });
+        lightTheme: props.codeLightTheme,
+        darkTheme: props.codeDarkTheme
+      }, props.codeXSlots);
     };
   }
 });
