@@ -220,11 +220,7 @@ const toggleTheme = () => {
   background: #fafafa;
 }
 
-.panel-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  color: #374151;
-}
+
 
 .theme-toggle {
   padding: 0.5rem 1rem;

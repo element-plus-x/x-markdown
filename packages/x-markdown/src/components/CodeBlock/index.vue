@@ -1,8 +1,13 @@
 <template>
-  <div>ddddd</div>
+  <div>
+    <StreamRenderer
+      :code="props?.raw?.content || ''"
+      language="typescript"
+    />
+  </div>
 </template>
 <script lang="ts" setup>
-import type { CodeBlockProps } from './types'; // 导入类型定义
-
-const props = withDefaults(defineProps<CodeBlockProps>(), {})
+import type { CodeBlockProps } from './types';
+import StreamRenderer from './StreamRenderer.vue';
+const props = defineProps<CodeBlockProps>()
 </script>
