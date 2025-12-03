@@ -73,8 +73,7 @@
 <script setup lang="ts">
 import { computed, ref, type CSSProperties } from 'vue'
 import type { BuiltinTheme, ThemedToken } from 'shiki'
-// import { getTokenStyleObject } from '@shikijs/core'
-import { getTokenStyleObject } from 'shiki'
+import { getTokenStyleObject } from '@shikijs/core'
 import { useClipboard } from '@vueuse/core'
 import { useHighlight } from '../../hooks/useHighlight'
 
