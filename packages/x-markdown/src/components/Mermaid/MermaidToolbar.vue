@@ -35,11 +35,9 @@ const activeTab = computed({
 const config = computed(() => {
   return {
     showToolbar: true,
-    // showFullscreen: true,
     showZoomIn: true,
     showZoomOut: true,
     showReset: true,
-    // showDownload: true,
     toolbarStyle: {},
     toolbarClass: '',
     iconColor: undefined,
@@ -107,12 +105,6 @@ function handleReset(event: Event) {
   emit('onReset')
 }
 
-// function handleFullscreen(event: Event) {
-//   event.stopPropagation();
-//   event.preventDefault();
-//   emit('onFullscreen');
-// }
-
 function handleToggleCode(event?: Event) {
   if (event) {
     event.stopPropagation()
@@ -120,12 +112,6 @@ function handleToggleCode(event?: Event) {
   }
   emit('onToggleCode')
 }
-
-// function handleDownload(event: Event) {
-//   event.stopPropagation();
-//   event.preventDefault();
-//   emit('onDownload');
-// }
 
 async function handleCopyCode(event: Event) {
   event.stopPropagation()
@@ -204,8 +190,20 @@ function handleTabClickEvent(pane: TabClickEvent) {
     <!-- 左侧 Tabs -->
     <div class="toolbar-left" :style="tabTextColorStyle">
       <div class="toolbar-tabs">
-        <div class="tab-item" :class="{ active: activeTab === 'diagram' }" @click="handleTabClick('diagram')">图片</div>
-        <div class="tab-item" :class="{ active: activeTab === 'code' }" @click="handleTabClick('code')">代码</div>
+        <div
+          class="tab-item"
+          :class="{ active: activeTab === 'diagram' }"
+          @click="handleTabClickEvent({ paneName: 'diagram' })"
+        >
+          图片
+        </div>
+        <div
+          class="tab-item"
+          :class="{ active: activeTab === 'code' }"
+          @click="handleTabClickEvent({ paneName: 'code' })"
+        >
+          代码
+        </div>
       </div>
     </div>
 
@@ -297,93 +295,87 @@ function handleTabClickEvent(pane: TabClickEvent) {
   </div>
 </template>
 
-<style scoped lang="scss">
+<style scoped>
 .mermaid-toolbar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  height: 42px;
-  background: #ebecef;
-  border-radius: 3px 3px 0 0;
-  padding: 0 12px;
-  pointer-events: auto;
-  position: relative;
-  z-index: 10;
+  padding: 8px 16px;
+  background: transparent;
+  color: inherit;
+}
 
-  .toolbar-left {
-    flex: 1;
+.mermaid-toolbar .toolbar-left {
+  display: flex;
+  align-items: center;
+}
 
-    .toolbar-tabs {
-      display: flex;
-      background: #dddee1;
-      padding: 2px;
-      border-radius: 10px;
+.mermaid-toolbar .toolbar-left .toolbar-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-      .tab-item {
-        height: 32px;
-        line-height: 32px;
-        padding: 0 12px;
-        font-size: 12px;
-        border: none;
-        color: var(--tab-text-color, #333);
-        width: 60px;
-        text-align: center;
-        box-sizing: border-box;
-        font-weight: 700;
-        cursor: pointer;
-        border-radius: 10px;
-        transition: all 0.2s;
+.mermaid-toolbar .toolbar-left .toolbar-tabs .tab-item {
+  font-size: 12px;
+  border: none;
+  color: inherit;
+  width: 60px;
+  text-align: center;
+  box-sizing: border-box;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 4px 8px;
+  transition: all 0.2s ease;
+  background: transparent;
+}
 
-        &.active {
-          color: var(--tab-text-color, #000);
-          background: var(--tab-active-bg, rgba(255, 255, 255, 0.8));
-        }
+.mermaid-toolbar .toolbar-left .toolbar-tabs .tab-item.active {
+  color: inherit;
+  background: rgba(0, 0, 0, 0.08);
+}
 
-        &:hover:not(.active) {
-          color: var(--tab-text-color, #000);
-          background: #d1d2d5;
-        }
-      }
-    }
-  }
+.markdown-mermaid--dark .mermaid-toolbar .toolbar-left .toolbar-tabs .tab-item.active {
+  background: rgba(255, 255, 255, 0.1);
+}
 
-  .toolbar-right {
-    display: flex;
-    align-items: center;
-    gap: 0;
+.mermaid-toolbar .toolbar-left .toolbar-tabs .tab-item:hover:not(.active) {
+  color: inherit;
+  background: rgba(0, 0, 0, 0.08);
+}
 
-    .toolbar-action-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: #333;
-      border-radius: 4px;
-      position: relative;
+.markdown-mermaid--dark .mermaid-toolbar .toolbar-left .toolbar-tabs .tab-item:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.1);
+}
 
-      &:hover:not(.disabled) {
-        color: var(--custom-icon-color, #000);
-        background: #dddee1;
-      }
+.mermaid-toolbar .toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 
-      &:active:not(.disabled) {
-        transform: scale(0.95);
-      }
+.mermaid-toolbar .toolbar-right .toolbar-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
 
-      &.disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-        transform: none;
-        background: none;
-      }
+.mermaid-toolbar .toolbar-right .toolbar-action-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.08);
+}
 
-      &.copy-success {
-        cursor: default;
-        transform: none;
-      }
-    }
-  }
+.markdown-mermaid--dark .mermaid-toolbar .toolbar-right .toolbar-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 </style>

@@ -1,50 +1,52 @@
 <script setup lang="ts">
 import type { MdComponent, MermaidExposeProps, MermaidToolbarConfig } from './types'
 import { debounce } from 'lodash-es'
-import { computed, nextTick, ref, toValue, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useMermaid, useMermaidZoom } from '../../hooks'
-// 移除不存在的 MarkdownProvider 导入
+import { useHighlight } from '../../hooks/useHighlight'
 import { copyToClipboard, downloadSvgAsPng } from './composables'
 import MermaidToolbar from './MermaidToolbar.vue'
 
 interface MermaidProps extends MdComponent {
   toolbarConfig?: MermaidToolbarConfig
+  isDark?: boolean
+  codeLightTheme?: string
+  codeDarkTheme?: string
 }
 
 const props = withDefaults(defineProps<MermaidProps>(), {
   raw: () => ({}),
   toolbarConfig: () => ({}),
+  isDark: false,
+  codeLightTheme: 'vitesse-light',
+  codeDarkTheme: 'vitesse-dark',
+  config: () => ({}),
 })
 
 const mermaidContent = computed(() => props.raw?.content || '')
 const mermaidResult = useMermaid(mermaidContent, {
   id: `mermaid-${props.raw?.key || 'default'}`,
+  theme: props.isDark ? 'dark' : 'default',
+  config: props.config,
 })
 
 const svg = ref('')
 const isLoading = computed(() => !mermaidResult.data.value && !mermaidResult.error.value)
 
-// 移除不存在的 context 相关代码
-// 使用空对象代替 codeXSlot
 const codeXSlot = ref({})
 
-// 计算工具栏配置，合并默认值
-const toolbarConfig = computed(() => {
-  // 移除不存在的 contextMermaidConfig
-  return {
-    showToolbar: true,
-    showFullscreen: true,
-    showZoomIn: true,
-    showZoomOut: true,
-    showReset: true,
-    ...props.toolbarConfig,
-  }
-})
+const toolbarConfig = computed(() => ({
+  showToolbar: true,
+  showFullscreen: true,
+  showZoomIn: true,
+  showZoomOut: true,
+  showReset: true,
+  ...props.toolbarConfig,
+}))
 
 const containerRef = ref<HTMLElement | null>(null)
 const showSourceCode = ref(false)
 
-// 初始化缩放功能
 const zoomControls = useMermaidZoom({
   container: containerRef,
   scaleStep: 0.2,
@@ -52,7 +54,6 @@ const zoomControls = useMermaidZoom({
   maxScale: 5,
 })
 
-// 修改 debounce 的使用方式
 const debouncedInitialize = debounce(onContentTransitionEnter, 500)
 
 watch(
@@ -70,7 +71,17 @@ watch(svg, (newSvg) => {
   }
 })
 
-// 工具栏事件处理
+const codeContent = computed(() => props.raw?.content || '')
+const actualTheme = computed(() => (props.isDark ? props.codeDarkTheme : props.codeLightTheme))
+const {
+  lines,
+  preStyle,
+  isLoading: isCodeLoading,
+} = useHighlight(codeContent, {
+  language: 'mermaid',
+  theme: actualTheme,
+})
+
 function handleZoomIn() {
   if (!showSourceCode.value) {
     zoomControls?.zoomIn()
@@ -110,11 +121,9 @@ async function handleCopyCode() {
 function handleDownload() {
   downloadSvgAsPng(svg.value)
 }
-// 处理图表内容过渡完成事件
+
 function onContentTransitionEnter() {
-  // 只在图表模式下初始化缩放功能
   if (!showSourceCode.value) {
-    // 使用 nextTick 确保 DOM 完全更新
     nextTick(() => {
       if (containerRef.value) {
         zoomControls.initialize()
@@ -124,48 +133,46 @@ function onContentTransitionEnter() {
 }
 
 // 创建暴露给插槽的方法对象
-const exposedMethods = computed(() => {
-  return {
-    // 基础属性
-    showSourceCode: showSourceCode.value,
-    svg: svg.value,
-    rawContent: props.raw.content || '',
-    toolbarConfig: toolbarConfig.value,
-    isLoading: isLoading.value,
+const exposedMethods = computed(
+  () =>
+    ({
+      // 基础属性
+      showSourceCode: showSourceCode.value,
+      svg: svg.value,
+      rawContent: props.raw.content || '',
+      toolbarConfig: toolbarConfig.value,
+      isLoading: isLoading.value,
 
-    // 缩放控制方法
-    zoomIn: handleZoomIn,
-    zoomOut: handleZoomOut,
-    reset: handleReset,
-    fullscreen: handleFullscreen,
+      zoomIn: handleZoomIn,
+      zoomOut: handleZoomOut,
+      reset: handleReset,
+      fullscreen: handleFullscreen,
 
-    // 其他操作方法
-    toggleCode: handleToggleCode,
-    copyCode: handleCopyCode,
-    download: handleDownload,
+      toggleCode: handleToggleCode,
+      copyCode: handleCopyCode,
+      download: handleDownload,
 
-    // 原始 props（除了重复的 toolbarConfig）
-    raw: props.raw,
-  } satisfies MermaidExposeProps
-})
+      raw: props.raw,
+    }) satisfies MermaidExposeProps,
+)
 </script>
 
 <template>
-  <div ref="containerRef" :key="props.raw.key" class="markdown-mermaid">
-    <!-- 工具栏 -->
+  <div
+    ref="containerRef"
+    :key="props.raw.key"
+    class="markdown-mermaid"
+    :class="{ 'markdown-mermaid--dark': props.isDark }"
+  >
     <Transition name="toolbar" appear>
       <div class="toolbar-container">
-        <!-- 自定义完整头部插槽 -->
         <component :is="codeXSlot.codeMermaidHeader" v-if="codeXSlot?.codeMermaidHeader" v-bind="exposedMethods" />
-        <!-- 默认工具栏 + 自定义操作插槽 -->
         <template v-else>
-          <!-- 自定义操作按钮插槽 -->
           <component
             :is="codeXSlot.codeMermaidHeaderControl"
             v-if="codeXSlot?.codeMermaidHeaderControl"
             v-bind="exposedMethods"
           />
-          <!-- 默认工具栏 -->
           <MermaidToolbar
             v-else
             :toolbar-config="toolbarConfig"
@@ -183,7 +190,24 @@ const exposedMethods = computed(() => {
       </div>
     </Transition>
     <Transition name="content" mode="out-in" @after-enter="onContentTransitionEnter">
-      <pre v-if="showSourceCode" key="source" class="mermaid-source-code">{{ props.raw.content }}</pre>
+      <div v-if="showSourceCode" key="source" class="mermaid-source-code">
+        <pre :style="[preStyle, { margin: 0 }]"><code class="code-content">
+        <template v-for="(line, i) in lines" :key="i"><span class="code-line">
+          <template v-for="(token, j) in line" :key="j">
+            <span :style="{
+              color: token.color,
+              backgroundColor: token.backgroundColor,
+              fontWeight: token.fontWeight,
+              fontStyle: token.fontStyle,
+              textDecoration: token.textDecoration
+            }">
+              {{ token.content }}
+            </span>
+          </template>
+          </span>{{ i < lines.length - 1 ? '\n' : '' }}
+        </template>
+        </code></pre>
+      </div>
       <div v-else class="mermaid-content" v-html="svg" />
     </Transition>
   </div>
@@ -191,76 +215,92 @@ const exposedMethods = computed(() => {
 
 <style>
 .markdown-mermaid {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  min-width: 100px;
-  min-height: 100px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-
-  .toolbar-container {
-    position: relative;
-    z-index: 10;
-    flex-shrink: 0;
-    background: white;
-  }
-
-  .mermaid-content {
-    position: relative;
-    z-index: 1;
-    flex: 1;
-    min-height: 200px;
-    cursor: grab;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    overflow: hidden;
-
-    &:active {
-      cursor: grabbing;
-    }
-
-    svg {
-      transform-origin: center center;
-      position: relative;
-      max-width: 100%;
-      max-height: 100%;
-    }
-  }
-
-  &:fullscreen {
-    .mermaid-content {
-      max-height: 100vh;
-      justify-content: center;
-    }
-  }
-
-  .mermaid-source-code {
-    position: relative;
-    z-index: 1;
-    flex: 1;
-    width: 100%;
-    margin: 0;
-    padding: 16px;
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #333;
-    overflow: auto;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    box-sizing: border-box;
-  }
+  font-size: 0;
+  background: rgba(0, 0, 0, 0.03);
 }
 
-/* 简单的过渡效果 */
+.markdown-mermaid.markdown-mermaid--dark {
+  background-color: #1a1a1a;
+}
+
+.markdown-mermaid .toolbar-container {
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.markdown-mermaid.markdown-mermaid--dark .toolbar-container {
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+}
+
+.markdown-mermaid .mermaid-content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 200px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.markdown-mermaid .mermaid-content:active {
+  cursor: grabbing;
+}
+
+.markdown-mermaid .mermaid-content svg {
+  transform-origin: center center;
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.markdown-mermaid:fullscreen .mermaid-content {
+  max-height: 100vh;
+  justify-content: center;
+}
+
+.markdown-mermaid .mermaid-source-code {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  width: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+.markdown-mermaid.markdown-mermaid--dark .mermaid-source-code {
+  background-color: #1a1a1a;
+}
+
+.markdown-mermaid .mermaid-source-code pre {
+  padding: 16px;
+  margin: 0 !important;
+  overflow: auto;
+  background: transparent !important;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.markdown-mermaid .mermaid-source-code .code-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.markdown-mermaid .mermaid-source-code .code-line {
+  width: 100%;
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+}
+
 .content-enter-active,
 .content-leave-active,
 .toolbar-enter-active,

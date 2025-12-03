@@ -27,7 +27,8 @@
 <script setup lang="ts">
 import { computed, type CSSProperties } from 'vue'
 import type { ThemedToken } from 'shiki'
-import { getTokenStyleObject } from '@shikijs/core'
+// import { getTokenStyleObject } from '@shikijs/core'
+import { getTokenStyleObject } from 'shiki'
 import { useHighlight } from '../../hooks/useHighlight'
 import type { CodeLineProps } from './types'
 

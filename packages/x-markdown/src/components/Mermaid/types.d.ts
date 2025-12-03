@@ -82,3 +82,61 @@ export interface MermaidExposeProps {
 export interface MdComponent {
   raw: any
 }
+
+export interface MermaidProps extends MdComponent {
+  raw: {
+    content?: string;
+    key?: string;
+    [key: string]: any;
+  };
+  toolbarConfig?: MermaidToolbarConfig;
+  isDark?: boolean;
+  lightTheme?: string;
+  darkTheme?: string;
+  config?: {
+    theme?: string;
+    securityLevel?: string;
+    startOnLoad?: boolean;
+    flowchart?: {
+      curve?: string;
+      useMaxWidth?: boolean;
+      htmlLabels?: boolean;
+      nodeSpacing?: number;
+      rankSpacing?: number;
+      padding?: number;
+      diagramPadding?: number;
+      defaultRenderer?: string;
+      [key: string]: any;
+    };
+    sequence?: {
+      diagramMarginX?: number;
+      diagramMarginY?: number;
+      actorMargin?: number;
+      width?: number;
+      height?: number;
+      boxMargin?: number;
+      boxTextMargin?: number;
+      noteMargin?: number;
+      messageMargin?: number;
+      mirrorActors?: boolean;
+      bottomMarginAdj?: number;
+      useMaxWidth?: boolean;
+      showSequenceNumbers?: boolean;
+      [key: string]: any;
+    };
+    gantt?: {
+      titleTopMargin?: number;
+      barHeight?: number;
+      barGap?: number;
+      topPadding?: number;
+      sidePadding?: number;
+      gridLineStartPadding?: number;
+      fontSize?: number;
+      fontFamily?: string;
+      numberSectionStyles?: number;
+      axisFormat?: string;
+      [key: string]: any;
+    };
+    [key: string]: any;
+  };
+}
