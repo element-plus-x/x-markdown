@@ -64,14 +64,17 @@
       </div>
 
       <!-- 流式速度控制 -->
-      <div class="config-section speed-section" v-if="isStreaming">
+      <div class="config-section speed-section">
         <div class="config-title">🎚️ 流式控制</div>
         <div class="config-content speed-content">
           <label>速度：</label>
-          <input type="range" v-model="streamSpeed" min="10" max="150" />
-          <span>{{ streamSpeed }}ms</span>
+          <input type="range" v-model.number="streamSpeed" min="10" max="150" step="10" />
+          <span class="speed-value">{{ streamSpeed }}ms</span>
           <div class="progress-bar">
             <div class="progress-fill" :style="{ width: streamProgress + '%' }"></div>
+            <span class="progress-text" :class="{ 'on-fill': streamProgress > 50 }"
+              >{{ streamProgress.toFixed(1) }}%</span
+            >
           </div>
         </div>
       </div>
@@ -134,7 +137,7 @@
 <script setup lang="ts">
 import 'katex/dist/katex.min.css'
 import 'github-markdown-css/github-markdown.css'
-import { ref, computed, h, onUnmounted } from 'vue'
+import { ref, computed, h, onUnmounted, watch } from 'vue'
 import { MarkdownRenderer } from 'x-markdown'
 
 // ==================== 状态管理 ====================
@@ -277,9 +280,26 @@ graph LR
 // 当前显示的 markdown 内容
 const markdown = ref(fullContent)
 
-// 流式进度
+// 流式进度 - 根据当前 markdown 内容长度计算
 const streamProgress = computed(() => {
-  return (streamIndex / fullContent.length) * 100
+  if (fullContent.length === 0) return 0
+  return Math.min((markdown.value.length / fullContent.length) * 100, 100)
+})
+
+// 监听流式速度变化，实时调整定时器间隔
+watch(streamSpeed, (newSpeed) => {
+  if (isStreaming.value && streamTimer) {
+    clearInterval(streamTimer)
+    streamTimer = setInterval(() => {
+      if (streamIndex < fullContent.length) {
+        const charsToAdd = Math.min(Math.floor(Math.random() * 3) + 1, fullContent.length - streamIndex)
+        markdown.value += fullContent.slice(streamIndex, streamIndex + charsToAdd)
+        streamIndex += charsToAdd
+      } else {
+        stopStreaming()
+      }
+    }, newSpeed)
+  }
 })
 
 // ==================== CodeX 配置 ====================
@@ -388,6 +408,52 @@ onUnmounted(() => {
 body {
   margin: 0 !important;
 }
+
+/* 滚动条样式 - Webkit 浏览器 (Chrome, Edge, Safari) */
+* {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgb(0 0 0 / 12%) rgb(0 0 0 / 6%); /* Firefox */
+}
+
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgb(0 0 0 / 6%);
+  border-radius: 3px;
+  box-shadow: inset 0 0 5px rgb(0 0 0 / 8%);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgb(0 0 0 / 12%);
+  border-radius: 3px;
+  box-shadow: inset 0 0 10px rgb(0 0 0 / 20%);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgb(0 0 0 / 24%);
+}
+
+/* 暗色模式下的滚动条 */
+.app-dark *::-webkit-scrollbar-track {
+  background: rgb(255 255 255 / 8%);
+  box-shadow: inset 0 0 5px rgb(255 255 255 / 5%);
+}
+
+.app-dark *::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 15%);
+  box-shadow: inset 0 0 10px rgb(255 255 255 / 10%);
+}
+
+.app-dark *::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 25%);
+}
+
+.app-dark * {
+  scrollbar-color: rgb(255 255 255 / 15%) rgb(255 255 255 / 8%); /* Firefox 暗色模式 */
+}
 </style>
 
 <style scoped>
@@ -399,12 +465,12 @@ body {
 }
 
 #app.app-dark {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: #1a1a1a;
 }
 
 /* ==================== 头部样式 ==================== */
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #42b883;
   color: white;
   padding: 1rem 2rem;
   display: flex;
@@ -412,7 +478,12 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 20px rgba(1, 57, 24, 0.3);
+}
+
+.app-dark .header {
+  background: #014629;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .header-content h1 {
@@ -484,14 +555,14 @@ body {
   display: flex;
   gap: 1.5rem;
   padding: 0.8rem 1.5rem;
-  background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
-  border-bottom: 1px solid #e5e7eb;
+  background: #42b883;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   flex-wrap: wrap;
   align-items: flex-start;
 }
 
 .app-dark .config-bar {
-  background: linear-gradient(135deg, #1a1a2e 0%, #1e2a3e 100%);
+  background: #014629;
   border-color: #374151;
 }
 
@@ -504,13 +575,13 @@ body {
 .config-title {
   font-size: 0.7rem;
   font-weight: 600;
-  color: #667eea;
+  color: rgba(255, 255, 255, 0.9);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .app-dark .config-title {
-  color: #a78bfa;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .config-content {
@@ -526,27 +597,28 @@ body {
   gap: 0.3rem;
   cursor: pointer;
   font-size: 0.8rem;
-  color: #374151;
+  color: white;
   padding: 0.3rem 0.6rem;
   border-radius: 6px;
   transition: background 0.2s;
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .config-content label:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .app-dark .config-content label {
   color: #e5e5e5;
-  background: #2a3a5a;
-  border-color: #4b5563;
+  background: rgba(66, 184, 131, 0.15);
+  border-color: rgba(66, 184, 131, 0.3);
 }
 
 .app-dark .config-content label:hover {
-  background: #374151;
+  background: rgba(66, 184, 131, 0.25);
+  border-color: rgba(66, 184, 131, 0.5);
 }
 
 .config-content input[type='checkbox'] {
@@ -564,22 +636,26 @@ body {
 .config-content .code-max-height-input {
   width: 80px;
   padding: 0.25rem 0.5rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 4px;
   font-size: 0.75rem;
-  background: white;
-  color: #374151;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+}
+
+.config-content .code-max-height-input::placeholder {
+  color: #999;
 }
 
 .app-dark .config-content .code-max-height-input {
-  background: #374151;
+  background: #212121;
   border-color: #4b5563;
   color: #e5e5e5;
 }
 
 .config-content .code-max-height-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #42b883;
 }
 
 .speed-section {
@@ -589,31 +665,102 @@ body {
 
 .speed-content {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
 }
 
 .speed-content input[type='range'] {
-  width: 80px;
+  width: 100px;
   cursor: pointer;
+  accent-color: white;
+}
+
+.speed-content input[type='range']::-webkit-slider-thumb {
+  background: white;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.speed-content input[type='range']::-moz-range-thumb {
+  background: white;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.app-dark .speed-content input[type='range'] {
+  accent-color: #42b883;
+}
+
+.app-dark .speed-content input[type='range']::-webkit-slider-thumb {
+  background: #42b883;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.app-dark .speed-content input[type='range']::-moz-range-thumb {
+  background: #42b883;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.speed-value {
+  min-width: 45px;
+  font-weight: 600;
+  color: white;
+  font-size: 0.85rem;
+}
+
+.app-dark .speed-value {
+  color: white;
 }
 
 .speed-content .progress-bar {
+  position: relative;
   flex: 1;
-  min-width: 100px;
-  height: 6px;
-  background: #e5e7eb;
-  border-radius: 3px;
+  min-width: 120px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .app-dark .speed-content .progress-bar {
-  background: #374151;
+  background: transparent;
+  border-color: rgba(66, 184, 131, 0.3);
 }
 
 .speed-content .progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-  transition: width 0.1s ease;
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.5);
+  transition: width 0.2s ease;
+  border-radius: 10px;
+}
+
+.speed-content .progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  z-index: 1;
+  transition: color 0.2s ease;
+}
+
+.speed-content .progress-text.on-fill {
+  color: #ffffff;
+}
+
+.app-dark .speed-content .progress-text {
+  color: #9ca3af;
+}
+
+.app-dark .speed-content .progress-text.on-fill {
+  color: #ffffff;
 }
 
 /* ==================== 主容器 ==================== */
@@ -640,7 +787,7 @@ body {
 
 .app-dark .editor-panel,
 .app-dark .preview-panel {
-  background: #1e2a4a;
+  background: #212121;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
@@ -654,7 +801,7 @@ body {
 }
 
 .app-dark .panel-header {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, #212121 0%, #212121 100%);
   border-color: #374151;
 }
 
@@ -684,16 +831,16 @@ body {
 
 .slot-badge {
   font-size: 0.75rem;
-  color: #667eea;
-  background: linear-gradient(135deg, #e0e7ff 0%, #f0e6ff 100%);
+  color: #42b883;
+  background: #e8f5f0;
   padding: 0.2rem 0.6rem;
   border-radius: 12px;
   font-weight: 500;
 }
 
 .app-dark .slot-badge {
-  background: linear-gradient(135deg, #312e81 0%, #4c1d95 100%);
-  color: #c4b5fd;
+  background: #1e3a32;
+  color: #42b883;
 }
 
 /* ==================== 编辑器样式 ==================== */
@@ -711,7 +858,7 @@ body {
 }
 
 .app-dark .editor {
-  background: #1e2a4a;
+  background: #212121;
   color: #e5e5e5;
 }
 
@@ -746,7 +893,7 @@ body {
 
 /* 暗色主题 - 强制覆盖 */
 .app-dark .preview-content {
-  background: #0d1117;
+  background: transparent;
 }
 
 .app-dark .preview-content.markdown-body {
@@ -769,8 +916,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 3px solid;
-  border-image: linear-gradient(90deg, #667eea, #764ba2) 1;
+  border-bottom: 3px solid #42b883;
   margin-bottom: 1rem;
 }
 
@@ -784,14 +930,14 @@ body {
   gap: 0.8rem;
   padding: 1rem;
   margin: 1rem 0;
-  background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%);
+  background: #e8f5f0;
   border-radius: 12px;
   border: none;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #42b883;
 }
 
 .app-dark :deep(.custom-blockquote) {
-  background: linear-gradient(135deg, #1e2a4a 0%, #2a1e4a 100%);
+  background: #1e3a32;
 }
 
 .quote-icon {
@@ -809,7 +955,7 @@ body {
 
 /* 自定义链接 */
 :deep(.custom-link) {
-  color: #667eea;
+  color: #42b883;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -821,12 +967,12 @@ body {
 }
 
 :deep(.custom-link:hover) {
-  background: #f0f4ff;
-  color: #764ba2;
+  background: #e8f5f0;
+  color: #35495e;
 }
 
 .app-dark :deep(.custom-link:hover) {
-  background: #1e2a4a;
+  background: #1e3a32;
 }
 
 .link-icon {
