@@ -111,11 +111,15 @@ function createMarkdownRenderer(name: string, coreComponent: typeof VueMarkdown 
             ...attrs,
           },
           // 渲染核心组件
-          h(coreComponent, { ...renderProps.value as any, class: 'x-md-core' }, {
-            // 合并自定义组件和外部插槽
-            ...components,
-            ...slots,
-          }),
+          h(
+            coreComponent,
+            { ...(renderProps.value as any), class: 'x-md-core' },
+            {
+              // 合并自定义组件和外部插槽
+              ...components,
+              ...slots,
+            },
+          ),
         )
     },
   })
