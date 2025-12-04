@@ -3,51 +3,35 @@ import { throttle } from 'lodash-es'
 import { computed, ref, watch, onUnmounted } from 'vue'
 import type { MermaidZoomControls, UseMermaidZoomOptions } from '../components/Mermaid/types'
 
-/**
- * 将 SVG 转换为 PNG 并下载
- * @param svg - SVG 字符串内容
- */
 export function downloadSvgAsPng(svg: string): void {
-  // SVG 内容为空时直接返回
   if (!svg) return
 
   try {
-    // 将 SVG 转换为 Data URL
     const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
     const img = new Image()
 
-    // 图片加载完成后进行绘制和下载
     img.onload = () => {
       try {
-        // 创建 Canvas 元素
         const canvas = document.createElement('canvas')
         const ctx = canvas.getContext('2d', { willReadFrequently: false })
         if (!ctx) return
 
-        // 使用 2x 缩放以获得更清晰的图像
         const scale = 2
         canvas.width = img.width * scale
         canvas.height = img.height * scale
-        // 启用图像平滑以提高质量
         ctx.imageSmoothingEnabled = true
         ctx.imageSmoothingQuality = 'high'
 
-        // 填充白色背景
         ctx.fillStyle = '#ffffff'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-        // 绘制 SVG 图像
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 
-        // 生成文件名（包含时间戳）
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
 
         try {
-          // 优先使用 toBlob 方法（性能更好）
           canvas.toBlob(
             (blob) => {
               if (!blob) return
-              // 创建 Blob URL 并触发下载
               const url = URL.createObjectURL(blob)
               const link = document.createElement('a')
               link.href = url
@@ -55,15 +39,13 @@ export function downloadSvgAsPng(svg: string): void {
               document.body.appendChild(link)
               link.click()
               document.body.removeChild(link)
-              // 释放 Blob URL
               URL.revokeObjectURL(url)
             },
             'image/png',
-            0.95, // 图像质量
+            0.95,
           )
         } catch (toBlobError) {
           console.error('toBlobError:', toBlobError)
-          // 降级方案：使用 toDataURL
           try {
             const dataUrl = canvas.toDataURL('image/png', 0.95)
             const link = document.createElement('a')
@@ -81,24 +63,21 @@ export function downloadSvgAsPng(svg: string): void {
       }
     }
 
-    // 图片加载失败的处理
     img.onerror = (error) => {
       console.error('Image load error:', error)
     }
 
-    // 开始加载图片
     img.src = svgDataUrl
   } catch (error) {
     console.error('下载失败:', error)
   }
 }
 
-// ==================== Mermaid Hooks ====================
-
 interface UseMermaidOptions {
   id?: string
   theme?: 'default' | 'dark' | 'forest' | 'neutral' | string
   config?: any
+  container?: HTMLElement | Ref<HTMLElement | null> | null
 }
 
 type UseMermaidOptionsInput = UseMermaidOptions | Ref<UseMermaidOptions>
@@ -109,26 +88,7 @@ async function loadMermaid() {
   return mermaidModule.default
 }
 
-let mermaidContainer: HTMLElement | null = null
-
-function getMermaidContainer(): HTMLElement {
-  if (!mermaidContainer) {
-    mermaidContainer = document.querySelector('.elx-markdown-mermaid-container') as HTMLElement
-    if (!mermaidContainer) {
-      mermaidContainer = document.createElement('div') as HTMLElement
-      mermaidContainer.ariaHidden = 'true'
-      mermaidContainer.style.maxHeight = '0'
-      mermaidContainer.style.opacity = '0'
-      mermaidContainer.style.overflow = 'hidden'
-      mermaidContainer.classList.add('elx-markdown-mermaid-container')
-      document.body.append(mermaidContainer)
-    }
-  }
-  return mermaidContainer
-}
-
 export function useMermaid(content: string | Ref<string>, options: UseMermaidOptionsInput = {}) {
-  // 支持响应式的 options
   const optionsRef = computed(() => typeof options === 'object' && 'value' in options ? options.value : options)
   const mermaidConfig = computed(() => ({
     suppressErrorRendering: true,
@@ -139,6 +99,17 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
   }))
   const data = ref('')
   const error = ref<unknown>(null)
+
+  const getRenderContainer = () => {
+    const containerOption = optionsRef.value.container
+    if (containerOption) {
+      return typeof containerOption === 'object' && 'value' in containerOption
+        ? containerOption.value
+        : containerOption
+    }
+    return null
+  }
+
   const throttledRender = throttle(
     async () => {
       const contentValue = typeof content === 'string' ? content : content.value
@@ -148,14 +119,12 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
         return
       }
       try {
-        // 动态加载 mermaid 库
         const mermaidInstance = await loadMermaid()
         if (!mermaidInstance) {
           data.value = contentValue
           error.value = null
           return
         }
-        // 语法校验
         const isValid = await mermaidInstance.parse(contentValue.trim())
         if (!isValid) {
           console.log('Mermaid parse error: Invalid syntax')
@@ -163,10 +132,13 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
           error.value = new Error('Mermaid parse error: Invalid syntax')
           return
         }
-        // 初始化 mermaid 配置
         mermaidInstance.initialize(mermaidConfig.value)
         const renderId = `${optionsRef.value.id || 'mermaid'}-${Math.random().toString(36).substr(2, 9)}`
-        const container = getMermaidContainer()
+        const container = getRenderContainer()
+        if (!container) {
+          console.warn('Mermaid render container not found')
+          return
+        }
         const { svg } = await mermaidInstance.render(renderId, contentValue, container)
         data.value = svg
         error.value = null
@@ -180,7 +152,6 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
     { trailing: true, leading: true },
   )
 
-  // 监听内容变化和配置变化，自动触发渲染
   watch(
     [
       () => (typeof content === 'string' ? content : content.value),
@@ -208,16 +179,13 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
 
   let removeEvents: (() => void) | null = null
 
-  // 获取SVG元素
   const getSvg = () => container.value?.querySelector('.syntax-mermaid__content svg') as HTMLElement
 
-  // 更新变换
   const updateTransform = (svg: HTMLElement) => {
     svg.style.transformOrigin = 'center center'
     svg.style.transform = `translate(${posX.value}px, ${posY.value}px) scale(${scale.value})`
   }
 
-  // 重置状态
   const resetState = () => {
     scale.value = 1
     posX.value = 0
@@ -225,7 +193,6 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     isDragging.value = false
   }
 
-  // 添加拖拽和缩放事件
   const addInteractionEvents = (containerEl: HTMLElement) => {
     let startX = 0
     let startY = 0
@@ -253,54 +220,49 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
       document.body.style.userSelect = ''
     }
 
-    // 鼠标事件
     const onMouseDown = (e: MouseEvent) => {
-      if (e.button !== 0) return // ⭐️ 只响应鼠标左键
+      if (e.button !== 0) return
       e.preventDefault()
       onStart(e.clientX, e.clientY)
     }
     const onMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY)
 
-    // 滚轮缩放事件
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault()
-
+    const handleWheelZoom = (e: WheelEvent) => {
       const svg = getSvg()
       if (!svg) return
 
-      // 获取容器和 SVG 的位置信息
       const containerRect = containerEl.getBoundingClientRect()
       const svgRect = svg.getBoundingClientRect()
 
-      // 计算鼠标相对于容器的位置
       const mouseX = e.clientX - containerRect.left
       const mouseY = e.clientY - containerRect.top
 
-      // 计算 SVG 中心相对于容器的位置
       const svgCenterX = (svgRect.left - containerRect.left) + svgRect.width / 2
       const svgCenterY = (svgRect.top - containerRect.top) + svgRect.height / 2
 
-      // 计算鼠标相对于 SVG 中心的偏移（考虑当前缩放和位移）
       const offsetX = (mouseX - svgCenterX - posX.value) / scale.value
       const offsetY = (mouseY - svgCenterY - posY.value) / scale.value
 
-      // 更新缩放比例 - 使用固定步进 0.02，平滑缩放
-      const delta = e.deltaY > 0 ? -0.02 : 0.02
+      const delta = e.deltaY > 0 ? -0.05 : 0.05
       const newScale = Math.min(Math.max(scale.value + delta, 0.1), 10)
 
-      // 如果缩放比例没有变化，直接返回
       if (newScale === scale.value) return
 
       scale.value = newScale
 
-      // 计算新的偏移量，保持鼠标位置不变
       posX.value = mouseX - svgCenterX - offsetX * scale.value
       posY.value = mouseY - svgCenterY - offsetY * scale.value
 
       updateTransform(svg)
     }
 
-    // 触摸事件
+    const throttledWheelZoom = throttle(handleWheelZoom, 20, { leading: true, trailing: true })
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      throttledWheelZoom(e)
+    }
+
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 1) {
         onStart(e.touches[0].clientX, e.touches[0].clientY)
@@ -313,7 +275,6 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
       }
     }
 
-    // 绑定事件到容器
     containerEl.addEventListener('mousedown', onMouseDown)
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('mouseup', onEnd)
@@ -334,7 +295,6 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     }
   }
 
-  // 缩放功能
   const zoomIn = () => {
     const svg = getSvg()
     if (svg) {
@@ -374,7 +334,6 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
 
     resetState()
 
-    // 将事件绑定到容器而不是 SVG
     removeEvents = addInteractionEvents(container.value)
 
     const svg = getSvg()
@@ -389,7 +348,6 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     resetState()
   }
 
-  // 监听容器变化
   watch(
     () => container.value,
     () => {
@@ -398,7 +356,6 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     },
   )
 
-  // 组件卸载时清理
   onUnmounted(destroy)
 
   return {
