@@ -14,15 +14,10 @@ export interface CodeLineProps {
    */
   isDark?: boolean;
   /**
-   * 亮色主题
-   * @default 'vitesse-light'
+   * Shiki 主题配置，数组形式 [lightTheme, darkTheme]
+   * @default ['vitesse-light', 'vitesse-dark']
    */
-  codeLightTheme?: BuiltinTheme;
-  /**
-   * 暗色主题
-   * @default 'vitesse-dark'
-   */
-  codeDarkTheme?: BuiltinTheme;
+  shikiTheme?: [BuiltinTheme, BuiltinTheme];
   /**
    * 是否启用动画效果
    * 启用后会给行内代码添加 x-md-animated-word class

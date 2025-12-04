@@ -32,15 +32,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
-    /** 亮色主题 */
-    codeLightTheme: {
-      type: String as PropType<BuiltinTheme>,
-      default: 'vitesse-light',
-    },
-    /** 暗色主题 */
-    codeDarkTheme: {
-      type: String as PropType<BuiltinTheme>,
-      default: 'vitesse-dark',
+    /** Shiki 主题配置，数组形式 [lightTheme, darkTheme] */
+    shikiTheme: {
+      type: Array as unknown as PropType<[BuiltinTheme, BuiltinTheme]>,
+      default: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
     },
     showCodeBlockHeader: {
       type: Boolean,
@@ -71,8 +66,7 @@ export default defineComponent({
         return h(CodeLine, {
           raw: props.raw,
           isDark: props.isDark,
-          codeLightTheme: props.codeLightTheme,
-          codeDarkTheme: props.codeDarkTheme,
+          shikiTheme: props.shikiTheme,
           enableAnimate: props.enableAnimate,
         })
       }
@@ -90,7 +84,12 @@ export default defineComponent({
 
       // 处理 Mermaid 图表
       if (language === 'mermaid') {
-        return h(Mermaid, props)
+        return h(Mermaid, {
+          raw: props.raw,
+          isDark: props.isDark,
+          shikiTheme: props.shikiTheme,
+          codeXSlots: props.codeXSlots,
+        })
       }
 
       // 渲染标准代码块
@@ -100,8 +99,8 @@ export default defineComponent({
           code: props.raw.content || '',
           language: props.raw.language || 'text',
           isDark: props.isDark,
-          lightTheme: props.codeLightTheme,
-          darkTheme: props.codeDarkTheme,
+          lightTheme: props.shikiTheme[0],
+          darkTheme: props.shikiTheme[1],
           showCodeBlockHeader: props.showCodeBlockHeader,
           codeMaxHeight: props.codeMaxHeight,
           enableAnimate: props.enableAnimate, // 传递动画开关

@@ -35,8 +35,7 @@ import type { CodeLineProps } from './types'
 const props = withDefaults(defineProps<CodeLineProps>(), {
   raw: () => ({}),
   isDark: false, // 默认亮色模式
-  codeLightTheme: 'vitesse-light', // 默认亮色主题
-  codeDarkTheme: 'vitesse-dark', // 默认暗色主题
+  shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [import('shiki').BuiltinTheme, import('shiki').BuiltinTheme], // 默认主题
   enableAnimate: false, // 默认不启用动画
 })
 
@@ -47,7 +46,7 @@ const content = computed(() => props.raw?.content ?? '')
 const language = computed(() => props.raw?.language || 'ts')
 
 // 当前使用的主题
-const actualTheme = computed(() => (props.isDark ? props.codeDarkTheme : props.codeLightTheme))
+const actualTheme = computed(() => (props.isDark ? props.shikiTheme[1] : props.shikiTheme[0]))
 
 // 使用 useHighlight hook 进行语法高亮
 const { lines, preStyle } = useHighlight(content, {

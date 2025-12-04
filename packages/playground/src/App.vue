@@ -41,10 +41,7 @@
             <input type="checkbox" v-model="enableAnimate" />
             动画效果
           </label>
-          <label>
-            <input type="checkbox" v-model="useCustomSlots" />
-            自定义插槽
-          </label>
+
         </div>
       </div>
 
@@ -52,6 +49,10 @@
       <div class="config-section">
         <div class="config-title">📦 代码块配置</div>
         <div class="config-content">
+          <label>
+            <input type="checkbox" v-model="useCustomSlots" />
+            codeXSlots插槽
+          </label>
           <label>
             <input type="checkbox" v-model="showCodeBlockHeader" />
             显示代码块头部
@@ -72,9 +73,8 @@
           <span class="speed-value">{{ streamSpeed }}ms</span>
           <div class="progress-bar">
             <div class="progress-fill" :style="{ width: streamProgress + '%' }"></div>
-            <span class="progress-text" :class="{ 'on-fill': streamProgress > 50 }"
-              >{{ streamProgress.toFixed(1) }}%</span
-            >
+            <span class="progress-text" :class="{ 'on-fill': streamProgress > 50 }">{{ streamProgress.toFixed(1)
+              }}%</span>
           </div>
         </div>
       </div>
@@ -98,16 +98,9 @@
           <span v-if="useCustomSlots" class="slot-badge">✨ 自定义渲染</span>
         </div>
         <div class="preview-content markdown-body">
-          <MarkdownRenderer
-            :markdown="markdown"
-            :enable-latex="enableLatex"
-            :allow-html="allowHtml"
-            :enable-breaks="enableBreaks"
-            :enable-animate="enableAnimate"
-            :is-dark="isDark"
-            :code-x-props="codeXProps"
-            :code-x-slots="useCustomSlots ? codeXSlots : undefined"
-          >
+          <MarkdownRenderer :markdown="markdown" :enable-latex="enableLatex" :allow-html="allowHtml"
+            :enable-breaks="enableBreaks" :enable-animate="enableAnimate" :is-dark="isDark" :code-x-props="codeXProps"
+            :code-x-slots="useCustomSlots ? codeXSlots : undefined">
             <!-- 自定义 blockquote：添加引用图标 -->
             <template v-if="useCustomSlots" #blockquote="{ children }">
               <blockquote class="custom-blockquote">
@@ -153,7 +146,7 @@ const enableLatex = ref(true)
 const allowHtml = ref(true)
 const enableBreaks = ref(true)
 const enableAnimate = ref(false) // 是否启用动画效果
-const useCustomSlots = ref(true)
+const useCustomSlots = ref(false)
 
 // 代码块配置选项
 const showCodeBlockHeader = ref(true) // 是否显示代码块头部
@@ -415,8 +408,10 @@ body {
 
 /* 滚动条样式 - Webkit 浏览器 (Chrome, Edge, Safari) */
 * {
-  scrollbar-width: thin; /* Firefox */
-  scrollbar-color: rgb(0 0 0 / 12%) rgb(0 0 0 / 6%); /* Firefox */
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: rgb(0 0 0 / 12%) rgb(0 0 0 / 6%);
+  /* Firefox */
 }
 
 *::-webkit-scrollbar {
@@ -456,7 +451,8 @@ body {
 }
 
 .app-dark * {
-  scrollbar-color: rgb(255 255 255 / 15%) rgb(255 255 255 / 8%); /* Firefox 暗色模式 */
+  scrollbar-color: rgb(255 255 255 / 15%) rgb(255 255 255 / 8%);
+  /* Firefox 暗色模式 */
 }
 </style>
 
@@ -1043,6 +1039,7 @@ body {
     min-height: 500px;
   }
 }
+
 .tip {
   display: inline-block;
   background: #fffae5;
@@ -1055,6 +1052,7 @@ body {
   margin-top: 20px;
   position: relative;
 }
+
 .tip::after {
   content: '6';
   position: absolute;

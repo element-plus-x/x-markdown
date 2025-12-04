@@ -1,4 +1,5 @@
 import { h } from 'vue'
+import type { BuiltinTheme } from 'shiki'
 import type { CodeXProps } from '../components/CodeX/types'
 import CodeX from '../components/CodeX/index.vue'
 
@@ -10,6 +11,8 @@ interface UseComponentsOptions {
   codeXSlots?: Record<string, any>
   // 是否为深色模式
   isDark?: boolean
+  // Shiki 主题配置
+  shikiTheme?: [BuiltinTheme, BuiltinTheme]
   // 代码块配置
   codeXProps?: CodeXProps
   // 是否启用动画效果
@@ -31,8 +34,7 @@ function useComponents(props?: UseComponentsOptions) {
         codeXSlots: props?.codeXSlots,
         isDark: props?.isDark,
         // 主题配置
-        codeLightTheme: props?.codeXProps?.codeLightTheme,
-        codeDarkTheme: props?.codeXProps?.codeDarkTheme,
+        shikiTheme: props?.shikiTheme,
         // 功能配置
         showCodeBlockHeader: props?.codeXProps?.showCodeBlockHeader,
         codeMaxHeight: props?.codeXProps?.codeMaxHeight,

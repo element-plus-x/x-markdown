@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { MermaidToolbarConfig, MermaidToolbarEmits } from './types'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
+// 直接从 @vueuse/core 导入剪贴板功能
+import { useClipboard } from '@vueuse/core'
 
 interface MermaidToolbarInternalProps {
   toolbarConfig?: MermaidToolbarConfig
@@ -16,8 +18,9 @@ const props = withDefaults(defineProps<MermaidToolbarInternalProps>(), {
 
 const emit = defineEmits<MermaidToolbarEmits>()
 
-// 复制成功状态
-const isCopySuccess = ref(false)
+// 使用 vueuse 的剪贴板 hook
+// copiedDuring: 1500 表示复制成功状态持续 1.5 秒
+const { copy, copied: isCopySuccess } = useClipboard({ copiedDuring: 1500 })
 
 // 当前激活的 tab
 const activeTab = computed({
@@ -122,40 +125,20 @@ async function handleCopyCode(event: Event) {
     return
   }
 
+  // 如果没有源代码，通知父组件处理
+  if (!props.sourceCode) {
+    emit('onCopyCode')
+    return
+  }
+
   try {
-    if (!props.sourceCode) {
-      emit('onCopyCode')
-      return
-    }
-
-    // 使用现代剪贴板 API
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(props.sourceCode)
-    } else {
-      // 降级方案：使用传统方法
-      const textArea = document.createElement('textarea')
-      textArea.value = props.sourceCode
-      textArea.style.position = 'fixed'
-      textArea.style.left = '-999999px'
-      textArea.style.top = '-999999px'
-      document.body.appendChild(textArea)
-      textArea.focus()
-      textArea.select()
-      document.execCommand('copy')
-      textArea.remove()
-    }
-
-    // 设置复制成功状态
-    isCopySuccess.value = true
-
-    setTimeout(() => {
-      isCopySuccess.value = false
-    }, 1500)
-
+    // 使用 vueuse 的 copy 方法进行复制
+    await copy(props.sourceCode)
+    // 通知父组件复制完成
     emit('onCopyCode')
   } catch (err) {
     console.error('Failed to copy code: ', err)
-    // 如果复制失败，也通知父组件，让父组件决定如何处理
+    // 复制失败时也通知父组件
     emit('onCopyCode')
   }
 }
@@ -187,22 +170,35 @@ function handleTabClickEvent(pane: TabClickEvent) {
     :style="config.toolbarStyle"
     @click="handleToolbarClick"
   >
-    <!-- 左侧 Tabs -->
+    <!-- 左侧分段器 -->
     <div class="toolbar-left" :style="tabTextColorStyle">
-      <div class="toolbar-tabs">
+      <div class="segmented-control">
+        <!-- 滑块背景，用于指示当前选中项 -->
+        <div class="segmented-slider" :class="{ 'slide-right': activeTab === 'code' }" />
+        <!-- Mermaid 图表选项 -->
         <div
-          class="tab-item"
+          class="segment-item"
           :class="{ active: activeTab === 'diagram' }"
           @click="handleTabClickEvent({ paneName: 'diagram' })"
         >
-          图片
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>预览</span>
         </div>
+        <!-- 代码选项 -->
         <div
-          class="tab-item"
+          class="segment-item"
           :class="{ active: activeTab === 'code' }"
           @click="handleTabClickEvent({ paneName: 'code' })"
         >
-          代码
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 18L22 12L16 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 6L2 12L8 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>代码</span>
         </div>
       </div>
     </div>
@@ -310,43 +306,89 @@ function handleTabClickEvent(pane: TabClickEvent) {
   align-items: center;
 }
 
-.mermaid-toolbar .toolbar-left .toolbar-tabs {
+/* 分段器容器样式 */
+.mermaid-toolbar .toolbar-left .segmented-control {
   display: flex;
   align-items: center;
-  gap: 4px;
+  position: relative;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  padding: 3px;
+  gap: 2px;
 }
 
-.mermaid-toolbar .toolbar-left .toolbar-tabs .tab-item {
+/* 暗色模式下的分段器背景 */
+.markdown-mermaid--dark .mermaid-toolbar .toolbar-left .segmented-control {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 滑块背景样式 - 用于指示当前选中项 */
+.mermaid-toolbar .toolbar-left .segmented-control .segmented-slider {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(50% - 4px);
+  height: calc(100% - 6px);
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+
+/* 暗色模式下的滑块背景 */
+.markdown-mermaid--dark .mermaid-toolbar .toolbar-left .segmented-control .segmented-slider {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* 滑块向右滑动时的位置 */
+.mermaid-toolbar .toolbar-left .segmented-control .segmented-slider.slide-right {
+  transform: translateX(calc(100% + 2px));
+}
+
+/* 分段器选项样式 */
+.mermaid-toolbar .toolbar-left .segmented-control .segment-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   font-size: 12px;
   border: none;
   color: inherit;
-  width: 60px;
+  min-width: 60px;
   text-align: center;
   box-sizing: border-box;
   font-weight: 500;
   cursor: pointer;
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 5px 12px;
   transition: all 0.2s ease;
   background: transparent;
+  opacity: 0.6;
+  user-select: none;
+  position: relative;
+  z-index: 1;
 }
 
-.mermaid-toolbar .toolbar-left .toolbar-tabs .tab-item.active {
-  color: inherit;
-  background: rgba(0, 0, 0, 0.08);
+/* 选项激活状态 */
+.mermaid-toolbar .toolbar-left .segmented-control .segment-item.active {
+  opacity: 1;
 }
 
-.markdown-mermaid--dark .mermaid-toolbar .toolbar-left .toolbar-tabs .tab-item.active {
-  background: rgba(255, 255, 255, 0.1);
+/* 暗色模式下激活状态的文字颜色 */
+.markdown-mermaid--dark .mermaid-toolbar .toolbar-left .segmented-control .segment-item.active {
+  color: #fff;
 }
 
-.mermaid-toolbar .toolbar-left .toolbar-tabs .tab-item:hover:not(.active) {
-  color: inherit;
-  background: rgba(0, 0, 0, 0.08);
+/* 选项 hover 效果 */
+.mermaid-toolbar .toolbar-left .segmented-control .segment-item:hover {
+  opacity: 1;
 }
 
-.markdown-mermaid--dark .mermaid-toolbar .toolbar-left .toolbar-tabs .tab-item:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.1);
+/* 选项内的图标样式 */
+.mermaid-toolbar .toolbar-left .segmented-control .segment-item svg {
+  flex-shrink: 0;
 }
 
 .mermaid-toolbar .toolbar-right {
@@ -359,8 +401,9 @@ function handleTabClickEvent(pane: TabClickEvent) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   border: none;
   border-radius: 4px;
   background: transparent;
@@ -373,6 +416,12 @@ function handleTabClickEvent(pane: TabClickEvent) {
 .mermaid-toolbar .toolbar-right .toolbar-action-btn:hover {
   opacity: 1;
   background: rgba(0, 0, 0, 0.08);
+}
+
+/* 复制成功状态 - 绿色图标 */
+.mermaid-toolbar .toolbar-right .toolbar-action-btn.copy-success {
+  opacity: 1;
+  color: #22c55e;
 }
 
 .markdown-mermaid--dark .mermaid-toolbar .toolbar-right .toolbar-action-btn:hover {

@@ -1,5 +1,6 @@
 import type { PropType } from 'vue'
 import type { PluggableList } from 'unified'
+import type { BuiltinTheme } from 'shiki'
 import type { CodeXProps } from '../components/CodeX/types'
 import type { CustomAttrs, SanitizeOptions } from '../core/types'
 import { computed, defineComponent, h, toValue } from 'vue'
@@ -21,13 +22,15 @@ const markdownRendererProps = {
   enableBreaks: { type: Boolean, default: true },
   // 是否为深色模式（控制整体 UI 主题）
   isDark: { type: Boolean, default: false },
-  // 代码块 CodeX 组件 props（包含 codeLightTheme、codeDarkTheme）
+  // Shiki 主题配置，数组形式 [lightTheme, darkTheme]
+  shikiTheme: {
+    type: Array as unknown as PropType<[BuiltinTheme, BuiltinTheme]>,
+    default: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
+  },
+  // 代码块 CodeX 组件 props（不再包含主题配置）
   codeXProps: {
     type: Object as PropType<CodeXProps>,
-    default: () => ({
-      codeLightTheme: 'vitesse-light',
-      codeDarkTheme: 'vitesse-dark',
-    }),
+    default: () => ({}),
   },
   // 自定义代码块渲染函数
   codeXRender: { type: Object, default: () => ({}) },

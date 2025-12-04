@@ -3,6 +3,98 @@ import { throttle } from 'lodash-es'
 import { computed, ref, watch, onUnmounted } from 'vue'
 import type { MermaidZoomControls, UseMermaidZoomOptions } from '../components/Mermaid/types'
 
+/**
+ * 将 SVG 转换为 PNG 并下载
+ * @param svg - SVG 字符串内容
+ */
+export function downloadSvgAsPng(svg: string): void {
+  // SVG 内容为空时直接返回
+  if (!svg) return
+
+  try {
+    // 将 SVG 转换为 Data URL
+    const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+    const img = new Image()
+
+    // 图片加载完成后进行绘制和下载
+    img.onload = () => {
+      try {
+        // 创建 Canvas 元素
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d', { willReadFrequently: false })
+        if (!ctx) return
+
+        // 使用 2x 缩放以获得更清晰的图像
+        const scale = 2
+        canvas.width = img.width * scale
+        canvas.height = img.height * scale
+        // 启用图像平滑以提高质量
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+
+        // 填充白色背景
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        // 绘制 SVG 图像
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+        // 生成文件名（包含时间戳）
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+
+        try {
+          // 优先使用 toBlob 方法（性能更好）
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) return
+              // 创建 Blob URL 并触发下载
+              const url = URL.createObjectURL(blob)
+              const link = document.createElement('a')
+              link.href = url
+              link.download = `mermaid-diagram-${timestamp}.png`
+              document.body.appendChild(link)
+              link.click()
+              document.body.removeChild(link)
+              // 释放 Blob URL
+              URL.revokeObjectURL(url)
+            },
+            'image/png',
+            0.95, // 图像质量
+          )
+        } catch (toBlobError) {
+          console.error('toBlobError:', toBlobError)
+          // 降级方案：使用 toDataURL
+          try {
+            const dataUrl = canvas.toDataURL('image/png', 0.95)
+            const link = document.createElement('a')
+            link.href = dataUrl
+            link.download = `mermaid-diagram-${timestamp}.png`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+          } catch (dataUrlError) {
+            console.error('dataUrlError:', dataUrlError)
+          }
+        }
+      } catch (canvasError) {
+        console.error('Canvas操作失败:', canvasError)
+      }
+    }
+
+    // 图片加载失败的处理
+    img.onerror = (error) => {
+      console.error('Image load error:', error)
+    }
+
+    // 开始加载图片
+    img.src = svgDataUrl
+  } catch (error) {
+    console.error('下载失败:', error)
+  }
+}
+
+// ==================== Mermaid Hooks ====================
+
 interface UseMermaidOptions {
   id?: string
   theme?: 'default' | 'dark' | 'forest' | 'neutral' | string

@@ -10,16 +10,6 @@ type SlotFn = (props: any) => VNode | VNode[]
  */
 export interface CodeXProps {
   /**
-   * 代码块亮色主题
-   * @default 'vitesse-light'
-   */
-  codeLightTheme?: BuiltinTheme;
-  /**
-   * 代码块暗色主题
-   * @default 'vitesse-dark'
-   */
-  codeDarkTheme?: BuiltinTheme;
-  /**
    * 是否显示代码块头部
    * @default true
    */

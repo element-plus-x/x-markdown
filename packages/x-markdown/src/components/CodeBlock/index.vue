@@ -41,8 +41,40 @@
         <!-- 右侧：复制按钮 -->
         <div class="x-md-code-header__right">
           <slot name="header-right" :code="code" :copy="copy" :copied="copied">
+            <!-- 复制按钮：显示复制或成功图标 -->
             <button class="x-md-copy-btn" :class="{ 'x-md-copy-btn--copied': copied }" @click="copy(code)">
-              <span class="x-md-copy-btn__text">{{ copied ? 'Copied' : 'Copy' }}</span>
+              <!-- 复制成功状态：显示对勾图标 -->
+              <svg
+                v-if="copied"
+                class="x-md-copy-icon"
+                width="16"
+                height="16"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 1024 1024"
+              >
+                <path
+                  fill="currentColor"
+                  d="M406.656 706.944 195.84 496.256a32 32 0 1 0-45.248 45.248l256 256 512-512a32 32 0 0 0-45.248-45.248L406.592 706.944z"
+                />
+              </svg>
+              <!-- 默认状态：显示复制图标 -->
+              <svg
+                v-else
+                class="x-md-copy-icon"
+                width="16"
+                height="16"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 1024 1024"
+              >
+                <path
+                  fill="currentColor"
+                  d="M768 832a128 128 0 0 1-128 128H192A128 128 0 0 1 64 832V384a128 128 0 0 1 128-128v64a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M384 128a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64V192a64 64 0 0 0-64-64zm0-64h448a128 128 0 0 1 128 128v448a128 128 0 0 1-128 128H384a128 128 0 0 1-128-128V192A128 128 0 0 1 384 64"
+                />
+              </svg>
             </button>
           </slot>
         </div>
@@ -74,9 +106,11 @@
 import { computed, ref, type CSSProperties } from 'vue'
 import type { BuiltinTheme, ThemedToken } from 'shiki'
 import { getTokenStyleObject } from '@shikijs/core'
+// 直接从 @vueuse/core 导入剪贴板功能
 import { useClipboard } from '@vueuse/core'
 import { useHighlight } from '../../hooks/useHighlight'
 
+// 使用 vueuse 的剪贴板 hook，复制成功状态持续 2 秒
 const { copy, copied } = useClipboard({ copiedDuring: 2000 })
 
 // 折叠状态
@@ -219,18 +253,18 @@ const codeContainerStyle = computed(() => ({
   text-transform: lowercase;
 }
 
-/* 复制按钮 */
+/* 复制按钮 - 图标样式 */
 .x-md-copy-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   border: none;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.08);
+  background: transparent;
   color: inherit;
-  font-size: 12px;
-  font-family: inherit;
   cursor: pointer;
   opacity: 0.7;
   transition: all 0.2s ease;
@@ -238,25 +272,23 @@ const codeContainerStyle = computed(() => ({
 
 .x-md-copy-btn:hover {
   opacity: 1;
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 /* 暗色主题复制按钮 */
-.x-md-code-block.x-md-code-block--dark .x-md-copy-btn {
+.x-md-code-block.x-md-code-block--dark .x-md-copy-btn:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.x-md-code-block.x-md-code-block--dark .x-md-copy-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
+/* 复制成功状态 */
 .x-md-copy-btn.x-md-copy-btn--copied {
   opacity: 1;
   color: #22c55e;
 }
 
-.x-md-copy-btn__text {
-  font-size: 12px;
+/* 复制图标 */
+.x-md-copy-icon {
+  flex-shrink: 0;
 }
 
 /* pre 样式 */

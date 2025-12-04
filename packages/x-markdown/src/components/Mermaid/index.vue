@@ -1,26 +1,41 @@
 <script setup lang="ts">
+// 类型导入
 import type { MdComponent, MermaidExposeProps, MermaidToolbarConfig } from './types'
+import type { ThemedToken, BuiltinTheme } from 'shiki'
+import type { CSSProperties } from 'vue'
+
+// 第三方库导入
 import { debounce } from 'lodash-es'
+import { getTokenStyleObject } from '@shikijs/core'
+
+// Vue 核心 API 导入
 import { computed, nextTick, ref, watch } from 'vue'
-import { useMermaid, useMermaidZoom } from '../../hooks'
+
+// 第三方 hooks 导入
+import { useClipboard } from '@vueuse/core'
+
+// 内部 hooks 导入
+import { useMermaid, useMermaidZoom, downloadSvgAsPng } from '../../hooks'
 import { useHighlight } from '../../hooks/useHighlight'
-import { copyToClipboard, downloadSvgAsPng } from './composables'
+
+// 组件导入
 import MermaidToolbar from './MermaidToolbar.vue'
 
 interface MermaidProps extends MdComponent {
   toolbarConfig?: MermaidToolbarConfig
   isDark?: boolean
-  codeLightTheme?: string
-  codeDarkTheme?: string
+  shikiTheme?: [BuiltinTheme, BuiltinTheme]
+  config?: Record<string, any>
+  codeXSlots?: Record<string, any>
 }
 
 const props = withDefaults(defineProps<MermaidProps>(), {
   raw: () => ({}),
   toolbarConfig: () => ({}),
   isDark: false,
-  codeLightTheme: 'vitesse-light',
-  codeDarkTheme: 'vitesse-dark',
+  shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
   config: () => ({}),
+  codeXSlots: () => ({}),
 })
 
 const mermaidContent = computed(() => props.raw?.content || '')
@@ -72,15 +87,27 @@ watch(svg, (newSvg) => {
 })
 
 const codeContent = computed(() => props.raw?.content || '')
-const actualTheme = computed(() => (props.isDark ? props.codeDarkTheme : props.codeLightTheme))
-const {
-  lines,
-  preStyle,
-  isLoading: isCodeLoading,
-} = useHighlight(codeContent, {
+const actualTheme = computed(() => (props.isDark ? props.shikiTheme[1] : props.shikiTheme[0]))
+const { lines, preStyle } = useHighlight(codeContent, {
   language: 'mermaid',
   theme: actualTheme,
 })
+
+// 将 CSS 属性名从 kebab-case 转为 camelCase
+const normalizeStyleKeys = (style: Record<string, string | number>): CSSProperties => {
+  const normalized: CSSProperties = {}
+  Object.entries(style).forEach(([key, value]) => {
+    const camelKey = key.replace(/-([a-z])/g, (_, char) => char.toUpperCase())
+      ; (normalized as Record<string, string | number>)[camelKey] = value
+  })
+  return normalized
+}
+
+// 获取 token 样式
+const getTokenStyle = (token: ThemedToken): CSSProperties => {
+  const rawStyle = token.htmlStyle || getTokenStyleObject(token)
+  return normalizeStyleKeys(rawStyle)
+}
 
 function handleZoomIn() {
   if (!showSourceCode.value) {
@@ -111,11 +138,18 @@ function handleToggleCode() {
   showSourceCode.value = !showSourceCode.value
 }
 
+// 使用 vueuse 的 useClipboard hook 进行复制操作
+const { copy: copyCode } = useClipboard()
+
+/**
+ * 复制代码到剪贴板
+ * 用于插槽暴露和事件回调
+ */
 async function handleCopyCode() {
   if (!props.raw.content) {
     return
   }
-  copyToClipboard(props.raw.content)
+  await copyCode(props.raw.content)
 }
 
 function handleDownload() {
@@ -158,56 +192,33 @@ const exposedMethods = computed(
 </script>
 
 <template>
-  <div
-    ref="containerRef"
-    :key="props.raw.key"
-    class="markdown-mermaid"
-    :class="{ 'markdown-mermaid--dark': props.isDark }"
-  >
+  <div ref="containerRef" :key="props.raw.key" class="markdown-mermaid"
+    :class="{ 'markdown-mermaid--dark': props.isDark }">
     <Transition name="toolbar" appear>
       <div class="toolbar-container">
         <component :is="codeXSlot.codeMermaidHeader" v-if="codeXSlot?.codeMermaidHeader" v-bind="exposedMethods" />
         <template v-else>
-          <component
-            :is="codeXSlot.codeMermaidHeaderControl"
-            v-if="codeXSlot?.codeMermaidHeaderControl"
-            v-bind="exposedMethods"
-          />
-          <MermaidToolbar
-            v-else
-            :toolbar-config="toolbarConfig"
-            :is-source-code-mode="showSourceCode"
-            :source-code="props.raw.content"
-            @on-zoom-in="handleZoomIn"
-            @on-zoom-out="handleZoomOut"
-            @on-reset="handleReset"
-            @on-fullscreen="handleFullscreen"
-            @on-toggle-code="handleToggleCode"
-            @on-copy-code="handleCopyCode"
-            @on-download="handleDownload"
-          />
+          <component :is="codeXSlot.codeMermaidHeaderControl" v-if="codeXSlot?.codeMermaidHeaderControl"
+            v-bind="exposedMethods" />
+          <MermaidToolbar v-else :toolbar-config="toolbarConfig" :is-source-code-mode="showSourceCode"
+            :source-code="props.raw.content" @on-zoom-in="handleZoomIn" @on-zoom-out="handleZoomOut"
+            @on-reset="handleReset" @on-fullscreen="handleFullscreen" @on-toggle-code="handleToggleCode"
+            @on-copy-code="handleCopyCode" @on-download="handleDownload" />
         </template>
       </div>
     </Transition>
     <Transition name="content" mode="out-in" @after-enter="onContentTransitionEnter">
       <div v-if="showSourceCode" key="source" class="mermaid-source-code">
-        <pre :style="[preStyle, { margin: 0 }]"><code class="code-content">
-        <template v-for="(line, i) in lines" :key="i"><span class="code-line">
-          <template v-for="(token, j) in line" :key="j">
-            <span :style="{
-              color: token.color,
-              backgroundColor: token.backgroundColor,
-              fontWeight: token.fontWeight,
-              fontStyle: token.fontStyle,
-              textDecoration: token.textDecoration
-            }">
-              {{ token.content }}
-            </span>
-          </template>
-          </span>{{ i < lines.length - 1 ? '\n' : '' }}
-        </template>
-        </code></pre>
+        <pre :class="['shiki', actualTheme]" :style="preStyle"><code class="code-content">
+        <span v-for="(line, i) in lines" :key="i" class="code-line">
+          <template v-if="!line.length">{{ '\u00A0' }}</template>
+          <template v-else><span
+                v-for="(token, j) in line"
+                :key="j"
+                :style="getTokenStyle(token)"
+              >{{ token.content }}</span></template></span></code></pre>
       </div>
+      <!-- 图表视图：显示渲染后的 SVG -->
       <div v-else class="mermaid-content" v-html="svg" />
     </Transition>
   </div>
@@ -222,7 +233,7 @@ const exposedMethods = computed(
 }
 
 .markdown-mermaid.markdown-mermaid--dark {
-  background-color: #1a1a1a;
+  background: rgba(255, 255, 255, 0.13);
 }
 
 .markdown-mermaid .toolbar-container {
@@ -273,10 +284,6 @@ const exposedMethods = computed(
   width: 100%;
   overflow: auto;
   box-sizing: border-box;
-}
-
-.markdown-mermaid.markdown-mermaid--dark .mermaid-source-code {
-  background-color: #1a1a1a;
 }
 
 .markdown-mermaid .mermaid-source-code pre {
