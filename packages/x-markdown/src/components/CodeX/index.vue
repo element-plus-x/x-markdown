@@ -1,46 +1,26 @@
 <script lang="ts">
 import { defineComponent, h, type PropType } from 'vue'
 import type { BuiltinTheme } from 'shiki'
-// @ts-ignore
+import type { CodeBlockAction } from '../CodeBlock/types'
+import type { MermaidAction } from '../Mermaid/types'
 import CodeBlock from '../CodeBlock/index.vue'
-// @ts-ignore
 import CodeLine from '../CodeLine/index.vue'
 import Mermaid from '../Mermaid/index.vue'
 
 export default defineComponent({
   props: {
-    // ==================== 基础配置 ====================
-    /** 原始数据对象 */
-    raw: {
-      type: Object,
-      default: () => ({}),
-    },
-    /** 自定义渲染器映射 */
-    codeXRender: {
-      type: Object,
-      default: () => ({}),
-    },
-    isDark: {
-      type: Boolean,
-      default: false,
-    },
-    /** Shiki 主题配置，数组形式 [lightTheme, darkTheme] */
+    raw: { type: Object, default: () => ({}) },
+    codeXRender: { type: Object, default: () => ({}) },
+    isDark: { type: Boolean, default: false },
     shikiTheme: {
       type: Array as unknown as PropType<[BuiltinTheme, BuiltinTheme]>,
       default: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
     },
-    showCodeBlockHeader: {
-      type: Boolean,
-      default: true,
-    },
-    codeMaxHeight: {
-      type: String,
-      default: undefined,
-    },
-    enableAnimate: {
-      type: Boolean,
-      default: false,
-    },
+    showCodeBlockHeader: { type: Boolean, default: true },
+    codeMaxHeight: { type: String, default: undefined },
+    enableAnimate: { type: Boolean, default: false },
+    codeBlockActions: { type: Array as PropType<CodeBlockAction[]>, default: undefined },
+    mermaidActions: { type: Array as PropType<MermaidAction[]>, default: undefined },
   },
   setup(props, { slots }) {
     const { codeXRender } = props
@@ -77,7 +57,6 @@ export default defineComponent({
 
       // 处理 Mermaid 图表
       if (language === 'mermaid') {
-        // 只传递 mermaid 相关的插槽（以 'mermaid' 开头的插槽名）
         const mermaidSlots: Record<string, any> = {}
         Object.keys(slots).forEach(key => {
           if (key.startsWith('mermaid')) {
@@ -91,8 +70,8 @@ export default defineComponent({
             raw: props.raw,
             isDark: props.isDark,
             shikiTheme: props.shikiTheme,
+            mermaidActions: props.mermaidActions,
           },
-          // 只传递 mermaid 相关的插槽
           mermaidSlots,
         )
       }
@@ -109,8 +88,8 @@ export default defineComponent({
           showCodeBlockHeader: props.showCodeBlockHeader,
           codeMaxHeight: props.codeMaxHeight,
           enableAnimate: props.enableAnimate,
+          codeBlockActions: props.codeBlockActions,
         },
-        // 直接透传所有插槽，CodeBlock 组件只会使用它认识的插槽
         slots,
       )
     }

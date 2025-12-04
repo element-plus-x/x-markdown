@@ -107,8 +107,18 @@
           <h2>👁️ 实时预览</h2>
         </div>
         <div class="preview-content markdown-body">
-          <MarkdownRenderer :markdown="markdown" :enable-latex="enableLatex" :allow-html="allowHtml"
-            :enable-breaks="enableBreaks" :enable-animate="enableAnimate" :is-dark="isDark" :code-x-props="codeXProps">
+          <MarkdownRenderer
+            :markdown="markdown"
+            :enable-latex="enableLatex"
+            :allow-html="allowHtml"
+            :enable-breaks="enableBreaks"
+            :enable-animate="enableAnimate"
+            :is-dark="isDark"
+            :show-code-block-header="showCodeBlockHeader"
+            :code-max-height="codeMaxHeight || undefined"
+            :code-block-actions="codeBlockActions"
+            :mermaid-actions="mermaidActions"
+          >
             <!-- 自定义 HTML 标签插槽 -->
             <template #self-btn>
               <button>点击button</button>
@@ -802,17 +812,35 @@ watch(streamSpeed, (newSpeed) => {
   }
 })
 
-// ==================== CodeX 配置 ====================
+// ==================== Actions 配置 ====================
 
-// 代码块完整配置（包含主题、样式、功能等）
-const codeXProps = computed(() => ({
-  // 主题配置
-  codeLightTheme: 'vitesse-light', // 浅色主题
-  codeDarkTheme: 'vitesse-dark', // 深色主题
-  // 功能配置
-  showCodeBlockHeader: showCodeBlockHeader.value, // 是否显示代码块头部
-  codeMaxHeight: codeMaxHeight.value || undefined, // 代码块最大高度
-}))
+// 代码块操作按钮
+const codeBlockActions = [
+  {
+    key: 'run',
+    title: '运行代码',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7L8 5z" fill="currentColor"/></svg>',
+    onClick: (props: any) => {
+      console.log('运行代码:', props.code)
+      alert('运行代码功能（示例）')
+    },
+    show: (props: any) => ['javascript', 'typescript', 'js', 'ts'].includes(props.language),
+  },
+]
+
+// Mermaid 操作按钮
+const mermaidActions = [
+  {
+    key: 'edit',
+    title: '编辑图表',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    onClick: (props: any) => {
+      console.log('编辑 Mermaid:', props.rawContent)
+      alert('编辑图表功能（示例）')
+    },
+    show: (props: any) => !props.showSourceCode,
+  },
+]
 
 // ==================== 方法 ====================
 

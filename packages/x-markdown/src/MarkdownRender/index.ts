@@ -1,54 +1,37 @@
 import type { PropType } from 'vue'
 import type { PluggableList } from 'unified'
 import type { BuiltinTheme } from 'shiki'
-import type { CodeXProps } from '../components/CodeX/types'
+import type { CodeBlockAction } from '../components/CodeBlock/types'
+import type { MermaidAction } from '../components/Mermaid/types'
 import type { CustomAttrs, SanitizeOptions } from '../core/types'
 import { computed, defineComponent, h, toValue } from 'vue'
 import { VueMarkdown, VueMarkdownAsync } from '../core'
 import { useComponents, usePlugins, useProcessMarkdown } from '../hooks'
 import './index.css'
 
-// Markdown 渲染器 Props 定义
 const markdownRendererProps = {
-  // markdown 字符串内容
   markdown: { type: String, default: '' },
-  // 是否允许 HTML
   allowHtml: { type: Boolean, default: false },
-  // 是否启用 LaTeX 支持
   enableLatex: { type: Boolean, default: true },
-  // 是否开启动画
   enableAnimate: { type: Boolean, default: false },
-  // 是否启用换行符转 <br>
   enableBreaks: { type: Boolean, default: true },
-  // 是否为深色模式（控制整体 UI 主题）
   isDark: { type: Boolean, default: false },
-  // Shiki 主题配置，数组形式 [lightTheme, darkTheme]
   shikiTheme: {
     type: Array as unknown as PropType<[BuiltinTheme, BuiltinTheme]>,
     default: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
   },
-  // 代码块 CodeX 组件 props（不再包含主题配置）
-  codeXProps: {
-    type: Object as PropType<CodeXProps>,
-    default: () => ({}),
-  },
-  // 自定义代码块渲染函数
+  showCodeBlockHeader: { type: Boolean, default: true },
+  codeMaxHeight: { type: String, default: undefined },
+  codeBlockActions: { type: Array as PropType<CodeBlockAction[]>, default: undefined },
+  mermaidActions: { type: Array as PropType<MermaidAction[]>, default: undefined },
   codeXRender: { type: Object, default: () => ({}) },
-  // 自定义属性对象
   customAttrs: { type: Object as PropType<CustomAttrs>, default: () => ({}) },
-  // remark 插件列表
   remarkPlugins: { type: Array as PropType<PluggableList>, default: () => [] },
-  // remark 前置插件列表
   remarkPluginsAhead: { type: Array as PropType<PluggableList>, default: () => [] },
-  // rehype 插件列表
   rehypePlugins: { type: Array as PropType<PluggableList>, default: () => [] },
-  // rehype 前置插件列表
   rehypePluginsAhead: { type: Array as PropType<PluggableList>, default: () => [] },
-  // rehype 配置项
   rehypeOptions: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-  // 是否启用内容清洗
   sanitize: { type: Boolean, default: false },
-  // 清洗选项
   sanitizeOptions: { type: Object as PropType<SanitizeOptions>, default: () => ({}) },
 }
 

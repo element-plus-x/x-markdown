@@ -43,6 +43,23 @@
         <div class="x-md-code-header__right">
           <!-- codeActions 插槽：自定义操作按钮区域 -->
           <slot name="codeActions" :code="code" :copy="copy" :copied="copied">
+            <!-- 通过 props 传入的自定义操作按钮 -->
+            <button
+              v-for="action in filteredActions"
+              :key="action.key"
+              class="x-md-action-btn"
+              :class="[action.class, { 'x-md-action-btn--disabled': action.disabled }]"
+              :style="action.style"
+              :title="action.title"
+              :disabled="action.disabled"
+              @click="handleActionClick(action)"
+            >
+              <!-- 渲染图标：支持组件、字符串或渲染函数 -->
+              <component
+                :is="renderActionIcon(action)"
+                v-if="action.icon"
+              />
+            </button>
             <!-- 默认复制按钮 -->
             <button class="x-md-copy-btn" :class="{ 'x-md-copy-btn--copied': copied }" @click="copy(code)">
               <!-- 复制成功状态：显示对勾图标 -->
@@ -102,11 +119,11 @@
 
 <script setup lang="ts">
 // Vue 核心 API
-import { computed, ref } from 'vue'
+import { computed, ref, h, type VNode } from 'vue'
 // 剪贴板功能
 import { useClipboard } from '@vueuse/core'
 // 引入类型定义
-import type { CodeBlockProps } from './types'
+import type { CodeBlockProps, CodeBlockAction, CodeBlockSlotProps } from './types'
 // 引入纯渲染组件
 import SyntaxCodeBlock from './SyntaxCodeBlock.vue'
 
@@ -136,6 +153,7 @@ const props = withDefaults(defineProps<CodeBlockProps>(), {
   isDark: false,               // 默认亮色模式
   showCodeBlockHeader: true,   // 默认显示代码块头部
   enableAnimate: false,        // 默认不启用动画
+  codeBlockActions: undefined, // 默认无自定义操作按钮
 })
 
 // 处理代码内容
@@ -143,6 +161,79 @@ const code = computed(() => props.code.trim())
 
 // 处理语言标识
 const language = computed(() => props.language || 'text')
+
+// 将 codeBlockActions 统一转换为数组形式
+const normalizedActions = computed<CodeBlockAction[]>(() => {
+  // 如果未传入则返回空数组
+  return props.codeBlockActions || []
+})
+
+// 根据 show 函数过滤要显示的操作按钮
+const filteredActions = computed<CodeBlockAction[]>(() => {
+  return normalizedActions.value.filter((action) => {
+    // 如果没有设置 show 函数，默认显示
+    if (!action.show) return true
+    // 调用 show 函数判断是否显示
+    return action.show(slotProps.value)
+  })
+})
+
+// 暴露给插槽的上下文属性
+const slotProps = computed<CodeBlockSlotProps>(() => ({
+  language: language.value,
+  code: code.value,
+  copy,
+  copied: copied.value,
+  collapsed: collapsed.value,
+  toggleCollapse,
+}))
+
+/**
+ * 渲染单个操作按钮的图标
+ * 支持 Vue 组件、字符串（HTML/SVG）或渲染函数
+ */
+function renderActionIcon(action: CodeBlockAction): VNode | null {
+  // 如果没有图标配置，返回 null
+  if (!action.icon) return null
+  
+  // 如果是字符串，使用 v-html 渲染（支持 SVG 字符串）
+  if (typeof action.icon === 'string') {
+    return h('span', {
+      class: 'x-md-action-icon',
+      innerHTML: action.icon,
+    })
+  }
+  
+  // 如果是函数类型（渲染函数），调用函数获取 VNode
+  if (typeof action.icon === 'function') {
+    // 检查是否是渲染函数（非组件函数）
+    // 渲染函数通常接收 props 参数并返回 VNode
+    try {
+      const result = (action.icon as (props: CodeBlockSlotProps) => VNode)(slotProps.value)
+      // 如果返回的是 VNode，直接使用
+      if (result && typeof result === 'object' && '__v_isVNode' in result) {
+        return result
+      }
+    } catch {
+      // 如果调用失败，当作组件处理
+    }
+    // 作为函数式组件处理
+    return h(action.icon as any)
+  }
+  
+  // 如果是组件对象，直接渲染组件
+  return h(action.icon as any)
+}
+
+/**
+ * 处理操作按钮点击事件
+ */
+function handleActionClick(action: CodeBlockAction) {
+  // 如果按钮被禁用，不执行点击事件
+  if (action.disabled) return
+  // 调用按钮的 onClick 回调，传入上下文属性
+  action.onClick?.(slotProps.value)
+}
 
 // 暴露给父组件的属性和方法
 defineExpose({
@@ -237,6 +328,55 @@ defineExpose({
 /* 复制图标 */
 .x-md-copy-icon {
   flex-shrink: 0; /* 防止图标被压缩 */
+}
+
+/* ==================== 自定义操作按钮样式 ==================== */
+.x-md-action-btn {
+  display: flex;              /* 弹性布局 */
+  align-items: center;        /* 垂直居中 */
+  justify-content: center;    /* 水平居中 */
+  width: 28px;                /* 按钮宽度 */
+  height: 28px;               /* 按钮高度 */
+  padding: 0;                 /* 清除内边距 */
+  border: none;               /* 无边框 */
+  border-radius: 4px;         /* 圆角 */
+  background: transparent;    /* 透明背景 */
+  color: inherit;             /* 继承文字颜色 */
+  cursor: pointer;            /* 手型光标 */
+  opacity: 0.7;               /* 默认透明度 */
+  transition: all 0.2s ease;  /* 过渡动画 */
+}
+
+/* 自定义操作按钮悬停状态 */
+.x-md-action-btn:hover {
+  opacity: 1;                        /* 完全不透明 */
+  background: rgba(0, 0, 0, 0.08);   /* 显示背景 */
+}
+
+/* 暗色主题自定义操作按钮悬停 */
+.x-md-code-block.x-md-code-block--dark .x-md-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1); /* 浅色背景 */
+}
+
+/* 禁用状态 */
+.x-md-action-btn.x-md-action-btn--disabled {
+  opacity: 0.3;              /* 降低透明度 */
+  cursor: not-allowed;       /* 禁止光标 */
+  pointer-events: none;      /* 禁止点击 */
+}
+
+/* 图标容器 */
+.x-md-action-icon {
+  display: flex;              /* 弹性布局 */
+  align-items: center;        /* 垂直居中 */
+  justify-content: center;    /* 水平居中 */
+}
+
+/* 图标内的 SVG 样式 */
+.x-md-action-icon :deep(svg) {
+  width: 16px;                /* 统一图标宽度 */
+  height: 16px;               /* 统一图标高度 */
+  flex-shrink: 0;             /* 防止图标被压缩 */
 }
 
 /* ==================== 折叠按钮样式 ==================== */

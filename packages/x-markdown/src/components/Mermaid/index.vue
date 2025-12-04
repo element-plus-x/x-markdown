@@ -15,11 +15,12 @@
  */
 
 // ==================== 类型导入 ====================
-import type { MdComponent, MermaidExposeProps, MermaidToolbarConfig } from './types'
+import type { MdComponent, MermaidExposeProps, MermaidAction, MermaidSlotProps } from './types'
 import type { BuiltinTheme } from 'shiki'
+import type { VNode } from 'vue'
 
 // ==================== Vue 核心 API 导入 ====================
-import { computed, ref } from 'vue'
+import { computed, ref, h } from 'vue'
 
 // ==================== 第三方 hooks 导入 ====================
 import { useClipboard } from '@vueuse/core'
@@ -29,19 +30,20 @@ import SyntaxMermaid from './SyntaxMermaid.vue'
 import SyntaxCodeBlock from '../CodeBlock/SyntaxCodeBlock.vue'
 
 interface MermaidProps extends MdComponent {
-  toolbarConfig?: MermaidToolbarConfig
   isDark?: boolean
   shikiTheme?: [BuiltinTheme, BuiltinTheme]
   config?: Record<string, any>
+  /** Mermaid 操作按钮配置，支持数组 */
+  mermaidActions?: MermaidAction[]
 }
 
 // 定义 props 并设置默认值
 const props = withDefaults(defineProps<MermaidProps>(), {
   raw: () => ({}),
-  toolbarConfig: () => ({}),
   isDark: false,
   shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
   config: () => ({}),
+  mermaidActions: undefined,
 })
 
 // ==================== 组件引用 ====================
@@ -68,53 +70,8 @@ const isLoading = computed(() => syntaxMermaidRef.value?.isLoading ?? true)
 // SVG 内容（从 SyntaxMermaid 获取）
 const svg = computed(() => syntaxMermaidRef.value?.svg ?? '')
 
-// 工具栏配置（合并默认配置）
-const toolbarConfig = computed(() => ({
-  showToolbar: true,
-  showFullscreen: true,
-  showZoomIn: true,
-  showZoomOut: true,
-  showReset: true,
-  toolbarStyle: {},
-  toolbarClass: '',
-  iconColor: undefined,
-  tabTextColor: undefined,
-  hoverBackgroundColor: undefined,
-  tabActiveBackgroundColor: undefined,
-  ...props.toolbarConfig,
-}))
-
 // 当前激活的 tab（预览/代码）
 const activeTab = computed(() => (showSourceCode.value ? 'code' : 'diagram'))
-
-// 动态图标颜色样式
-const iconColorStyle = computed(() => {
-  const style: Record<string, string> = {}
-  if (toolbarConfig.value.iconColor) {
-    style.color = toolbarConfig.value.iconColor
-    style['--custom-icon-color'] = toolbarConfig.value.iconColor
-  }
-  if (toolbarConfig.value.hoverBackgroundColor) {
-    style['--custom-hover-bg'] = toolbarConfig.value.hoverBackgroundColor
-  } else if (toolbarConfig.value.iconColor) {
-    style['--custom-hover-bg'] = 'rgba(0, 0, 0, 0.1)'
-  }
-  return style
-})
-
-// 动态 tab 文字颜色样式
-const tabTextColorStyle = computed(() => {
-  const style: Record<string, string> = {}
-  if (toolbarConfig.value.tabTextColor) {
-    style['--tab-text-color'] = toolbarConfig.value.tabTextColor
-  }
-  if (toolbarConfig.value.tabActiveBackgroundColor) {
-    style['--tab-active-bg'] = toolbarConfig.value.tabActiveBackgroundColor
-  } else if (toolbarConfig.value.tabTextColor) {
-    style['--tab-active-bg'] = 'rgba(0, 0, 0, 0.1)'
-  }
-  return style
-})
 
 // ==================== 控制方法 ====================
 
@@ -167,7 +124,7 @@ function handleToggleCode() {
 
 // 使用 vueuse 的 useClipboard hook 进行复制操作
 // copiedDuring: 1500 表示复制成功状态持续 1.5 秒
-const { copy: copyCode, copied: isCopySuccess } = useClipboard({ copiedDuring: 1500 })
+const { copy: copyCode, copied } = useClipboard({ copiedDuring: 1500 })
 
 /**
  * 切换 tab（预览/代码）
@@ -189,7 +146,7 @@ async function handleCopyCode(event?: Event) {
   event?.preventDefault()
   
   // 如果正在显示成功状态，不执行复制操作
-  if (isCopySuccess.value) {
+  if (copied.value) {
     return
   }
   
@@ -206,6 +163,87 @@ function handleDownload() {
   syntaxMermaidRef.value?.download()
 }
 
+// ==================== mermaidActions 处理逻辑 ====================
+
+// 将 mermaidActions 统一转换为数组形式
+const normalizedActions = computed<MermaidAction[]>(() => {
+  // 仅支持数组形式，如果未传入则返回空数组
+  return props.mermaidActions || []
+})
+
+// 根据当前视图过滤要显示的操作按钮
+const filteredActions = computed<MermaidAction[]>(() => {
+  return normalizedActions.value.filter((action) => {
+    // 如果没有设置 show 函数，默认显示
+    if (!action.show) return true
+    // 调用 show 函数判断是否显示
+    return action.show(slotProps.value)
+  })
+})
+
+// 暴露给插槽/操作按钮的上下文属性
+const slotProps = computed<MermaidSlotProps>(() => ({
+  showSourceCode: showSourceCode.value,
+  svg: svg.value,
+  rawContent: props.raw.content || '',
+  isLoading: isLoading.value,
+  copied: copied.value,
+  zoomIn: handleZoomIn,
+  zoomOut: handleZoomOut,
+  reset: handleReset,
+  fullscreen: handleFullscreen,
+  toggleCode: handleToggleCode,
+  copyCode: handleCopyCode,
+  download: handleDownload,
+  raw: props.raw,
+}))
+
+/**
+ * 渲染单个操作按钮的图标
+ * 支持 Vue 组件、字符串（HTML/SVG）或渲染函数
+ */
+function renderActionIcon(action: MermaidAction): VNode | null {
+  // 如果没有图标配置，返回 null
+  if (!action.icon) return null
+  
+  // 如果是字符串，使用 v-html 渲染（支持 SVG 字符串）
+  if (typeof action.icon === 'string') {
+    return h('span', {
+      class: 'mermaid-action-icon',
+      innerHTML: action.icon,
+    })
+  }
+  
+  // 如果是函数类型（渲染函数），调用函数获取 VNode
+  if (typeof action.icon === 'function') {
+    // 检查是否是渲染函数（非组件函数）
+    try {
+      const result = (action.icon as (props: MermaidSlotProps) => VNode)(slotProps.value)
+      // 如果返回的是 VNode，直接使用
+      if (result && typeof result === 'object' && '__v_isVNode' in result) {
+        return result
+      }
+    } catch {
+      // 如果调用失败，当作组件处理
+    }
+    // 作为函数式组件处理
+    return h(action.icon as any)
+  }
+  
+  // 如果是组件对象，直接渲染组件
+  return h(action.icon as any)
+}
+
+/**
+ * 处理操作按钮点击事件
+ */
+function handleActionClick(action: MermaidAction) {
+  // 如果按钮被禁用，不执行点击事件
+  if (action.disabled) return
+  // 调用按钮的 onClick 回调，传入上下文属性
+  action.onClick?.(slotProps.value)
+}
+
 // 创建暴露给插槽的方法对象
 const exposedMethods = computed(
   () =>
@@ -214,8 +252,8 @@ const exposedMethods = computed(
       showSourceCode: showSourceCode.value,
       svg: svg.value,
       rawContent: props.raw.content || '',
-      toolbarConfig: toolbarConfig.value,
       isLoading: isLoading.value,
+      copied: copied.value,
 
       zoomIn: handleZoomIn,
       zoomOut: handleZoomOut,
@@ -251,14 +289,9 @@ const exposedMethods = computed(
           v-bind="exposedMethods"
         >
           <!-- 默认工具栏 -->
-          <div
-            v-if="toolbarConfig.showToolbar"
-            class="mermaid-toolbar"
-            :class="toolbarConfig.toolbarClass"
-            :style="toolbarConfig.toolbarStyle"
-          >
+          <div class="mermaid-toolbar">
             <!-- 左侧分段器 -->
-            <div class="toolbar-left" :style="tabTextColorStyle">
+            <div class="toolbar-left">
               <div class="segmented-control">
                 <!-- 滑块背景，用于指示当前选中项 -->
                 <div class="segmented-slider" :class="{ 'slide-right': activeTab === 'code' }" />
@@ -290,21 +323,38 @@ const exposedMethods = computed(
               </div>
             </div>
 
-            <!-- 右侧按钮组：使用 mermaidActions 插槽 -->
+            <!-- 右侧按钮组 -->
             <div class="toolbar-right">
               <!-- mermaidActions 插槽：自定义操作按钮区域 -->
               <slot name="mermaidActions" v-bind="exposedMethods">
-                <!-- 代码视图：只显示复制按钮 -->
+                <!-- 通过 props 传入的自定义操作按钮 -->
+                <div
+                  v-for="action in filteredActions"
+                  :key="action.key"
+                  class="toolbar-action-btn"
+                  :class="[action.class, { 'toolbar-action-btn--disabled': action.disabled }]"
+                  :style="action.style"
+                  :title="action.title"
+                  @click="handleActionClick(action)"
+                >
+                  <!-- 渲染图标：支持组件、字符串或渲染函数 -->
+                  <component
+                    :is="renderActionIcon(action)"
+                    v-if="action.icon"
+                  />
+                </div>
+
+                <!-- 代码视图：显示复制按钮 -->
                 <template v-if="showSourceCode">
                   <div
                     class="toolbar-action-btn"
-                    :class="{ 'copy-success': isCopySuccess }"
-                    :style="iconColorStyle"
+                    :class="{ 'copy-success': copied }"
+                    title="复制代码"
                     @click="handleCopyCode($event)"
                   >
                     <!-- 复制成功图标 -->
                     <svg
-                      v-if="isCopySuccess"
+                      v-if="copied"
                       width="16"
                       height="16"
                       xmlns="http://www.w3.org/2000/svg"
@@ -339,9 +389,8 @@ const exposedMethods = computed(
                 <template v-else>
                   <!-- 缩小按钮 -->
                   <div
-                    v-if="toolbarConfig.showZoomOut"
                     class="toolbar-action-btn"
-                    :style="iconColorStyle"
+                    title="缩小"
                     @click="handleZoomOut($event)"
                   >
                     <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
@@ -354,9 +403,8 @@ const exposedMethods = computed(
 
                   <!-- 放大按钮 -->
                   <div
-                    v-if="toolbarConfig.showZoomIn"
                     class="toolbar-action-btn"
-                    :style="iconColorStyle"
+                    title="放大"
                     @click="handleZoomIn($event)"
                   >
                     <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
@@ -369,9 +417,8 @@ const exposedMethods = computed(
 
                   <!-- 重置按钮 -->
                   <div
-                    v-if="toolbarConfig.showReset"
                     class="toolbar-action-btn"
-                    :style="iconColorStyle"
+                    title="重置"
                     @click="handleReset($event)"
                   >
                     <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
@@ -581,6 +628,28 @@ const exposedMethods = computed(
 
 .markdown-mermaid.markdown-mermaid--dark .mermaid-toolbar .toolbar-action-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+/* ==================== 自定义操作按钮样式 ==================== */
+/* 禁用状态 */
+.markdown-mermaid .mermaid-toolbar .toolbar-action-btn.toolbar-action-btn--disabled {
+  opacity: 0.3;              /* 降低透明度 */
+  cursor: not-allowed;       /* 禁止光标 */
+  pointer-events: none;      /* 禁止点击 */
+}
+
+/* 图标容器 */
+.markdown-mermaid .mermaid-toolbar .mermaid-action-icon {
+  display: flex;              /* 弹性布局 */
+  align-items: center;        /* 垂直居中 */
+  justify-content: center;    /* 水平居中 */
+}
+
+/* 图标内的 SVG 样式 */
+.markdown-mermaid .mermaid-toolbar .mermaid-action-icon :deep(svg) {
+  width: 16px;                /* 统一图标宽度 */
+  height: 16px;               /* 统一图标高度 */
+  flex-shrink: 0;             /* 防止图标被压缩 */
 }
 
 /* ==================== 源代码区域样式 ==================== */
