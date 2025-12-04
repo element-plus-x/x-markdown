@@ -84,7 +84,6 @@ const getTokenStyle = (token: ThemedToken): CSSProperties => {
   overflow: hidden;
   font-size: 14px;
   background: rgba(0, 0, 0, 0.03);
-  padding: 2px 4px;
 }
 
 /* 暗色主题容器 */
