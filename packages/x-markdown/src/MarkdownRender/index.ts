@@ -34,8 +34,6 @@ const markdownRendererProps = {
   },
   // 自定义代码块渲染函数
   codeXRender: { type: Object, default: () => ({}) },
-  // 自定义代码块插槽（用于 CodeBlock 组件的 header、header-left、header-right 插槽）
-  codeXSlots: { type: Object, default: () => ({}) },
   // 自定义属性对象
   customAttrs: { type: Object as PropType<CustomAttrs>, default: () => ({}) },
   // remark 插件列表

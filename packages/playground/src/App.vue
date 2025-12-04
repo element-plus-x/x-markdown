@@ -21,6 +21,21 @@
 
     <!-- 配置区域 - 放在顶部 -->
     <div class="config-bar">
+      <!-- 示例切换 -->
+      <div class="config-section example-section">
+        <div class="config-title">📚 示例选择</div>
+        <div class="config-content example-tabs">
+          <button 
+            v-for="example in exampleList" 
+            :key="example.value"
+            :class="['example-tab', { active: currentExample === example.value }]"
+            @click="switchExample(example.value)"
+          >
+            {{ example.icon }} {{ example.label }}
+          </button>
+        </div>
+      </div>
+
       <!-- 渲染选项 -->
       <div class="config-section">
         <div class="config-title">⚙️ 渲染选项</div>
@@ -41,7 +56,6 @@
             <input type="checkbox" v-model="enableAnimate" />
             动画效果
           </label>
-
         </div>
       </div>
 
@@ -49,10 +63,6 @@
       <div class="config-section">
         <div class="config-title">📦 代码块配置</div>
         <div class="config-content">
-          <label>
-            <input type="checkbox" v-model="useCustomSlots" />
-            codeXSlots插槽
-          </label>
           <label>
             <input type="checkbox" v-model="showCodeBlockHeader" />
             显示代码块头部
@@ -95,33 +105,16 @@
       <div class="preview-panel">
         <div class="panel-header">
           <h2>👁️ 实时预览</h2>
-          <span v-if="useCustomSlots" class="slot-badge">✨ 自定义渲染</span>
         </div>
         <div class="preview-content markdown-body">
           <MarkdownRenderer :markdown="markdown" :enable-latex="enableLatex" :allow-html="allowHtml"
-            :enable-breaks="enableBreaks" :enable-animate="enableAnimate" :is-dark="isDark" :code-x-props="codeXProps"
-            :code-x-slots="useCustomSlots ? codeXSlots : undefined">
-            <!-- 自定义 blockquote：添加引用图标 -->
-            <template v-if="useCustomSlots" #blockquote="{ children }">
-              <blockquote class="custom-blockquote">
-                <div class="quote-icon">💬</div>
-                <div class="quote-content">
-                  <component :is="children" />
-                </div>
-              </blockquote>
-            </template>
+            :enable-breaks="enableBreaks" :enable-animate="enableAnimate" :is-dark="isDark" :code-x-props="codeXProps">
+            <!-- 自定义 HTML 标签插槽 -->
             <template #self-btn>
               <button>点击button</button>
             </template>
             <template #tip>
               <div class="tip">角标</div>
-            </template>
-            <!-- 自定义链接：添加外链图标 -->
-            <template v-if="useCustomSlots" #a="{ children, ...props }">
-              <a :href="props?.href" target="_blank" rel="noopener noreferrer" class="custom-link">
-                <component :is="children" />
-                <span class="link-icon">↗</span>
-              </a>
             </template>
           </MarkdownRenderer>
         </div>
@@ -133,7 +126,7 @@
 <script setup lang="ts">
 import 'katex/dist/katex.min.css'
 import 'github-markdown-css/github-markdown.css'
-import { ref, computed, h, onUnmounted, watch } from 'vue'
+import { ref, computed, onUnmounted, watch } from 'vue'
 import { MarkdownRenderer } from 'x-markdown'
 
 // ==================== 状态管理 ====================
@@ -141,12 +134,23 @@ import { MarkdownRenderer } from 'x-markdown'
 // 主题状态
 const isDark = ref(false)
 
+// 示例选择
+type ExampleType = 'basic' | 'code' | 'mermaid' | 'formula'
+const currentExample = ref<ExampleType>('basic')
+
+// 示例列表
+const exampleList = [
+  { value: 'basic' as ExampleType, label: '基础示例', icon: '📝' },
+  { value: 'code' as ExampleType, label: '代码块示例', icon: '💻' },
+  { value: 'mermaid' as ExampleType, label: 'Mermaid 示例', icon: '📊' },
+  { value: 'formula' as ExampleType, label: '公式示例', icon: '📐' },
+]
+
 // Markdown 渲染选项
 const enableLatex = ref(true)
 const allowHtml = ref(true)
 const enableBreaks = ref(true)
 const enableAnimate = ref(false) // 是否启用动画效果
-const useCustomSlots = ref(false)
 
 // 代码块配置选项
 const showCodeBlockHeader = ref(true) // 是否显示代码块头部
@@ -160,8 +164,8 @@ let streamIndex = 0
 
 // ==================== Markdown 内容 ====================
 
-// 完整的演示内容
-const fullContent = `# 🎉 X-Markdown 功能演示
+// 基础示例 - 展示基本 Markdown 语法
+const basicExample = `# 🎉 X-Markdown 基础示例
 
 欢迎使用 X-Markdown Playground！这是一个功能丰富的 Vue 3 Markdown 组件库。
 
@@ -175,54 +179,41 @@ const fullContent = `# 🎉 X-Markdown 功能演示
 - 📊 **Mermaid 图表** - 流程图、时序图等
 - 🔧 **自定义插槽** - 灵活定制渲染样式
 
-## 💻 代码高亮示例
-\`const a = 2\` \`const b = 2\` \`const c = 2\` \`const d = 2\` \`const e = 2\`
-\`\`\`typescript
-// TypeScript 示例 - 实时语法高亮
-interface User {
-  id: number
-  name: string
-  email: string
-}
+## 📝 文本格式
 
-async function fetchUser(id: number): Promise<User> {
-  const response = await fetch(\`/api/users/\${id}\`)
-  return response.json()
-}
+这是一段**粗体文本**，这是*斜体文本*，这是~~删除线~~。
 
-const user = await fetchUser(1)
-console.log(\`Hello, \${user.name}!\`)
-\`\`\`
+还可以使用 \`行内代码\` 来高亮显示代码片段。
 
-\`\`\`python
-# Python 示例
-def fibonacci(n: int) -> list[int]:
-    """生成斐波那契数列"""
-    result = []
-    a, b = 0, 1
-    for _ in range(n):
-        result.append(a)
-        a, b = b, a + b
-    return result
+## 📋 列表示例
 
-print(fibonacci(10))
-\`\`\`
+### 无序列表
+- 第一项
+- 第二项
+  - 嵌套项 A
+  - 嵌套项 B
+- 第三项
 
-## 📐 LaTeX 数学公式
+### 有序列表
+1. 步骤一
+2. 步骤二
+3. 步骤三
 
-行内公式：质能方程 $E = mc^2$，欧拉公式 $e^{i\\pi} + 1 = 0$
+## ✅ 任务列表
 
-块级公式：
+- [x] 基础 Markdown 渲染
+- [x] 代码语法高亮
+- [x] LaTeX 数学公式
+- [ ] 待完成功能
 
-$$
-\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
-$$
+## 💬 引用示例
 
-$$
-\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}
-$$
+> 这是一个引用块。
+> 可以包含多行内容。
+>
+> — X-Markdown 团队
 
-## 📊 数据表格
+## 📊 表格示例
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
@@ -231,56 +222,568 @@ $$
 | 流式渲染 | ✅ | 实时输出 |
 | 自定义插槽 | ✅ | 灵活定制 |
 
-## 📈 Mermaid 流程图
-
-\`\`\`mermaid
-graph LR
-    A[输入 Markdown] --> B{解析}
-    B --> C[AST 树]
-    C --> D[渲染 VNode]
-    D --> E[显示结果]
-    B --> F[代码块]
-    F --> G[Shiki 高亮]
-    G --> D
-\`\`\`
-
-## 💬 引用示例
-
-> 这是一个自定义样式的引用块。
-> 当启用"自定义插槽"时，会显示特殊的引用图标。
->
-> — X-Markdown 团队
-
-## ✅ 任务列表
-
-- [x] 基础 Markdown 渲染
-- [x] 代码语法高亮
-- [x] LaTeX 数学公式
-- [x] Mermaid 图表
-- [x] 流式渲染支持
-- [x] 自定义插槽渲染
-
-
-## 🔤 插槽示例
-<self-btn>这是button</self-btn>
-## 🔗 相关链接
+## 🔗 链接示例
 
 - [Vue.js 官网](https://vuejs.org)
 - [GitHub 仓库](https://github.com/element-plus-x/x-markdown)
-- [Shiki 文档](https://shiki.matsu.io)
+
+## 🔤 自定义插槽
+
+<self-btn>这是自定义按钮</self-btn>
 
 ---
 
-⚡ 点击左上角 **"流式演示"** 按钮查看实时流式渲染效果！
+⚡ 尝试点击上方按钮切换不同示例！
 `
 
+// 代码块示例 - 展示多语言代码高亮
+const codeExample = `# 💻 代码块示例
+
+展示 X-Markdown 强大的代码高亮能力，基于 Shiki 引擎，支持 100+ 编程语言。
+
+## 行内代码
+
+可以在文本中使用 \`const a = 2\` 这样的行内代码，支持 \`多个\` \`行内代码\` \`并排显示\`。
+
+## TypeScript / JavaScript
+
+\`\`\`typescript
+// TypeScript 示例 - 接口与异步函数
+interface User {
+  id: number
+  name: string
+  email: string
+  roles: string[]
+}
+
+interface ApiResponse<T> {
+  data: T
+  status: number
+  message: string
+}
+
+async function fetchUser(id: number): Promise<ApiResponse<User>> {
+  const response = await fetch(\`/api/users/\${id}\`)
+  if (!response.ok) {
+    throw new Error(\`HTTP error! status: \${response.status}\`)
+  }
+  return response.json()
+}
+
+// 使用示例
+const result = await fetchUser(1)
+console.log(\`Hello, \${result.data.name}!\`)
+\`\`\`
+
+## Python
+
+\`\`\`python
+# Python 示例 - 类与装饰器
+from functools import wraps
+from typing import Callable, TypeVar
+
+T = TypeVar('T')
+
+def retry(max_attempts: int = 3):
+    """重试装饰器"""
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> T:
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt == max_attempts - 1:
+                        raise e
+                    print(f"Attempt {attempt + 1} failed, retrying...")
+            raise RuntimeError("Should not reach here")
+        return wrapper
+    return decorator
+
+@retry(max_attempts=3)
+def fetch_data(url: str) -> dict:
+    """获取数据"""
+    import requests
+    response = requests.get(url)
+    return response.json()
+\`\`\`
+
+## Rust
+
+\`\`\`rust
+// Rust 示例 - 结构体与 trait
+use std::fmt;
+
+#[derive(Debug, Clone)]
+struct Point {
+    x: f64,
+    y: f64,
+}
+
+impl Point {
+    fn new(x: f64, y: f64) -> Self {
+        Self { x, y }
+    }
+
+    fn distance(&self, other: &Point) -> f64 {
+        let dx = self.x - other.x;
+        let dy = self.y - other.y;
+        (dx * dx + dy * dy).sqrt()
+    }
+}
+
+impl fmt::Display for Point {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
+fn main() {
+    let p1 = Point::new(0.0, 0.0);
+    let p2 = Point::new(3.0, 4.0);
+    println!("Distance: {}", p1.distance(&p2));
+}
+\`\`\`
+
+## Go
+
+\`\`\`go
+// Go 示例 - goroutine 与 channel
+package main
+
+import (
+    "fmt"
+    "sync"
+    "time"
+)
+
+func worker(id int, jobs <-chan int, results chan<- int, wg *sync.WaitGroup) {
+    defer wg.Done()
+    for job := range jobs {
+        fmt.Printf("Worker %d processing job %d\\n", id, job)
+        time.Sleep(100 * time.Millisecond)
+        results <- job * 2
+    }
+}
+
+func main() {
+    jobs := make(chan int, 100)
+    results := make(chan int, 100)
+    var wg sync.WaitGroup
+
+    // 启动 3 个 worker
+    for w := 1; w <= 3; w++ {
+        wg.Add(1)
+        go worker(w, jobs, results, &wg)
+    }
+
+    // 发送任务
+    for j := 1; j <= 9; j++ {
+        jobs <- j
+    }
+    close(jobs)
+
+    wg.Wait()
+    close(results)
+}
+\`\`\`
+
+## SQL
+
+\`\`\`sql
+-- SQL 示例 - 复杂查询
+WITH monthly_sales AS (
+    SELECT 
+        DATE_TRUNC('month', order_date) AS month,
+        product_id,
+        SUM(quantity) AS total_quantity,
+        SUM(price * quantity) AS total_revenue
+    FROM orders
+    WHERE order_date >= '2024-01-01'
+    GROUP BY DATE_TRUNC('month', order_date), product_id
+)
+SELECT 
+    p.name AS product_name,
+    ms.month,
+    ms.total_quantity,
+    ms.total_revenue,
+    RANK() OVER (PARTITION BY ms.month ORDER BY ms.total_revenue DESC) AS rank
+FROM monthly_sales ms
+JOIN products p ON p.id = ms.product_id
+WHERE ms.total_revenue > 1000
+ORDER BY ms.month, rank;
+\`\`\`
+
+## Shell / Bash
+
+\`\`\`bash
+#!/bin/bash
+# 自动化部署脚本
+
+set -euo pipefail
+
+PROJECT_DIR="/var/www/app"
+BACKUP_DIR="/var/backups/app"
+
+echo "🚀 Starting deployment..."
+
+# 创建备份
+backup_current() {
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    echo "📦 Creating backup..."
+    tar -czf "$BACKUP_DIR/backup_$timestamp.tar.gz" -C "$PROJECT_DIR" .
+}
+
+# 拉取最新代码
+pull_latest() {
+    echo "📥 Pulling latest changes..."
+    cd "$PROJECT_DIR"
+    git pull origin main
+}
+
+# 安装依赖并构建
+build_app() {
+    echo "🔨 Building application..."
+    pnpm install
+    pnpm run build
+}
+
+# 执行部署
+backup_current
+pull_latest
+build_app
+
+echo "✅ Deployment completed!"
+\`\`\`
+`
+
+// Mermaid 示例 - 展示各种图表
+const mermaidExample = `# 📊 Mermaid 图表示例
+
+X-Markdown 支持 Mermaid 图表，可以绘制流程图、时序图、甘特图等多种图表。
+
+## 流程图 (Flowchart)
+
+\`\`\`mermaid
+graph TB
+    A[开始] --> B{是否登录?}
+    B -->|是| C[进入首页]
+    B -->|否| D[跳转登录页]
+    D --> E[输入账号密码]
+    E --> F{验证通过?}
+    F -->|是| C
+    F -->|否| G[显示错误]
+    G --> E
+    C --> H[结束]
+\`\`\`
+
+## 时序图 (Sequence Diagram)
+
+\`\`\`mermaid
+sequenceDiagram
+    participant U as 用户
+    participant C as 客户端
+    participant S as 服务器
+    participant D as 数据库
+
+    U->>C: 点击登录
+    C->>S: POST /api/login
+    S->>D: 查询用户信息
+    D-->>S: 返回用户数据
+    S-->>C: 返回 JWT Token
+    C-->>U: 登录成功，跳转首页
+\`\`\`
+
+## 甘特图 (Gantt Chart)
+
+\`\`\`mermaid
+gantt
+    title 项目开发计划
+    dateFormat  YYYY-MM-DD
+    section 需求分析
+    需求调研           :a1, 2024-01-01, 7d
+    需求文档           :after a1, 5d
+    section 设计阶段
+    UI 设计            :2024-01-10, 10d
+    架构设计           :2024-01-12, 8d
+    section 开发阶段
+    前端开发           :2024-01-20, 20d
+    后端开发           :2024-01-20, 25d
+    section 测试上线
+    集成测试           :2024-02-15, 10d
+    上线部署           :2024-02-25, 3d
+\`\`\`
+
+## 类图 (Class Diagram)
+
+\`\`\`mermaid
+classDiagram
+    class Animal {
+        +String name
+        +int age
+        +makeSound()
+    }
+    class Dog {
+        +String breed
+        +bark()
+        +fetch()
+    }
+    class Cat {
+        +String color
+        +meow()
+        +scratch()
+    }
+    class Bird {
+        +float wingspan
+        +fly()
+        +sing()
+    }
+    Animal <|-- Dog
+    Animal <|-- Cat
+    Animal <|-- Bird
+\`\`\`
+
+## 状态图 (State Diagram)
+
+\`\`\`mermaid
+stateDiagram-v2
+    [*] --> 待处理
+    待处理 --> 处理中 : 开始处理
+    处理中 --> 已完成 : 处理成功
+    处理中 --> 失败 : 处理失败
+    失败 --> 处理中 : 重试
+    失败 --> 已取消 : 取消
+    已完成 --> [*]
+    已取消 --> [*]
+\`\`\`
+
+## 饼图 (Pie Chart)
+
+\`\`\`mermaid
+pie showData
+    title 技术栈使用占比
+    "Vue.js" : 35
+    "React" : 30
+    "Angular" : 15
+    "Svelte" : 10
+    "其他" : 10
+\`\`\`
+
+## ER 图 (Entity Relationship)
+
+\`\`\`mermaid
+erDiagram
+    USER ||--o{ ORDER : places
+    USER {
+        int id PK
+        string name
+        string email
+    }
+    ORDER ||--|{ ORDER_ITEM : contains
+    ORDER {
+        int id PK
+        date created_at
+        int user_id FK
+    }
+    ORDER_ITEM }|--|| PRODUCT : references
+    ORDER_ITEM {
+        int id PK
+        int quantity
+        int order_id FK
+        int product_id FK
+    }
+    PRODUCT {
+        int id PK
+        string name
+        float price
+    }
+\`\`\`
+`
+
+// 公式示例 - 展示 LaTeX 数学公式
+const formulaExample = `# 📐 LaTeX 公式示例
+
+X-Markdown 支持 KaTeX 渲染的 LaTeX 数学公式，可以展示复杂的数学表达式。
+
+## 行内公式
+
+在文本中嵌入公式：质能方程 $E = mc^2$，欧拉恒等式 $e^{i\\pi} + 1 = 0$，二次公式 $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$。
+
+## 基础数学
+
+### 分数与根式
+
+$$
+\\frac{a}{b} + \\frac{c}{d} = \\frac{ad + bc}{bd}
+$$
+
+$$
+\\sqrt{a^2 + b^2} = c \\quad \\text{（勾股定理）}
+$$
+
+$$
+\\sqrt[n]{x} = x^{\\frac{1}{n}}
+$$
+
+### 指数与对数
+
+$$
+a^m \\cdot a^n = a^{m+n} \\qquad \\frac{a^m}{a^n} = a^{m-n}
+$$
+
+$$
+\\log_a(xy) = \\log_a x + \\log_a y
+$$
+
+## 微积分
+
+### 极限
+
+$$
+\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1
+$$
+
+$$
+\\lim_{n \\to \\infty} \\left(1 + \\frac{1}{n}\\right)^n = e
+$$
+
+### 导数
+
+$$
+\\frac{d}{dx}[f(g(x))] = f'(g(x)) \\cdot g'(x)
+$$
+
+$$
+\\frac{\\partial f}{\\partial x} = \\lim_{h \\to 0} \\frac{f(x+h, y) - f(x, y)}{h}
+$$
+
+### 积分
+
+$$
+\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
+$$
+
+$$
+\\oint_C \\vec{F} \\cdot d\\vec{r} = \\iint_S (\\nabla \\times \\vec{F}) \\cdot d\\vec{S}
+$$
+
+## 线性代数
+
+### 矩阵
+
+$$
+A = \\begin{pmatrix}
+a_{11} & a_{12} & a_{13} \\\\
+a_{21} & a_{22} & a_{23} \\\\
+a_{31} & a_{32} & a_{33}
+\\end{pmatrix}
+$$
+
+### 行列式
+
+$$
+\\det(A) = \\begin{vmatrix}
+a & b \\\\
+c & d
+\\end{vmatrix} = ad - bc
+$$
+
+### 特征值
+
+$$
+A\\vec{v} = \\lambda\\vec{v} \\implies \\det(A - \\lambda I) = 0
+$$
+
+## 概率统计
+
+### 正态分布
+
+$$
+f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}
+$$
+
+### 期望与方差
+
+$$
+E[X] = \\sum_{i=1}^{n} x_i \\cdot P(x_i) \\qquad \\text{Var}(X) = E[(X - \\mu)^2]
+$$
+
+### 贝叶斯公式
+
+$$
+P(A|B) = \\frac{P(B|A) \\cdot P(A)}{P(B)}
+$$
+
+## 级数
+
+### 泰勒级数
+
+$$
+e^x = \\sum_{n=0}^{\\infty} \\frac{x^n}{n!} = 1 + x + \\frac{x^2}{2!} + \\frac{x^3}{3!} + \\cdots
+$$
+
+$$
+\\sin x = \\sum_{n=0}^{\\infty} \\frac{(-1)^n x^{2n+1}}{(2n+1)!}
+$$
+
+### 傅里叶级数
+
+$$
+f(x) = \\frac{a_0}{2} + \\sum_{n=1}^{\\infty} \\left( a_n \\cos\\frac{n\\pi x}{L} + b_n \\sin\\frac{n\\pi x}{L} \\right)
+$$
+
+## 物理公式
+
+### 麦克斯韦方程组
+
+$$
+\\nabla \\cdot \\vec{E} = \\frac{\\rho}{\\epsilon_0}
+$$
+
+$$
+\\nabla \\times \\vec{E} = -\\frac{\\partial \\vec{B}}{\\partial t}
+$$
+
+### 薛定谔方程
+
+$$
+i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\vec{r}, t) = \\hat{H}\\Psi(\\vec{r}, t)
+$$
+
+---
+
+🎯 **提示**：确保启用「LaTeX 数学」选项以正确渲染公式！
+`
+
+// 示例内容映射
+const exampleContents: Record<ExampleType, string> = {
+  basic: basicExample,
+  code: codeExample,
+  mermaid: mermaidExample,
+  formula: formulaExample,
+}
+
+// 完整的演示内容 - 默认使用基础示例
+const fullContent = computed(() => exampleContents[currentExample.value])
+
 // 当前显示的 markdown 内容
-const markdown = ref(fullContent)
+const markdown = ref(basicExample)
+
+// 切换示例的方法
+const switchExample = (example: ExampleType) => {
+  // 如果正在流式中，先停止
+  stopStreaming()
+  // 切换示例
+  currentExample.value = example
+  // 更新 markdown 内容
+  markdown.value = exampleContents[example]
+  streamIndex = 0
+}
 
 // 流式进度 - 根据当前 markdown 内容长度计算
 const streamProgress = computed(() => {
-  if (fullContent.length === 0) return 0
-  return Math.min((markdown.value.length / fullContent.length) * 100, 100)
+  if (fullContent.value.length === 0) return 0
+  return Math.min((markdown.value.length / fullContent.value.length) * 100, 100)
 })
 
 // 监听流式速度变化，实时调整定时器间隔
@@ -288,9 +791,9 @@ watch(streamSpeed, (newSpeed) => {
   if (isStreaming.value && streamTimer) {
     clearInterval(streamTimer)
     streamTimer = setInterval(() => {
-      if (streamIndex < fullContent.length) {
-        const charsToAdd = Math.min(Math.floor(Math.random() * 3) + 1, fullContent.length - streamIndex)
-        markdown.value += fullContent.slice(streamIndex, streamIndex + charsToAdd)
+      if (streamIndex < fullContent.value.length) {
+        const charsToAdd = Math.min(Math.floor(Math.random() * 3) + 1, fullContent.value.length - streamIndex)
+        markdown.value += fullContent.value.slice(streamIndex, streamIndex + charsToAdd)
         streamIndex += charsToAdd
       } else {
         stopStreaming()
@@ -311,48 +814,6 @@ const codeXProps = computed(() => ({
   codeMaxHeight: codeMaxHeight.value || undefined, // 代码块最大高度
 }))
 
-// 自定义代码块插槽
-const codeXSlots = {
-  // 自定义头部左侧：语言图标 + 名称
-  'header-left': ({ language }: { language: string }) => {
-    const icons: Record<string, string> = {
-      javascript: '🟨',
-      typescript: '🔷',
-      python: '🐍',
-      rust: '🦀',
-      go: '🐹',
-      java: '☕',
-      cpp: '⚙️',
-      c: '©️',
-      html: '🌐',
-      css: '🎨',
-      json: '📋',
-      markdown: '📝',
-      shell: '💻',
-      bash: '💻',
-      sql: '🗃️',
-      mermaid: '📊',
-    }
-    const icon = icons[language] || '📄'
-    return h('span', { class: 'custom-lang' }, [
-      h('span', { class: 'lang-icon' }, icon),
-      h('span', { class: 'lang-name' }, language.toUpperCase()),
-    ])
-  },
-
-  // 自定义头部右侧：复制按钮
-  'header-right': ({ code, copy, copied }: { code: string; copy: (text: string) => void; copied: boolean }) => {
-    return h(
-      'button',
-      {
-        class: ['custom-copy-btn', { copied }],
-        onClick: () => copy(code),
-      },
-      copied ? '✅ 已复制' : '📋 复制',
-    )
-  },
-}
-
 // ==================== 方法 ====================
 
 // 切换主题
@@ -369,10 +830,10 @@ const startStreaming = () => {
   streamIndex = 0
 
   streamTimer = setInterval(() => {
-    if (streamIndex < fullContent.length) {
+    if (streamIndex < fullContent.value.length) {
       // 每次添加 1-3 个字符
-      const charsToAdd = Math.min(Math.floor(Math.random() * 3) + 1, fullContent.length - streamIndex)
-      markdown.value += fullContent.slice(streamIndex, streamIndex + charsToAdd)
+      const charsToAdd = Math.min(Math.floor(Math.random() * 3) + 1, fullContent.value.length - streamIndex)
+      markdown.value += fullContent.value.slice(streamIndex, streamIndex + charsToAdd)
       streamIndex += charsToAdd
     } else {
       stopStreaming()
@@ -392,7 +853,7 @@ const stopStreaming = () => {
 // 重置内容
 const resetContent = () => {
   stopStreaming()
-  markdown.value = fullContent
+  markdown.value = fullContent.value
   streamIndex = 0
 }
 
@@ -570,6 +1031,58 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+}
+
+/* ==================== 示例选择器样式 ==================== */
+.example-section {
+  flex-shrink: 0;
+}
+
+.example-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.example-tab {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.example-tab:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.example-tab.active {
+  background: rgba(255, 255, 255, 0.9);
+  color: #014629;
+  border-color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+.app-dark .example-tab {
+  background: rgba(66, 184, 131, 0.1);
+  border-color: rgba(66, 184, 131, 0.3);
+}
+
+.app-dark .example-tab:hover {
+  background: rgba(66, 184, 131, 0.2);
+  border-color: rgba(66, 184, 131, 0.5);
+}
+
+.app-dark .example-tab.active {
+  background: #42b883;
+  color: white;
+  border-color: #42b883;
 }
 
 .config-title {

@@ -1,14 +1,11 @@
 <script lang="ts">
-import { defineComponent, h, type PropType, type VNode } from 'vue'
+import { defineComponent, h, type PropType } from 'vue'
 import type { BuiltinTheme } from 'shiki'
 // @ts-ignore
 import CodeBlock from '../CodeBlock/index.vue'
 // @ts-ignore
 import CodeLine from '../CodeLine/index.vue'
 import Mermaid from '../Mermaid/index.vue'
-
-// 插槽函数类型
-type SlotFn = (props: any) => VNode | VNode[]
 
 export default defineComponent({
   props: {
@@ -21,11 +18,6 @@ export default defineComponent({
     /** 自定义渲染器映射 */
     codeXRender: {
       type: Object,
-      default: () => ({}),
-    },
-    /** 自定义插槽映射 */
-    codeXSlots: {
-      type: Object as PropType<Record<string, SlotFn>>,
       default: () => ({}),
     },
     isDark: {
@@ -50,8 +42,9 @@ export default defineComponent({
       default: false,
     },
   },
-  setup(props) {
+  setup(props, { slots }) {
     const { codeXRender } = props
+    
     return (): ReturnType<typeof h> | null => {
       // 处理行内代码
       if (props.raw.inline) {
@@ -84,12 +77,24 @@ export default defineComponent({
 
       // 处理 Mermaid 图表
       if (language === 'mermaid') {
-        return h(Mermaid, {
-          raw: props.raw,
-          isDark: props.isDark,
-          shikiTheme: props.shikiTheme,
-          codeXSlots: props.codeXSlots,
+        // 只传递 mermaid 相关的插槽（以 'mermaid' 开头的插槽名）
+        const mermaidSlots: Record<string, any> = {}
+        Object.keys(slots).forEach(key => {
+          if (key.startsWith('mermaid')) {
+            mermaidSlots[key] = slots[key]
+          }
         })
+
+        return h(
+          Mermaid,
+          {
+            raw: props.raw,
+            isDark: props.isDark,
+            shikiTheme: props.shikiTheme,
+          },
+          // 只传递 mermaid 相关的插槽
+          mermaidSlots,
+        )
       }
 
       // 渲染标准代码块
@@ -103,9 +108,10 @@ export default defineComponent({
           darkTheme: props.shikiTheme[1],
           showCodeBlockHeader: props.showCodeBlockHeader,
           codeMaxHeight: props.codeMaxHeight,
-          enableAnimate: props.enableAnimate, // 传递动画开关
+          enableAnimate: props.enableAnimate,
         },
-        props.codeXSlots,
+        // 直接透传所有插槽，CodeBlock 组件只会使用它认识的插槽
+        slots,
       )
     }
   },

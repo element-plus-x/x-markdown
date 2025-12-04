@@ -7,8 +7,6 @@ import CodeX from '../components/CodeX/index.vue'
 interface UseComponentsOptions {
   // 自定义代码块渲染函数
   codeXRender?: Record<string, any>
-  // 自定义代码块插槽
-  codeXSlots?: Record<string, any>
   // 是否为深色模式
   isDark?: boolean
   // Shiki 主题配置
@@ -31,7 +29,6 @@ function useComponents(props?: UseComponentsOptions) {
       h(CodeX, {
         raw,
         codeXRender: props?.codeXRender,
-        codeXSlots: props?.codeXSlots,
         isDark: props?.isDark,
         // 主题配置
         shikiTheme: props?.shikiTheme,

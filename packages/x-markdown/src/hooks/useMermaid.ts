@@ -203,7 +203,7 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
   let removeEvents: (() => void) | null = null
 
   // 获取SVG元素
-  const getSvg = () => container.value?.querySelector('.mermaid-content svg') as HTMLElement
+  const getSvg = () => container.value?.querySelector('.syntax-mermaid__content svg') as HTMLElement
 
   // 更新变换
   const updateTransform = (svg: HTMLElement) => {

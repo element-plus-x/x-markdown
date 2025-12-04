@@ -1,8 +1,8 @@
 import type { BuiltinTheme } from 'shiki'
-import type { VNode } from 'vue'
 
-// 插槽函数类型
-type SlotFn = (props: any) => VNode | VNode[]
+// 从各组件导入插槽类型
+import type { CodeBlockSlots } from '../CodeBlock/types'
+import type { MermaidSlots } from '../Mermaid/types'
 
 /**
  * CodeX 组件的 Props 类型定义
@@ -28,13 +28,11 @@ export interface CodeXProps {
 }
 
 /**
- * CodeBlock 插槽定义
+ * CodeX 组件插槽定义
+ * 合并 CodeBlock 和 Mermaid 的插槽
  */
-export interface CodeBlockSlots {
-  /** 完整头部插槽 */
-  header?: SlotFn;
-  /** 头部左侧插槽 */
-  'header-left'?: SlotFn;
-  /** 头部右侧插槽 */
-  'header-right'?: SlotFn;
-}
+export interface CodeXSlots extends CodeBlockSlots, MermaidSlots {}
+
+// 重新导出子组件的插槽类型，方便外部使用
+export type { CodeBlockSlots, CodeBlockSlotProps } from '../CodeBlock/types'
+export type { MermaidSlots, MermaidSlotProps } from '../Mermaid/types'

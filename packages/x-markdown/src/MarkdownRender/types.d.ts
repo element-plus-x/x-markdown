@@ -19,8 +19,6 @@ export interface MarkdownContext {
   enableBreaks?: boolean;
   // 自定义代码块渲染函数
   codeXRender?: Record<string, any>;
-  // 自定义代码块插槽（用于 CodeBlock 组件的 header、header-left、header-right 插槽）
-  codeXSlots?: Record<string, any>;
   // 自定义代码块属性
   codeXProps?: CodeXProps;
   // 自定义属性对象
