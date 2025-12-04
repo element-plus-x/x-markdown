@@ -118,6 +118,7 @@
             :code-max-height="codeMaxHeight || undefined"
             :code-block-actions="codeBlockActions"
             :mermaid-actions="mermaidActions"
+            :code-x-render="codeXRender"
           >
             <!-- 自定义 HTML 标签插槽 -->
             <template #self-btn>
@@ -136,7 +137,7 @@
 <script setup lang="ts">
 import 'katex/dist/katex.min.css'
 import 'github-markdown-css/github-markdown.css'
-import { ref, computed, onUnmounted, watch } from 'vue'
+import { ref, computed, onUnmounted, watch, h } from 'vue'
 import { MarkdownRenderer } from 'x-markdown'
 
 // ==================== 状态管理 ====================
@@ -464,6 +465,80 @@ pull_latest
 build_app
 
 echo "✅ Deployment completed!"
+\`\`\`
+
+## JSON
+
+\`\`\`json
+{
+  "name": "x-markdown",
+  "version": "1.0.0",
+  "description": "Vue 3 Markdown 组件库",
+  "keywords": ["vue", "markdown", "shiki", "mermaid"],
+  "author": {
+    "name": "Element Plus X",
+    "email": "contact@example.com"
+  },
+  "dependencies": {
+    "vue": "^3.4.0",
+    "shiki": "^1.0.0",
+    "mermaid": "^10.0.0"
+  },
+  "features": {
+    "streaming": true,
+    "codeHighlight": true,
+    "latex": true,
+    "mermaid": true
+  }
+}
+\`\`\`
+
+## ECharts 图表 (自定义渲染)
+
+通过 \`codeXRender\` 自定义渲染器，可以将 ECharts 配置直接渲染为交互式图表：
+
+\`\`\`echarts
+{
+  "title": {
+    "text": "技术栈使用趋势",
+    "left": "center"
+  },
+  "tooltip": {
+    "trigger": "axis"
+  },
+  "legend": {
+    "data": ["Vue", "React", "Angular"],
+    "top": "30"
+  },
+  "xAxis": {
+    "type": "category",
+    "data": ["2020", "2021", "2022", "2023", "2024"]
+  },
+  "yAxis": {
+    "type": "value",
+    "name": "使用率 (%)"
+  },
+  "series": [
+    {
+      "name": "Vue",
+      "type": "line",
+      "smooth": true,
+      "data": [35, 42, 48, 55, 62]
+    },
+    {
+      "name": "React",
+      "type": "line",
+      "smooth": true,
+      "data": [45, 50, 52, 54, 56]
+    },
+    {
+      "name": "Angular",
+      "type": "line",
+      "smooth": true,
+      "data": [30, 28, 25, 22, 20]
+    }
+  ]
+}
 \`\`\`
 `
 
@@ -841,6 +916,83 @@ const mermaidActions = [
     show: (props: any) => !props.showSourceCode,
   },
 ]
+
+// 自定义代码块渲染器示例
+const codeXRender = {
+  // 自定义 JSON 渲染：显示格式化的 JSON
+  json: (props: any) => {
+    try {
+      const formatted = JSON.stringify(JSON.parse(props.raw.content), null, 2)
+      return h('pre', {
+        style: {
+          background: isDark.value ? '#1e1e1e' : '#f5f5f5',
+          padding: '16px',
+          borderRadius: '8px',
+          overflow: 'auto',
+          margin: '0',
+        },
+      }, [
+        h('code', { style: { color: isDark.value ? '#9cdcfe' : '#0451a5' } }, formatted),
+      ])
+    } catch {
+      return null // 解析失败时使用默认渲染
+    }
+  },
+  // 自定义 ECharts 渲染：解析配置并渲染图表
+  echarts: (props: any) => {
+    try {
+      const config = JSON.parse(props.raw.content)
+      // 生成唯一 ID
+      const chartId = `echarts-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+      // 返回一个容器，并在 mounted 后初始化 ECharts
+      return h('div', {
+        id: chartId,
+        style: {
+          width: '100%',
+          height: '400px',
+          background: isDark.value ? '#1e1e1e' : '#ffffff',
+          borderRadius: '8px',
+          border: `1px solid ${isDark.value ? '#333' : '#e5e7eb'}`,
+        },
+        // 使用 Vue 的 onMounted 钩子在元素挂载后初始化 ECharts
+        onVnodeMounted: async (vnode: any) => {
+          // 动态导入 echarts
+          const echarts = await import('echarts')
+          const chartDom = vnode.el as HTMLElement
+          if (chartDom) {
+            const chart = echarts.init(chartDom, isDark.value ? 'dark' : undefined)
+            chart.setOption(config)
+            // 监听窗口大小变化，自适应图表
+            const resizeHandler = () => chart.resize()
+            window.addEventListener('resize', resizeHandler)
+            // 存储清理函数
+            ;(chartDom as any).__echarts_cleanup__ = () => {
+              window.removeEventListener('resize', resizeHandler)
+              chart.dispose()
+            }
+          }
+        },
+        onVnodeUnmounted: (vnode: any) => {
+          const chartDom = vnode.el as HTMLElement
+          if (chartDom && (chartDom as any).__echarts_cleanup__) {
+            (chartDom as any).__echarts_cleanup__()
+          }
+        },
+      })
+    } catch (e) {
+      // 解析失败时显示错误提示
+      return h('div', {
+        style: {
+          padding: '16px',
+          background: '#fef2f2',
+          color: '#dc2626',
+          borderRadius: '8px',
+          border: '1px solid #fecaca',
+        },
+      }, `ECharts 配置解析失败: ${e}`)
+    }
+  },
+}
 
 // ==================== 方法 ====================
 
