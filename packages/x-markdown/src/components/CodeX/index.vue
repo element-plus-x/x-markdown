@@ -21,6 +21,7 @@ export default defineComponent({
     enableAnimate: { type: Boolean, default: false },
     codeBlockActions: { type: Array as PropType<CodeBlockAction[]>, default: undefined },
     mermaidActions: { type: Array as PropType<MermaidAction[]>, default: undefined },
+    mermaidConfig: { type: Object as PropType<Record<string, any>>, default: undefined },
   },
   setup(props, { slots }) {
     const { codeXRender } = props
@@ -71,6 +72,7 @@ export default defineComponent({
             isDark: props.isDark,
             shikiTheme: props.shikiTheme,
             mermaidActions: props.mermaidActions,
+            config: props.mermaidConfig,
           },
           mermaidSlots,
         )

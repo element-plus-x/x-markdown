@@ -10,6 +10,7 @@ export interface CodeXProps {
   enableAnimate?: boolean
   codeBlockActions?: CodeBlockAction[]
   mermaidActions?: MermaidAction[]
+  mermaidConfig?: Record<string, any>
 }
 
 export interface CodeXSlots extends CodeBlockSlots, MermaidSlots {}

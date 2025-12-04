@@ -14,6 +14,7 @@ export interface MarkdownContext {
   codeMaxHeight?: string
   codeBlockActions?: CodeBlockAction[]
   mermaidActions?: MermaidAction[]
+  mermaidConfig?: Record<string, any>
   customAttrs?: CustomAttrs
   remarkPlugins?: PluggableList
   remarkPluginsAhead?: PluggableList

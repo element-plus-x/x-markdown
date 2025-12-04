@@ -24,6 +24,7 @@ const markdownRendererProps = {
   codeMaxHeight: { type: String, default: undefined },
   codeBlockActions: { type: Array as PropType<CodeBlockAction[]>, default: undefined },
   mermaidActions: { type: Array as PropType<MermaidAction[]>, default: undefined },
+  mermaidConfig: { type: Object as PropType<Record<string, any>>, default: undefined },
   codeXRender: { type: Object, default: () => ({}) },
   customAttrs: { type: Object as PropType<CustomAttrs>, default: () => ({}) },
   remarkPlugins: { type: Array as PropType<PluggableList>, default: () => [] },

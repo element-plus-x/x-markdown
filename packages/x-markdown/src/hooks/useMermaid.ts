@@ -101,6 +101,8 @@ interface UseMermaidOptions {
   config?: any
 }
 
+type UseMermaidOptionsInput = UseMermaidOptions | Ref<UseMermaidOptions>
+
 async function loadMermaid() {
   if (typeof window === 'undefined') return null
   const mermaidModule = await import('mermaid')
@@ -125,14 +127,15 @@ function getMermaidContainer(): HTMLElement {
   return mermaidContainer
 }
 
-export function useMermaid(content: string | Ref<string>, options: UseMermaidOptions = {}) {
-  const { id = 'mermaid', theme = 'default', config = {} } = options
+export function useMermaid(content: string | Ref<string>, options: UseMermaidOptionsInput = {}) {
+  // 支持响应式的 options
+  const optionsRef = computed(() => typeof options === 'object' && 'value' in options ? options.value : options)
   const mermaidConfig = computed(() => ({
     suppressErrorRendering: true,
     startOnLoad: false,
     securityLevel: 'loose',
-    theme,
-    ...config,
+    theme: optionsRef.value.theme || 'default',
+    ...(optionsRef.value.config || {}),
   }))
   const data = ref('')
   const error = ref<unknown>(null)
@@ -162,7 +165,7 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
         }
         // 初始化 mermaid 配置
         mermaidInstance.initialize(mermaidConfig.value)
-        const renderId = `${id}-${Math.random().toString(36).substr(2, 9)}`
+        const renderId = `${optionsRef.value.id || 'mermaid'}-${Math.random().toString(36).substr(2, 9)}`
         const container = getMermaidContainer()
         const { svg } = await mermaidInstance.render(renderId, contentValue, container)
         data.value = svg
@@ -177,9 +180,12 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
     { trailing: true, leading: true },
   )
 
-  // 监听内容变化，自动触发渲染
+  // 监听内容变化和配置变化，自动触发渲染
   watch(
-    () => (typeof content === 'string' ? content : content.value),
+    [
+      () => (typeof content === 'string' ? content : content.value),
+      () => mermaidConfig.value,
+    ],
     () => {
       throttledRender()
     },
@@ -219,8 +225,8 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     isDragging.value = false
   }
 
-  // 添加拖拽事件
-  const addDragEvents = (content: HTMLElement) => {
+  // 添加拖拽和缩放事件
+  const addInteractionEvents = (containerEl: HTMLElement) => {
     let startX = 0
     let startY = 0
 
@@ -235,7 +241,10 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
       if (isDragging.value) {
         posX.value = clientX - startX
         posY.value = clientY - startY
-        updateTransform(content)
+        const svg = getSvg()
+        if (svg) {
+          updateTransform(svg)
+        }
       }
     }
 
@@ -252,6 +261,45 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     }
     const onMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY)
 
+    // 滚轮缩放事件
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+
+      const svg = getSvg()
+      if (!svg) return
+
+      // 获取容器和 SVG 的位置信息
+      const containerRect = containerEl.getBoundingClientRect()
+      const svgRect = svg.getBoundingClientRect()
+
+      // 计算鼠标相对于容器的位置
+      const mouseX = e.clientX - containerRect.left
+      const mouseY = e.clientY - containerRect.top
+
+      // 计算 SVG 中心相对于容器的位置
+      const svgCenterX = (svgRect.left - containerRect.left) + svgRect.width / 2
+      const svgCenterY = (svgRect.top - containerRect.top) + svgRect.height / 2
+
+      // 计算鼠标相对于 SVG 中心的偏移（考虑当前缩放和位移）
+      const offsetX = (mouseX - svgCenterX - posX.value) / scale.value
+      const offsetY = (mouseY - svgCenterY - posY.value) / scale.value
+
+      // 更新缩放比例 - 使用固定步进 0.02，平滑缩放
+      const delta = e.deltaY > 0 ? -0.02 : 0.02
+      const newScale = Math.min(Math.max(scale.value + delta, 0.1), 10)
+
+      // 如果缩放比例没有变化，直接返回
+      if (newScale === scale.value) return
+
+      scale.value = newScale
+
+      // 计算新的偏移量，保持鼠标位置不变
+      posX.value = mouseX - svgCenterX - offsetX * scale.value
+      posY.value = mouseY - svgCenterY - offsetY * scale.value
+
+      updateTransform(svg)
+    }
+
     // 触摸事件
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 1) {
@@ -265,19 +313,21 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
       }
     }
 
-    // 绑定事件
-    content.addEventListener('mousedown', onMouseDown)
+    // 绑定事件到容器
+    containerEl.addEventListener('mousedown', onMouseDown)
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('mouseup', onEnd)
-    content.addEventListener('touchstart', onTouchStart, { passive: false })
+    containerEl.addEventListener('wheel', onWheel, { passive: false })
+    containerEl.addEventListener('touchstart', onTouchStart, { passive: false })
     document.addEventListener('touchmove', onTouchMove, { passive: false })
     document.addEventListener('touchend', onEnd)
 
     return () => {
-      content.removeEventListener('mousedown', onMouseDown)
+      containerEl.removeEventListener('mousedown', onMouseDown)
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseup', onEnd)
-      content.removeEventListener('touchstart', onTouchStart)
+      containerEl.removeEventListener('wheel', onWheel)
+      containerEl.removeEventListener('touchstart', onTouchStart)
       document.removeEventListener('touchmove', onTouchMove)
       document.removeEventListener('touchend', onEnd)
       document.body.style.userSelect = ''
@@ -324,9 +374,11 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
 
     resetState()
 
+    // 将事件绑定到容器而不是 SVG
+    removeEvents = addInteractionEvents(container.value)
+
     const svg = getSvg()
     if (svg) {
-      removeEvents = addDragEvents(svg)
       updateTransform(svg)
     }
   }

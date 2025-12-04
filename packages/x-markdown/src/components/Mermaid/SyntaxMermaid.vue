@@ -47,11 +47,13 @@ const props = withDefaults(defineProps<SyntaxMermaidProps>(), {
 // 使用 useMermaid hook 进行图表渲染
 // 根据 isDark 切换 Mermaid 主题
 const mermaidContent = computed(() => props.content)
-const mermaidResult = useMermaid(mermaidContent, {
+// 使用 computed 包装 options，以便在 isDark 或 config 变化时重新渲染
+const mermaidOptions = computed(() => ({
   id: props.id,
   theme: props.isDark ? 'dark' : 'default',
   config: props.config,
-})
+}))
+const mermaidResult = useMermaid(mermaidContent, mermaidOptions)
 
 // 存储渲染后的 SVG 内容
 const svg = ref('')
@@ -213,16 +215,6 @@ defineExpose({
         <span class="syntax-mermaid__loading-text">加载中...</span>
       </slot>
     </div>
-
-    <!-- 错误状态 -->
-    <div v-else-if="error" class="syntax-mermaid__error">
-      <slot name="error" :error="error">
-        <span class="syntax-mermaid__error-text">{{ error }}</span>
-      </slot>
-    </div>
-
-    <!-- SVG 图表内容 -->
-    <!-- v-html 用于渲染 Mermaid 生成的 SVG 字符串 -->
     <div v-else class="syntax-mermaid__content" v-html="svg" />
   </div>
 </template>
@@ -233,7 +225,7 @@ defineExpose({
   /* 弹性布局，内容居中 */
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   /* 最小高度确保组件有足够空间 */
   min-height: 200px;
   /* 隐藏溢出内容（缩放时可能超出） */
@@ -257,7 +249,7 @@ defineExpose({
   /* 内容居中 */
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 /* SVG 图表样式 */
@@ -302,24 +294,5 @@ defineExpose({
 /* 暗色模式下的加载文字 */
 .syntax-mermaid--dark .syntax-mermaid__loading-text {
   color: #999;
-}
-
-/* ==================== 错误状态样式 ==================== */
-.syntax-mermaid__error {
-  /* 居中显示 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* 占满容器 */
-  width: 100%;
-  height: 100%;
-  /* 最小高度 */
-  min-height: 200px;
-}
-
-.syntax-mermaid__error-text {
-  /* 错误文字样式 - 红色 */
-  color: #ef4444;
-  font-size: 14px;
 }
 </style>

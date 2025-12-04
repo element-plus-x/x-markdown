@@ -13,6 +13,7 @@ interface UseComponentsOptions {
   codeMaxHeight?: string
   codeBlockActions?: CodeBlockAction[]
   mermaidActions?: MermaidAction[]
+  mermaidConfig?: Record<string, any>
 }
 
 function useComponents(props?: UseComponentsOptions) {
@@ -28,6 +29,7 @@ function useComponents(props?: UseComponentsOptions) {
         codeMaxHeight: props?.codeMaxHeight,
         codeBlockActions: props?.codeBlockActions,
         mermaidActions: props?.mermaidActions,
+        mermaidConfig: props?.mermaidConfig,
       }),
   }
   return components
