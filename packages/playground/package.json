@@ -9,10 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "echarts": "^6.0.0",
     "github-markdown-css": "^5.8.1",
     "katex": "^0.16.25",
     "vue": "^3.3.0",
-    "x-markdown": "workspace:*"
+    "x-markdown-vue": "workspace:*"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",

@@ -1,57 +1,31 @@
 <script lang="ts">
-import { defineComponent, h, type PropType, type VNode } from 'vue'
+import { defineComponent, h, type PropType } from 'vue'
 import type { BuiltinTheme } from 'shiki'
-// @ts-ignore
+import type { CodeBlockAction } from '../CodeBlock/types'
+import type { MermaidAction } from '../Mermaid/types'
 import CodeBlock from '../CodeBlock/index.vue'
-// @ts-ignore
 import CodeLine from '../CodeLine/index.vue'
 import Mermaid from '../Mermaid/index.vue'
 
-// 插槽函数类型
-type SlotFn = (props: any) => VNode | VNode[]
-
 export default defineComponent({
   props: {
-    // ==================== 基础配置 ====================
-    /** 原始数据对象 */
-    raw: {
-      type: Object,
-      default: () => ({}),
-    },
-    /** 自定义渲染器映射 */
-    codeXRender: {
-      type: Object,
-      default: () => ({}),
-    },
-    /** 自定义插槽映射 */
-    codeXSlots: {
-      type: Object as PropType<Record<string, SlotFn>>,
-      default: () => ({}),
-    },
-    isDark: {
-      type: Boolean,
-      default: false,
-    },
-    /** Shiki 主题配置，数组形式 [lightTheme, darkTheme] */
+    raw: { type: Object, default: () => ({}) },
+    codeXRender: { type: Object, default: () => ({}) },
+    isDark: { type: Boolean, default: false },
     shikiTheme: {
       type: Array as unknown as PropType<[BuiltinTheme, BuiltinTheme]>,
       default: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
     },
-    showCodeBlockHeader: {
-      type: Boolean,
-      default: true,
-    },
-    codeMaxHeight: {
-      type: String,
-      default: undefined,
-    },
-    enableAnimate: {
-      type: Boolean,
-      default: false,
-    },
+    showCodeBlockHeader: { type: Boolean, default: true },
+    codeMaxHeight: { type: String, default: undefined },
+    enableAnimate: { type: Boolean, default: false },
+    codeBlockActions: { type: Array as PropType<CodeBlockAction[]>, default: undefined },
+    mermaidActions: { type: Array as PropType<MermaidAction[]>, default: undefined },
+    mermaidConfig: { type: Object as PropType<Record<string, any>>, default: undefined },
   },
-  setup(props) {
+  setup(props, { slots }) {
     const { codeXRender } = props
+    
     return (): ReturnType<typeof h> | null => {
       // 处理行内代码
       if (props.raw.inline) {
@@ -84,12 +58,24 @@ export default defineComponent({
 
       // 处理 Mermaid 图表
       if (language === 'mermaid') {
-        return h(Mermaid, {
-          raw: props.raw,
-          isDark: props.isDark,
-          shikiTheme: props.shikiTheme,
-          codeXSlots: props.codeXSlots,
+        const mermaidSlots: Record<string, any> = {}
+        Object.keys(slots).forEach(key => {
+          if (key.startsWith('mermaid')) {
+            mermaidSlots[key] = slots[key]
+          }
         })
+
+        return h(
+          Mermaid,
+          {
+            raw: props.raw,
+            isDark: props.isDark,
+            shikiTheme: props.shikiTheme,
+            mermaidActions: props.mermaidActions,
+            config: props.mermaidConfig,
+          },
+          mermaidSlots,
+        )
       }
 
       // 渲染标准代码块
@@ -103,9 +89,10 @@ export default defineComponent({
           darkTheme: props.shikiTheme[1],
           showCodeBlockHeader: props.showCodeBlockHeader,
           codeMaxHeight: props.codeMaxHeight,
-          enableAnimate: props.enableAnimate, // 传递动画开关
+          enableAnimate: props.enableAnimate,
+          codeBlockActions: props.codeBlockActions,
         },
-        props.codeXSlots,
+        slots,
       )
     }
   },

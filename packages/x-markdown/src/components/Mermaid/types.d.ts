@@ -1,19 +1,25 @@
-export interface MermaidToolbarConfig {
-  showToolbar?: boolean
-  showFullscreen?: boolean
-  showZoomIn?: boolean
-  showZoomOut?: boolean
-  showReset?: boolean
-  showDownload?: boolean
-  toolbarStyle?: Record<string, any>
-  toolbarClass?: string
-  iconColor?: string
-  tabTextColor?: string
-  hoverBackgroundColor?: string
-  tabActiveBackgroundColor?: string
+import type { Ref, ComputedRef } from 'vue'
+
+export interface SyntaxMermaidProps {
+  content: string
+  id?: string
+  isDark?: boolean
+  config?: Record<string, any>
 }
 
-export interface MermaidToolbarProps extends MermaidToolbarConfig {}
+export interface SyntaxMermaidExpose {
+  svg: Ref<string>
+  isLoading: ComputedRef<boolean>
+  error: ComputedRef<string | null>
+  containerRef: Ref<HTMLElement | null>
+  zoomIn: () => void
+  zoomOut: () => void
+  reset: () => void
+  fullscreen: () => void
+  download: () => void
+  getSvg: () => string
+  reinitialize: () => void
+}
 
 export interface MermaidZoomControls {
   zoomIn: () => void
@@ -31,18 +37,6 @@ export interface UseMermaidZoomOptions {
   maxScale?: number
 }
 
-export interface MermaidToolbarEmits {
-  onZoomIn: []
-  onZoomOut: []
-  onReset: []
-  onFullscreen: []
-  onEdit: []
-  onToggleCode: []
-  onCopyCode: []
-  onDownload: []
-}
-
-// Mermaid 组件暴露给插槽的方法接口
 export interface MermaidExposedMethods {
   zoomIn: () => void
   zoomOut: () => void
@@ -53,7 +47,6 @@ export interface MermaidExposedMethods {
   download: () => void
   svg: import('vue').Ref<string>
   showSourceCode: import('vue').Ref<boolean>
-  toolbarConfig: import('vue').ComputedRef<MermaidToolbarConfig>
   rawContent: string
 }
 
@@ -61,21 +54,15 @@ export interface MermaidExposeProps {
   showSourceCode: boolean
   svg: string
   rawContent: any
-  toolbarConfig: MermaidToolbarConfig
   isLoading: boolean
-
-  // 缩放控制方法
+  copied: boolean
   zoomIn: () => void
   zoomOut: () => void
   reset: () => void
   fullscreen: () => void
-
-  // 其他操作方法
   toggleCode: () => void
   copyCode: () => Promise<void>
   download: () => void
-
-  // 原始 props（除了重复的 toolbarConfig）
   raw: any
 }
 
@@ -89,10 +76,10 @@ export interface MermaidProps extends MdComponent {
     key?: string;
     [key: string]: any;
   };
-  toolbarConfig?: MermaidToolbarConfig;
   isDark?: boolean;
   lightTheme?: string;
   darkTheme?: string;
+  mermaidActions?: MermaidAction[];
   config?: {
     theme?: string;
     securityLevel?: string;
@@ -139,4 +126,42 @@ export interface MermaidProps extends MdComponent {
     };
     [key: string]: any;
   };
+}
+
+import type { VNode, Component, FunctionalComponent } from 'vue'
+
+type MermaidIconRenderFn = (props: MermaidSlotProps) => VNode
+
+export interface MermaidAction {
+  key: string;
+  icon?: Component | FunctionalComponent | string | MermaidIconRenderFn;
+  title?: string;
+  onClick?: (props: MermaidSlotProps) => void;
+  disabled?: boolean;
+  class?: string;
+  style?: Record<string, string>;
+  show?: (props: MermaidSlotProps) => boolean;
+}
+
+type MermaidSlotFn = (props: MermaidSlotProps) => VNode | VNode[]
+
+export interface MermaidSlotProps {
+  showSourceCode: boolean;
+  svg: string;
+  rawContent: string;
+  isLoading: boolean;
+  copied: boolean;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  reset: () => void;
+  fullscreen: () => void;
+  toggleCode: () => void;
+  copyCode: () => Promise<void>;
+  download: () => void;
+  raw: any;
+}
+
+export interface MermaidSlots {
+  mermaidHeader?: MermaidSlotFn;
+  mermaidActions?: MermaidSlotFn;
 }

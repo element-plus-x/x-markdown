@@ -1,6 +1,6 @@
 {
-  "name": "x-markdown",
-  "version": "1.0.0",
+  "name": "x-markdown-vue",
+  "version": "0.0.1-beta.102",
   "description": "A markdown component library for Vue",
   "type": "module",
   "main": "./dist/index.js",
@@ -14,8 +14,7 @@
     "./style": "./dist/style.css"
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "scripts": {
     "dev": "vite",
@@ -43,7 +42,7 @@
     "lodash-es": "^4.17.21",
     "mdast": "^3.0.0",
     "mdast-util-to-hast": "^13.2.1",
-    "mermaid": "^10.0.0",
+    "mermaid": "^11.12.2",
     "property-information": "^7.1.0",
     "rehype": "^13.0.0",
     "rehype-katex": "^7.0.0",
