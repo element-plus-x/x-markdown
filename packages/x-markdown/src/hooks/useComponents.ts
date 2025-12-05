@@ -10,6 +10,8 @@ interface UseComponentsOptions {
   shikiTheme?: [BuiltinTheme, BuiltinTheme]
   enableAnimate?: boolean
   showCodeBlockHeader?: boolean
+  stickyCodeBlockHeader?: boolean
+  stickyCodeBlockHeaderTop?: number | string
   codeMaxHeight?: string
   codeBlockActions?: CodeBlockAction[]
   mermaidActions?: MermaidAction[]
@@ -26,6 +28,8 @@ function useComponents(props?: UseComponentsOptions) {
         shikiTheme: props?.shikiTheme,
         enableAnimate: props?.enableAnimate,
         showCodeBlockHeader: props?.showCodeBlockHeader,
+        stickyCodeBlockHeader: props?.stickyCodeBlockHeader,
+        stickyCodeBlockHeaderTop: props?.stickyCodeBlockHeaderTop,
         codeMaxHeight: props?.codeMaxHeight,
         codeBlockActions: props?.codeBlockActions,
         mermaidActions: props?.mermaidActions,

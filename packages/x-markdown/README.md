@@ -136,6 +136,8 @@ interface CodeXProps {
   codeLightTheme?: string        // 亮色主题，默认 'vitesse-light'
   codeDarkTheme?: string         // 暗色主题，默认 'vitesse-dark'
   showCodeBlockHeader?: boolean  // 是否显示代码块头部
+  stickyCodeBlockHeader?: boolean // 代码块头部是否sticky定位
+  stickyCodeBlockHeaderTop?: number | string  // 代码块头部top位置
   codeMaxHeight?: string         // 代码块最大高度，如 '300px'
   enableAnimate?: boolean        // 是否启用代码块动画
   codeBlockActions?: CodeBlockAction[]  // 代码块自定义操作按钮

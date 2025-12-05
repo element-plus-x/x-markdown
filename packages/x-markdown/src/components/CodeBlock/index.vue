@@ -2,7 +2,12 @@
   <!-- 代码块容器：包含头部工具栏和代码渲染区域 -->
   <div class="x-md-code-block" :class="{ 'x-md-code-block--dark': props.isDark }">
     <!-- 头部区域：支持完全自定义或默认渲染 -->
-    <div v-if="showCodeBlockHeader" class="x-md-code-header">
+    <div
+      v-if="showCodeBlockHeader"
+      class="x-md-code-header"
+      :class="{ 'x-md-code-header--sticky': props.stickyCodeBlockHeader }"
+      :style="props.stickyCodeBlockHeaderTop ? { top: typeof props.stickyCodeBlockHeaderTop === 'number' ? `${props.stickyCodeBlockHeaderTop}px` : props.stickyCodeBlockHeaderTop } : undefined"
+    >
       <!-- codeHeader 插槽：完全替换整个头部区域 -->
       <slot
         name="codeHeader"
@@ -154,6 +159,8 @@ const props = withDefaults(defineProps<CodeBlockProps>(), {
   showCodeBlockHeader: true,   // 默认显示代码块头部
   enableAnimate: false,        // 默认不启用动画
   codeBlockActions: undefined, // 默认无自定义操作按钮
+  stickyCodeBlockHeader: true, // 默认启用sticky
+  stickyCodeBlockHeaderTop: '0', // 默认top值为0
 })
 
 // 处理代码内容
@@ -269,10 +276,30 @@ defineExpose({
   color: #333;                       /* 文字颜色 */
 }
 
+/* Sticky 头部样式 */
+.x-md-code-header.x-md-code-header--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;                       /* 确保在其他内容之上 */
+  will-change: transform;            /* 性能优化 */
+  background: rgba(235, 235, 235);
+  border-radius: 8px 8px 0 0;
+}
+
+/* 当启用 sticky header 时，移除 overflow hidden */
+.x-md-code-block:has(.x-md-code-header--sticky) {
+    overflow: visible;
+}
+
 /* 暗色主题头部 */
 .x-md-code-block.x-md-code-block--dark .x-md-code-header {
   background: rgba(0, 0, 0, 0.25);   /* 更深的背景 */
   color: #fff;                       /* 白色文字 */
+}
+
+/* 暗色主题Sticky头部 */
+.x-md-code-block.x-md-code-block--dark .x-md-code-header--sticky {
+    background: rgba(44, 44, 44);   /* 更深的背景 */
 }
 
 /* 头部左右区域布局 */

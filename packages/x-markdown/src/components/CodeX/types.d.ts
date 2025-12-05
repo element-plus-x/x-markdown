@@ -6,6 +6,8 @@ import type { MermaidSlots, MermaidAction } from '../Mermaid/types'
 
 export interface CodeXProps {
   showCodeBlockHeader?: boolean
+  stickyCodeBlockHeader?: boolean
+  stickyCodeBlockHeaderTop?: number | string
   codeMaxHeight?: string
   enableAnimate?: boolean
   codeBlockActions?: CodeBlockAction[]

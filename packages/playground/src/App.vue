@@ -67,6 +67,10 @@
             <input type="checkbox" v-model="showCodeBlockHeader" />
             显示代码块头部
           </label>
+          <label>
+             <input type="checkbox" v-model="enableCodeBlockHeaderSticky" />
+                代码块头部开启sticky
+          </label>
           <label class="code-max-height-label">
             代码块最大高度
             <input type="text" v-model="codeMaxHeight" placeholder="如: 300px" class="code-max-height-input" />
@@ -116,6 +120,7 @@
             :enable-animate="enableAnimate"
             :is-dark="isDark"
             :show-code-block-header="showCodeBlockHeader"
+            :sticky-code-block-header="enableCodeBlockHeaderSticky"
             :code-max-height="codeMaxHeight || undefined"
             :code-block-actions="codeBlockActions"
             :mermaid-actions="mermaidActions"
@@ -170,6 +175,7 @@ const enableAnimate = ref(false) // 是否启用动画效果
 
 // 代码块配置选项
 const showCodeBlockHeader = ref(true) // 是否显示代码块头部
+const enableCodeBlockHeaderSticky = ref(true) // 是否显示代码块头部sticky定位
 const codeMaxHeight = ref('') // 代码块最大高度（如 '300px'）
 
 // 流式演示状态
@@ -1779,7 +1785,6 @@ body {
 /* ==================== 预览内容 ==================== */
 .preview-content {
   flex: 1;
-  padding: 1rem;
   overflow-y: auto;
   background: white;
 }
