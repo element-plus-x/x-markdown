@@ -259,7 +259,6 @@ defineExpose({
   overflow: hidden;        /* 隐藏溢出内容 */
   font-size: 0;            /* 消除内联元素间隙 */
   background: rgba(0, 0, 0, 0.03); /* 浅色背景 */
-  overflow: hidden;        /* 默认隐藏溢出 */
 }
 
 /* 暗色主题容器 */
@@ -283,7 +282,8 @@ defineExpose({
   top: 0;
   z-index: 2;                       /* 确保在其他内容之上 */
   will-change: transform;            /* 性能优化 */
-  background: #eeeeee;
+  background: rgba(235, 235, 235);
+  border-radius: 8px 8px 0 0;
 }
 
 /* 当启用 sticky header 时，移除 overflow hidden */
@@ -295,6 +295,11 @@ defineExpose({
 .x-md-code-block.x-md-code-block--dark .x-md-code-header {
   background: rgba(0, 0, 0, 0.25);   /* 更深的背景 */
   color: #fff;                       /* 白色文字 */
+}
+
+/* 暗色主题Sticky头部 */
+.x-md-code-block.x-md-code-block--dark .x-md-code-header--sticky {
+    background: rgba(44, 44, 44);   /* 更深的背景 */
 }
 
 /* 头部左右区域布局 */
