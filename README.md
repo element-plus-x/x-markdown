@@ -21,21 +21,45 @@
 
 ## 📑 目录
 
-- [✨ 特性](#-特性)
-- [📦 安装](#-安装)
-- [🚀 快速开始](#-快速开始)
-- [📖 配置选项](#-配置选项)
-- [🎨 主题配置](#-主题配置)
-- [🔧 自定义渲染](#-自定义渲染)
-- [🌊 流式渲染动画](#-流式渲染动画)
-- [🔌 插件系统](#-插件系统)
-- [🛡️ 安全配置](#️-安全配置)
-- [🌟 功能演示](#-功能演示)
-- [💡 使用场景](#-使用场景)
-- [🔧 技术栈](#-技术栈)
-- [📁 项目结构](#-项目结构)
-- [🤝 贡献](#-贡献)
-- [📄 License](#-license)
+- [X-Markdown](#x-markdown)
+  - [📑 目录](#-目录)
+  - [✨ 特性](#-特性)
+  - [📦 安装](#-安装)
+    - [依赖项](#依赖项)
+  - [🚀 快速开始](#-快速开始)
+    - [基础用法](#基础用法)
+    - [异步渲染](#异步渲染)
+  - [📖 配置选项](#-配置选项)
+    - [Props 属性](#props-属性)
+    - [CodeXProps 代码块配置](#codexprops-代码块配置)
+  - [🎨 主题配置](#-主题配置)
+    - [深色模式](#深色模式)
+    - [代码高亮主题](#代码高亮主题)
+  - [🔧 自定义渲染](#-自定义渲染)
+    - [自定义属性](#自定义属性)
+    - [自定义插槽](#自定义插槽)
+      - [支持的插槽类型](#支持的插槽类型)
+    - [自定义代码块渲染器](#自定义代码块渲染器)
+    - [代码块插槽](#代码块插槽)
+  - [🌊 流式渲染动画](#-流式渲染动画)
+  - [🔌 插件系统](#-插件系统)
+    - [remark 插件](#remark-插件)
+    - [rehype 插件](#rehype-插件)
+  - [🛡️ 安全配置](#️-安全配置)
+  - [🌟 功能演示](#-功能演示)
+    - [代码高亮](#代码高亮)
+    - [LaTeX 数学公式](#latex-数学公式)
+    - [Mermaid 图表](#mermaid-图表)
+    - [完整的配置示例](#完整的配置示例)
+    - [表格](#表格)
+    - [任务列表](#任务列表)
+  - [💡 使用场景](#-使用场景)
+  - [🔧 技术栈](#-技术栈)
+  - [📁 项目结构](#-项目结构)
+  - [🤝 贡献](#-贡献)
+    - [开发流程](#开发流程)
+    - [开发指南](#开发指南)
+  - [📄 License](#-license)
 
 </div>
 
@@ -154,6 +178,9 @@ interface CodeXProps {
   codeDarkTheme?: string         // 暗色主题，默认 'vitesse-dark'
   showCodeBlockHeader?: boolean  // 是否显示代码块头部
   codeMaxHeight?: string         // 代码块最大高度，如 '300px'
+  enableAnimate?: boolean        // 是否启用代码块动画
+  codeBlockActions?: CodeBlockAction[]  // 代码块自定义操作按钮
+  mermaidActions?: MermaidAction[]  // Mermaid 图表自定义操作按钮
 }
 ```
 
@@ -421,6 +448,59 @@ $$
 ### Mermaid 图表
 
 支持流程图、时序图、甘特图等多种图表类型：
+
+```ts
+interface MermaidSlotProps {
+  showSourceCode: boolean    // 是否显示源代码
+  svg: string                // 渲染的 SVG 内容
+  rawContent: string         // 原始 Mermaid 代码
+  isLoading: boolean         // 加载状态
+  copied: boolean            // 复制状态
+  zoomIn: () => void         // 放大函数
+  zoomOut: () => void        // 缩小函数
+  reset: () => void          // 重置函数
+  fullscreen: () => void     // 全屏函数
+  toggleCode: () => void     // 切换代码显示函数
+  copyCode: () => Promise<void>  // 复制代码函数
+  download: () => void       // 下载函数
+  raw: any                   // 原始数据
+}
+```
+
+### 完整的配置示例
+
+```vue
+<template>
+  <MarkdownRenderer
+    :markdown="content"
+    :is-dark="isDark"
+    :enable-animate="true"
+    :code-x-props="{
+      codeLightTheme: 'github-light',
+      codeDarkTheme: 'github-dark',
+      showCodeBlockHeader: true,
+      codeMaxHeight: '400px',
+      enableAnimate: true,
+      codeBlockActions: [
+        {
+          key: 'copy',
+          icon: '📋',
+          title: '复制代码',
+          onClick: ({ code, copy }) => copy(code)
+        }
+      ],
+      mermaidActions: [
+        {
+          key: 'zoom-in',
+          icon: '🔍',
+          title: '放大图表',
+          onClick: ({ zoomIn }) => zoomIn()
+        }
+      ]
+    }"
+  />
+</template>
+```
 
 ````markdown
 ```mermaid
