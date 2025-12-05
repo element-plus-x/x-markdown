@@ -22,6 +22,8 @@ export interface CodeBlockProps {
   showCodeBlockHeader?: boolean;
   enableAnimate?: boolean;
   codeBlockActions?: CodeBlockAction[];
+  stickyCodeBlockHeader?: boolean;
+  stickyCodeBlockHeaderTop?: string | number;
 }
 
 export interface CodeBlockRaw {

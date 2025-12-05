@@ -18,6 +18,10 @@
   background: transparent !important;
 }
 
+.x-md-renderer pre:has(.x-md-code-header--sticky) {
+  overflow: unset;
+}
+
 .katex-error {
   color: var(--el-text-color-secondary) !important;
 }

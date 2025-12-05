@@ -11,6 +11,8 @@ export interface MarkdownContext {
   enableBreaks?: boolean
   codeXRender?: Record<string, any>
   showCodeBlockHeader?: boolean
+  stickyCodeBlockHeader?: boolean
+  stickyCodeBlockHeaderTop?: number | string
   codeMaxHeight?: string
   codeBlockActions?: CodeBlockAction[]
   mermaidActions?: MermaidAction[]
