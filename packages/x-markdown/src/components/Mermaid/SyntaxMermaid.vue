@@ -30,7 +30,7 @@ const mermaidResult = useMermaid(mermaidContent, mermaidOptions)
 
 const svg = ref('')
 
-const isLoading = computed(() => !mermaidResult.data.value && !mermaidResult.error.value)
+const isLoading = computed(() => mermaidResult.isLoading.value)
 
 const error = computed(() => mermaidResult.error.value)
 

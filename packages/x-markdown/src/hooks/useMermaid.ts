@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 import { throttle } from 'lodash-es'
 import { computed, ref, watch, onUnmounted } from 'vue'
-import type { MermaidZoomControls, UseMermaidZoomOptions } from '../components/Mermaid/types'
+import type { MermaidZoomControls, UseMermaidZoomOptions, UseMermaidResult } from '../components/Mermaid/types'
 
 export function downloadSvgAsPng(svg: string): void {
   if (!svg) return
@@ -82,13 +82,46 @@ interface UseMermaidOptions {
 
 type UseMermaidOptionsInput = UseMermaidOptions | Ref<UseMermaidOptions>
 
+// 缓存 mermaid 模块，避免重复加载
+let mermaidPromise: Promise<any> | null = null
+
 async function loadMermaid() {
   if (typeof window === 'undefined') return null
-  const mermaidModule = await import('mermaid')
-  return mermaidModule.default
+  if (!mermaidPromise) {
+    mermaidPromise = import('mermaid').then(m => m.default)
+  }
+  return mermaidPromise
 }
 
-export function useMermaid(content: string | Ref<string>, options: UseMermaidOptionsInput = {}) {
+// 全局渲染队列，确保 mermaid 渲染不互相干扰，但尽快处理
+type RenderTask = () => Promise<void>
+const renderQueue: RenderTask[] = []
+let isProcessingQueue = false
+
+async function processRenderQueue() {
+  if (isProcessingQueue) return
+  isProcessingQueue = true
+
+  while (renderQueue.length > 0) {
+    const task = renderQueue.shift()
+    if (task) {
+      try {
+        await task()
+      } catch (err) {
+        console.error('Mermaid render queue error:', err)
+      }
+    }
+  }
+
+  isProcessingQueue = false
+}
+
+function addToRenderQueue(task: RenderTask) {
+  renderQueue.push(task)
+  processRenderQueue()
+}
+
+export function useMermaid(content: string | Ref<string>, options: UseMermaidOptionsInput = {}): UseMermaidResult {
   const optionsRef = computed(() => typeof options === 'object' && 'value' in options ? options.value : options)
   const mermaidConfig = computed(() => ({
     suppressErrorRendering: true,
@@ -99,6 +132,7 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
   }))
   const data = ref('')
   const error = ref<unknown>(null)
+  const isLoading = ref(false)
 
   const getRenderContainer = () => {
     const containerOption = optionsRef.value.container
@@ -110,46 +144,65 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
     return null
   }
 
+  // 每个实例有自己的 throttle 函数
   const throttledRender = throttle(
-    async () => {
+    () => {
       const contentValue = typeof content === 'string' ? content : content.value
       if (!contentValue?.trim()) {
         data.value = ''
         error.value = null
+        isLoading.value = false
         return
       }
-      try {
-        const mermaidInstance = await loadMermaid()
-        if (!mermaidInstance) {
-          data.value = contentValue
+
+      isLoading.value = true
+
+      // 将实际渲染任务添加到队列
+      addToRenderQueue(async () => {
+        try {
+          const mermaidInstance = await loadMermaid()
+          if (!mermaidInstance) {
+            data.value = contentValue
+            error.value = null
+            isLoading.value = false
+            return
+          }
+
+          // 先初始化配置
+          mermaidInstance.initialize(mermaidConfig.value)
+
+          // 使用 parse 验证语法
+          const isValid = await mermaidInstance.parse(contentValue.trim())
+          if (!isValid) {
+            console.log('Mermaid parse error: Invalid syntax')
+            data.value = ''
+            error.value = new Error('Mermaid parse error: Invalid syntax')
+            isLoading.value = false
+            return
+          }
+
+          const renderId = `${optionsRef.value.id || 'mermaid'}-${Math.random().toString(36).substring(2, 11)}`
+          const container = getRenderContainer()
+          if (!container) {
+            console.warn('Mermaid render container not found')
+            isLoading.value = false
+            return
+          }
+
+          const { svg } = await mermaidInstance.render(renderId, contentValue, container)
+          data.value = svg
           error.value = null
-          return
-        }
-        const isValid = await mermaidInstance.parse(contentValue.trim())
-        if (!isValid) {
-          console.log('Mermaid parse error: Invalid syntax')
+          isLoading.value = false
+        } catch (err) {
+          console.log('Mermaid render error:', err)
           data.value = ''
-          error.value = new Error('Mermaid parse error: Invalid syntax')
-          return
+          error.value = err
+          isLoading.value = false
         }
-        mermaidInstance.initialize(mermaidConfig.value)
-        const renderId = `${optionsRef.value.id || 'mermaid'}-${Math.random().toString(36).substr(2, 9)}`
-        const container = getRenderContainer()
-        if (!container) {
-          console.warn('Mermaid render container not found')
-          return
-        }
-        const { svg } = await mermaidInstance.render(renderId, contentValue, container)
-        data.value = svg
-        error.value = null
-      } catch (err) {
-        console.log('Mermaid render error:', err)
-        data.value = ''
-        error.value = err
-      }
+      })
     },
-    300,
-    { trailing: true, leading: true },
+    100,
+    { leading: false, trailing: true },
   )
 
   watch(
@@ -166,6 +219,7 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
   return {
     data,
     error,
+    isLoading,
   }
 }
 
