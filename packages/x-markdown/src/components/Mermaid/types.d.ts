@@ -37,6 +37,12 @@ export interface UseMermaidZoomOptions {
   maxScale?: number
 }
 
+export interface UseMermaidResult {
+  data: Ref<string>
+  error: Ref<unknown>
+  isLoading: Ref<boolean>
+}
+
 export interface MermaidExposedMethods {
   zoomIn: () => void
   zoomOut: () => void

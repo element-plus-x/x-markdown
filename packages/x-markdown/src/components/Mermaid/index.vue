@@ -77,11 +77,11 @@ function handleTabClick(tabName: string) {
 async function handleCopyCode(event?: Event) {
   event?.stopPropagation()
   event?.preventDefault()
-  
+
   if (copied.value) {
     return
   }
-  
+
   if (!props.raw.content) {
     return
   }
@@ -119,25 +119,23 @@ const slotProps = computed<MermaidSlotProps>(() => ({
   raw: props.raw,
 }))
 
-
 function renderActionIcon(action: MermaidAction): VNode | null {
   if (!action.icon) return null
-  
+
   if (typeof action.icon === 'string') {
     return h('span', {
       class: 'mermaid-action-icon',
       innerHTML: action.icon,
     })
   }
-  
+
   if (typeof action.icon === 'function') {
     try {
       const result = (action.icon as (props: MermaidSlotProps) => VNode)(slotProps.value)
       if (result && typeof result === 'object' && '__v_isVNode' in result) {
         return result
       }
-    } catch {
-    }
+    } catch {}
     return h(action.icon as any)
   }
 
@@ -170,17 +168,10 @@ const exposedMethods = computed(
 </script>
 
 <template>
-  <div
-    :key="props.raw.key"
-    class="markdown-mermaid"
-    :class="{ 'markdown-mermaid--dark': props.isDark }"
-  >
+  <div :key="props.raw.key" class="markdown-mermaid" :class="{ 'markdown-mermaid--dark': props.isDark }">
     <Transition name="toolbar" appear>
       <div class="toolbar-container">
-        <slot
-          name="mermaidHeader"
-          v-bind="exposedMethods"
-        >
+        <slot name="mermaidHeader" v-bind="exposedMethods">
           <div class="mermaid-toolbar">
             <div class="toolbar-left">
               <div class="segmented-control">
@@ -191,20 +182,46 @@ const exposedMethods = computed(
                   @click="handleTabClick('diagram')"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path
+                      d="M12 2L2 7L12 12L22 7L12 2Z"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M2 17L12 22L22 17"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M2 12L12 17L22 12"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
                   </svg>
                   <span>预览</span>
                 </div>
-                <div
-                  class="segment-item"
-                  :class="{ active: activeTab === 'code' }"
-                  @click="handleTabClick('code')"
-                >
+                <div class="segment-item" :class="{ active: activeTab === 'code' }" @click="handleTabClick('code')">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16 18L22 12L16 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M8 6L2 12L8 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path
+                      d="M16 18L22 12L16 6"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M8 6L2 12L8 18"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
                   </svg>
                   <span>代码</span>
                 </div>
@@ -222,10 +239,7 @@ const exposedMethods = computed(
                   :title="action.title"
                   @click="handleActionClick(action)"
                 >
-                  <component
-                    :is="renderActionIcon(action)"
-                    v-if="action.icon"
-                  />
+                  <component :is="renderActionIcon(action)" v-if="action.icon" />
                 </div>
 
                 <template v-if="showSourceCode">
@@ -247,13 +261,7 @@ const exposedMethods = computed(
                         d="M406.656 706.944 195.84 496.256a32 32 0 1 0-45.248 45.248l256 256 512-512a32 32 0 0 0-45.248-45.248L406.592 706.944z"
                       />
                     </svg>
-                    <svg
-                      v-else
-                      width="16"
-                      height="16"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 1024 1024"
-                    >
+                    <svg v-else width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                       <path
                         fill="currentColor"
                         d="M768 832a128 128 0 0 1-128 128H192A128 128 0 0 1 64 832V384a128 128 0 0 1 128-128v64a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64z"
@@ -267,11 +275,7 @@ const exposedMethods = computed(
                 </template>
 
                 <template v-else>
-                  <div
-                    class="toolbar-action-btn"
-                    title="缩小"
-                    @click="handleZoomOut($event)"
-                  >
+                  <div class="toolbar-action-btn" title="缩小" @click="handleZoomOut($event)">
                     <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                       <path
                         fill="currentColor"
@@ -280,11 +284,7 @@ const exposedMethods = computed(
                     </svg>
                   </div>
 
-                  <div
-                    class="toolbar-action-btn"
-                    title="放大"
-                    @click="handleZoomIn($event)"
-                  >
+                  <div class="toolbar-action-btn" title="放大" @click="handleZoomIn($event)">
                     <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                       <path
                         fill="currentColor"
@@ -293,11 +293,7 @@ const exposedMethods = computed(
                     </svg>
                   </div>
 
-                  <div
-                    class="toolbar-action-btn"
-                    title="重置"
-                    @click="handleReset($event)"
-                  >
+                  <div class="toolbar-action-btn" title="重置" @click="handleReset($event)">
                     <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                       <path
                         fill="currentColor"
@@ -310,11 +306,7 @@ const exposedMethods = computed(
                     </svg>
                   </div>
 
-                  <div
-                    class="toolbar-action-btn"
-                    title="下载"
-                    @click="handleDownload"
-                  >
+                  <div class="toolbar-action-btn" title="下载" @click="handleDownload">
                     <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                       <path
                         fill="currentColor"

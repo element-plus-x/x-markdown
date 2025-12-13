@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 import { throttle } from 'lodash-es'
 import { computed, ref, watch, onUnmounted } from 'vue'
-import type { MermaidZoomControls, UseMermaidZoomOptions } from '../components/Mermaid/types'
+import type { MermaidZoomControls, UseMermaidZoomOptions, UseMermaidResult } from '../components/Mermaid/types'
 
 export function downloadSvgAsPng(svg: string): void {
   if (!svg) return
@@ -82,14 +82,47 @@ interface UseMermaidOptions {
 
 type UseMermaidOptionsInput = UseMermaidOptions | Ref<UseMermaidOptions>
 
+// 缓存 mermaid 模块，避免重复加载
+let mermaidPromise: Promise<any> | null = null
+
 async function loadMermaid() {
   if (typeof window === 'undefined') return null
-  const mermaidModule = await import('mermaid')
-  return mermaidModule.default
+  if (!mermaidPromise) {
+    mermaidPromise = import('mermaid').then((m) => m.default)
+  }
+  return mermaidPromise
 }
 
-export function useMermaid(content: string | Ref<string>, options: UseMermaidOptionsInput = {}) {
-  const optionsRef = computed(() => typeof options === 'object' && 'value' in options ? options.value : options)
+// 全局渲染队列，确保 mermaid 渲染不互相干扰，但尽快处理
+type RenderTask = () => Promise<void>
+const renderQueue: RenderTask[] = []
+let isProcessingQueue = false
+
+async function processRenderQueue() {
+  if (isProcessingQueue) return
+  isProcessingQueue = true
+
+  while (renderQueue.length > 0) {
+    const task = renderQueue.shift()
+    if (task) {
+      try {
+        await task()
+      } catch (err) {
+        console.error('Mermaid render queue error:', err)
+      }
+    }
+  }
+
+  isProcessingQueue = false
+}
+
+function addToRenderQueue(task: RenderTask) {
+  renderQueue.push(task)
+  processRenderQueue()
+}
+
+export function useMermaid(content: string | Ref<string>, options: UseMermaidOptionsInput = {}): UseMermaidResult {
+  const optionsRef = computed(() => (typeof options === 'object' && 'value' in options ? options.value : options))
   const mermaidConfig = computed(() => ({
     suppressErrorRendering: true,
     startOnLoad: false,
@@ -99,64 +132,79 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
   }))
   const data = ref('')
   const error = ref<unknown>(null)
+  const isLoading = ref(false)
 
   const getRenderContainer = () => {
     const containerOption = optionsRef.value.container
     if (containerOption) {
-      return typeof containerOption === 'object' && 'value' in containerOption
-        ? containerOption.value
-        : containerOption
+      return typeof containerOption === 'object' && 'value' in containerOption ? containerOption.value : containerOption
     }
     return null
   }
 
+  // 每个实例有自己的 throttle 函数
   const throttledRender = throttle(
-    async () => {
+    () => {
       const contentValue = typeof content === 'string' ? content : content.value
       if (!contentValue?.trim()) {
         data.value = ''
         error.value = null
+        isLoading.value = false
         return
       }
-      try {
-        const mermaidInstance = await loadMermaid()
-        if (!mermaidInstance) {
-          data.value = contentValue
+
+      isLoading.value = true
+
+      // 将实际渲染任务添加到队列
+      addToRenderQueue(async () => {
+        try {
+          const mermaidInstance = await loadMermaid()
+          if (!mermaidInstance) {
+            data.value = contentValue
+            error.value = null
+            isLoading.value = false
+            return
+          }
+
+          // 先初始化配置
+          mermaidInstance.initialize(mermaidConfig.value)
+
+          // 使用 parse 验证语法
+          const isValid = await mermaidInstance.parse(contentValue.trim())
+          if (!isValid) {
+            console.log('Mermaid parse error: Invalid syntax')
+            data.value = ''
+            error.value = new Error('Mermaid parse error: Invalid syntax')
+            isLoading.value = false
+            return
+          }
+
+          const renderId = `${optionsRef.value.id || 'mermaid'}-${Math.random().toString(36).substring(2, 11)}`
+          const container = getRenderContainer()
+          if (!container) {
+            console.warn('Mermaid render container not found')
+            isLoading.value = false
+            return
+          }
+
+          const { svg } = await mermaidInstance.render(renderId, contentValue, container)
+          data.value = svg
           error.value = null
-          return
-        }
-        const isValid = await mermaidInstance.parse(contentValue.trim())
-        if (!isValid) {
-          console.log('Mermaid parse error: Invalid syntax')
+          isLoading.value = false
+        } catch (err) {
+          console.log('Mermaid render error:', err)
           data.value = ''
-          error.value = new Error('Mermaid parse error: Invalid syntax')
-          return
+          error.value = err
+          isLoading.value = false
         }
-        mermaidInstance.initialize(mermaidConfig.value)
-        const renderId = `${optionsRef.value.id || 'mermaid'}-${Math.random().toString(36).substr(2, 9)}`
-        const container = getRenderContainer()
-        if (!container) {
-          console.warn('Mermaid render container not found')
-          return
-        }
-        const { svg } = await mermaidInstance.render(renderId, contentValue, container)
-        data.value = svg
-        error.value = null
-      } catch (err) {
-        console.log('Mermaid render error:', err)
-        data.value = ''
-        error.value = err
-      }
+      })
     },
-    300,
-    { trailing: true, leading: true },
+    100,
+    { leading: false, trailing: true },
   )
 
   watch(
-    [
-      () => (typeof content === 'string' ? content : content.value),
-      () => mermaidConfig.value,
-    ],
+    [() => (typeof content === 'string' ? content : content.value), () => mermaidConfig.value],
     () => {
       throttledRender()
     },
@@ -166,6 +214,7 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
   return {
     data,
     error,
+    isLoading,
   }
 }
 
@@ -196,6 +245,7 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
   const addInteractionEvents = (containerEl: HTMLElement) => {
     let startX = 0
     let startY = 0
+    let isInteractingWithMermaid = false
 
     const onStart = (clientX: number, clientY: number) => {
       isDragging.value = true
@@ -205,7 +255,7 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     }
 
     const onMove = (clientX: number, clientY: number) => {
-      if (isDragging.value) {
+      if (isDragging.value && isInteractingWithMermaid) {
         posX.value = clientX - startX
         posY.value = clientY - startY
         const svg = getSvg()
@@ -217,15 +267,25 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
 
     const onEnd = () => {
       isDragging.value = false
+      isInteractingWithMermaid = false
       document.body.style.userSelect = ''
     }
 
     const onMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return
-      e.preventDefault()
-      onStart(e.clientX, e.clientY)
+      // 只在点击Mermaid容器时才阻止默认行为
+      if (e.target === containerEl || containerEl.contains(e.target as Node)) {
+        e.preventDefault()
+        isInteractingWithMermaid = true
+        onStart(e.clientX, e.clientY)
+      }
     }
-    const onMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY)
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (isInteractingWithMermaid) {
+        onMove(e.clientX, e.clientY)
+      }
+    }
 
     const handleWheelZoom = (e: WheelEvent) => {
       const svg = getSvg()
@@ -237,8 +297,8 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
       const mouseX = e.clientX - containerRect.left
       const mouseY = e.clientY - containerRect.top
 
-      const svgCenterX = (svgRect.left - containerRect.left) + svgRect.width / 2
-      const svgCenterY = (svgRect.top - containerRect.top) + svgRect.height / 2
+      const svgCenterX = svgRect.left - containerRect.left + svgRect.width / 2
+      const svgCenterY = svgRect.top - containerRect.top + svgRect.height / 2
 
       const offsetX = (mouseX - svgCenterX - posX.value) / scale.value
       const offsetY = (mouseY - svgCenterY - posY.value) / scale.value
@@ -259,17 +319,27 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     const throttledWheelZoom = throttle(handleWheelZoom, 20, { leading: true, trailing: true })
 
     const onWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      throttledWheelZoom(e)
+      // 只在鼠标在Mermaid容器内时才阻止滚动
+      if (e.target === containerEl || containerEl.contains(e.target as Node)) {
+        e.preventDefault()
+        throttledWheelZoom(e)
+      }
     }
 
     const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        onStart(e.touches[0].clientX, e.touches[0].clientY)
+      // 只在触摸Mermaid容器时才处理
+      if (e.target === containerEl || containerEl.contains(e.target as Node)) {
+        if (e.touches.length === 1) {
+          e.preventDefault()
+          isInteractingWithMermaid = true
+          onStart(e.touches[0].clientX, e.touches[0].clientY)
+        }
       }
     }
+
     const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 1) {
+      // 只在触摸Mermaid容器时才处理
+      if (isInteractingWithMermaid) {
         e.preventDefault()
         onMove(e.touches[0].clientX, e.touches[0].clientY)
       }
@@ -280,7 +350,8 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     document.addEventListener('mouseup', onEnd)
     containerEl.addEventListener('wheel', onWheel, { passive: false })
     containerEl.addEventListener('touchstart', onTouchStart, { passive: false })
-    document.addEventListener('touchmove', onTouchMove, { passive: false })
+    // 只在Mermaid容器上监听touchmove，而不是document
+    containerEl.addEventListener('touchmove', onTouchMove, { passive: false })
     document.addEventListener('touchend', onEnd)
 
     return () => {
@@ -289,7 +360,7 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
       document.removeEventListener('mouseup', onEnd)
       containerEl.removeEventListener('wheel', onWheel)
       containerEl.removeEventListener('touchstart', onTouchStart)
-      document.removeEventListener('touchmove', onTouchMove)
+      containerEl.removeEventListener('touchmove', onTouchMove)
       document.removeEventListener('touchend', onEnd)
       document.body.style.userSelect = ''
     }

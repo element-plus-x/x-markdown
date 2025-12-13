@@ -19,26 +19,6 @@
 
 </div>
 
-## 📑 目录
-
-- [✨ 特性](#-特性)
-- [📦 安装](#-安装)
-- [🚀 快速开始](#-快速开始)
-- [📖 配置选项](#-配置选项)
-- [🎨 主题配置](#-主题配置)
-- [🔧 自定义渲染](#-自定义渲染)
-- [🌊 流式渲染动画](#-流式渲染动画)
-- [🔌 插件系统](#-插件系统)
-- [🛡️ 安全配置](#️-安全配置)
-- [🌟 功能演示](#-功能演示)
-- [💡 使用场景](#-使用场景)
-- [🔧 技术栈](#-技术栈)
-- [📁 项目结构](#-项目结构)
-- [🤝 贡献](#-贡献)
-- [📄 License](#-license)
-
-</div>
-
 ## ✨ 特性
 
 - 🚀 **Vue 3 组合式 API** - 基于 Vue 3 Composition API 构建
@@ -129,32 +109,53 @@ const content = ref('# Large Document\n...')
 
 ### Props 属性
 
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `markdown` | `string` | `''` | Markdown 字符串内容 |
-| `allowHtml` | `boolean` | `false` | 是否允许渲染 HTML |
-| `enableLatex` | `boolean` | `true` | 是否启用 LaTeX 数学公式支持 |
-| `enableAnimate` | `boolean` | `false` | 是否启用流式动画效果 |
-| `enableBreaks` | `boolean` | `true` | 是否将换行符转换为 `<br>` |
-| `isDark` | `boolean` | `false` | 是否为深色模式 |
-| `codeXProps` | `CodeXProps` | `{}` | 代码块配置选项 |
-| `codeXRender` | `object` | `{}` | 自定义代码块渲染函数 |
-| `codeXSlots` | `object` | `{}` | 自定义代码块插槽 |
-| `customAttrs` | `CustomAttrs` | `{}` | 自定义属性对象 |
-| `remarkPlugins` | `PluggableList` | `[]` | remark 插件列表 |
-| `rehypePlugins` | `PluggableList` | `[]` | rehype 插件列表 |
-| `sanitize` | `boolean` | `false` | 是否启用内容清洗 |
-| `sanitizeOptions` | `SanitizeOptions` | `{}` | 清洗配置选项 |
+| 属性                  | 类型                | 默认值      | 说明                        |
+| --------------------- | ------------------- | ----------- | --------------------------- |
+| `markdown`            | `string`            | `''`        | Markdown 字符串内容         |
+| `allowHtml`           | `boolean`           | `false`     | 是否允许渲染 HTML           |
+| `enableLatex`         | `boolean`           | `true`      | 是否启用 LaTeX 数学公式支持 |
+| `enableAnimate`       | `boolean`           | `false`     | 是否启用流式动画效果        |
+| `enableBreaks`        | `boolean`           | `true`      | 是否将换行符转换为 `<br>`   |
+| `isDark`              | `boolean`           | `false`     | 是否为深色模式              |
+| `showCodeBlockHeader` | `boolean`           | `true`      | 是否显示代码块头部          |
+| `codeMaxHeight`       | `string`            | `undefined` | 代码块最大高度，如 '300px'  |
+| `codeBlockActions`    | `CodeBlockAction[]` | `[]`        | 代码块自定义操作按钮        |
+| `mermaidActions`      | `MermaidAction[]`   | `[]`        | Mermaid 图表自定义操作按钮  |
+| `codeXRender`         | `object`            | `{}`        | 自定义代码块渲染函数        |
+| `customAttrs`         | `CustomAttrs`       | `{}`        | 自定义属性对象              |
+| `remarkPlugins`       | `PluggableList`     | `[]`        | remark 插件列表             |
+| `rehypePlugins`       | `PluggableList`     | `[]`        | rehype 插件列表             |
+| `sanitize`            | `boolean`           | `false`     | 是否启用内容清洗            |
+| `sanitizeOptions`     | `SanitizeOptions`   | `{}`        | 清洗配置选项                |
 
 ### CodeXProps 代码块配置
 
 ```ts
 interface CodeXProps {
-  codeLightTheme?: string        // 亮色主题，默认 'vitesse-light'
-  codeDarkTheme?: string         // 暗色主题，默认 'vitesse-dark'
-  showCodeBlockHeader?: boolean  // 是否显示代码块头部
+  codeLightTheme?: string // 亮色主题，默认 'vitesse-light'
+  codeDarkTheme?: string // 暗色主题，默认 'vitesse-dark'
+  showCodeBlockHeader?: boolean // 是否显示代码块头部
   stickyCodeBlockHeader?: boolean // 代码块头部是否sticky定位
-  codeMaxHeight?: string         // 代码块最大高度，如 '300px'
+  codeMaxHeight?: string // 代码块最大高度，如 '300px'
+  enableAnimate?: boolean // 是否启用代码块动画
+  codeBlockActions?: CodeBlockAction[] // 代码块自定义操作按钮
+  mermaidActions?: MermaidAction[] // Mermaid 图表自定义操作按钮
+}
+
+interface CodeBlockAction {
+  key: string // 唯一标识符
+  title: string // 按钮标题
+  icon: string // 按钮图标（SVG 或文本）
+  onClick: (props: any) => void // 点击回调函数
+  show?: (props: any) => boolean // 条件显示函数（可选）
+}
+
+interface MermaidAction {
+  key: string // 唯一标识符
+  title: string // 按钮标题
+  icon: string // 按钮图标（SVG 或文本）
+  onClick: (props: any) => void // 点击回调函数
+  show?: (props: any) => boolean // 条件显示函数（可选）
 }
 ```
 
@@ -166,7 +167,7 @@ interface CodeXProps {
     codeLightTheme: 'github-light',
     codeDarkTheme: 'github-dark',
     showCodeBlockHeader: true,
-    codeMaxHeight: '400px'
+    codeMaxHeight: '400px',
   }"
 />
 ```
@@ -202,7 +203,7 @@ const toggleTheme = () => {
   :markdown="content"
   :code-x-props="{
     codeLightTheme: 'github-light',
-    codeDarkTheme: 'one-dark-pro'
+    codeDarkTheme: 'one-dark-pro',
   }"
 />
 ```
@@ -219,12 +220,12 @@ const toggleTheme = () => {
   :custom-attrs="{
     heading: (node, { level }) => ({
       class: ['heading', `heading-${level}`],
-      id: `heading-${level}`
+      id: `heading-${level}`,
     }),
     a: (node) => ({
       target: '_blank',
-      rel: 'noopener noreferrer'
-    })
+      rel: 'noopener noreferrer',
+    }),
   }"
 />
 ```
@@ -284,7 +285,7 @@ const codeXRender = {
   // 自定义 echarts 代码块渲染
   echarts: (props) => h(EchartsRenderer, { code: props.raw.content }),
   // 自定义行内代码渲染
-  inline: (props) => h('code', { class: 'custom-inline' }, props.raw.content)
+  inline: (props) => h('code', { class: 'custom-inline' }, props.raw.content),
 }
 </script>
 
@@ -303,7 +304,7 @@ import { h } from 'vue'
 
 const codeXSlots = {
   'header-left': ({ language }) => h('span', { class: 'lang-badge' }, language),
-  'header-right': ({ code, copy }) => h('button', { onClick: () => copy(code) }, '📋 复制')
+  'header-right': ({ code, copy }) => h('button', { onClick: () => copy(code) }, '📋 复制'),
 }
 </script>
 
@@ -378,12 +379,11 @@ const rehypePlugins = [rehypeSlug, rehypeAutolinkHeadings]
   :sanitize-options="{
     allowedTags: ['h1', 'h2', 'p', 'a', 'code', 'pre'],
     allowedAttributes: {
-      a: ['href', 'target']
-    }
+      a: ['href', 'target'],
+    },
   }"
 />
 ```
-
 
 ## 🌟 功能演示
 
@@ -394,7 +394,7 @@ const rehypePlugins = [rehypeSlug, rehypeAutolinkHeadings]
 ````markdown
 ```javascript
 function greet(name) {
-  console.log(`Hello, ${name}!`);
+  console.log(`Hello, ${name}!`)
 }
 ```
 
@@ -414,6 +414,7 @@ def fibonacci(n):
 行内公式: $E = mc^2$
 
 块级公式:
+
 $$
 \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
 $$
@@ -421,30 +422,228 @@ $$
 
 ### Mermaid 图表
 
-支持流程图、时序图、甘特图等多种图表类型：
+X-Markdown 支持完整的 Mermaid 图表渲染，包括流程图、时序图、甘特图、类图、状态图、饼图、ER 图等多种图表类型，并提供丰富的交互功能。
 
-````markdown
+## 流程图 (Flowchart)
+
 ```mermaid
-graph TD
-    A[开始] --> B{判断条件}
-    B -->|是| C[执行操作]
-    B -->|否| D[跳过]
-    C --> E[结束]
-    D --> E
+graph TB
+    A[开始] --> B{是否登录?}
+    B -->|是| C[进入首页]
+    B -->|否| D[跳转登录页]
+    D --> E[输入账号密码]
+    E --> F{验证通过?}
+    F -->|是| C
+    F -->|否| G[显示错误]
+    G --> E
+    C --> H[结束]
 ```
-````
+
+## 时序图 (Sequence Diagram)
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant C as 客户端
+    participant S as 服务器
+    participant D as 数据库
+
+    U->>C: 点击登录
+    C->>S: POST /api/login
+    S->>D: 查询用户信息
+    D-->>S: 返回用户数据
+    S-->>C: 返回 JWT Token
+    C-->>U: 登录成功，跳转首页
+```
+
+## 甘特图 (Gantt Chart)
+
+```mermaid
+gantt
+    title 项目开发计划
+    dateFormat  YYYY-MM-DD
+    section 需求分析
+    需求调研           :a1, 2024-01-01, 7d
+    需求文档           :after a1, 5d
+    section 设计阶段
+    UI 设计            :2024-01-10, 10d
+    架构设计           :2024-01-12, 8d
+    section 开发阶段
+    前端开发           :2024-01-20, 20d
+    后端开发           :2024-01-20, 25d
+    section 测试上线
+    集成测试           :2024-02-15, 10d
+    上线部署           :2024-02-25, 3d
+```
+
+## 类图 (Class Diagram)
+
+```mermaid
+classDiagram
+    class Animal {
+        +String name
+        +int age
+        +makeSound()
+    }
+    class Dog {
+        +String breed
+        +bark()
+        +fetch()
+    }
+    class Cat {
+        +String color
+        +meow()
+        +scratch()
+    }
+    class Bird {
+        +float wingspan
+        +fly()
+        +sing()
+    }
+    Animal <|-- Dog
+    Animal <|-- Cat
+    Animal <|-- Bird
+```
+
+## 状态图 (State Diagram)
+
+```mermaid
+stateDiagram-v2
+    [*] --> 待处理
+    待处理 --> 处理中 : 开始处理
+    处理中 --> 已完成 : 处理成功
+    处理中 --> 失败 : 处理失败
+    失败 --> 处理中 : 重试
+    失败 --> 已取消 : 取消
+    已完成 --> [*]
+    已取消 --> [*]
+```
+
+## 饼图 (Pie Chart)
+
+```mermaid
+pie showData
+    title 技术栈使用占比
+    "Vue.js" : 35
+    "React" : 30
+    "Angular" : 15
+    "Svelte" : 10
+    "其他" : 10
+```
+
+## ER 图 (Entity Relationship)
+
+```mermaid
+erDiagram
+    USER ||--o{ ORDER : places
+    USER {
+        int id PK
+        string name
+        string email
+    }
+    ORDER ||--|{ ORDER_ITEM : contains
+    ORDER {
+        int id PK
+        date created_at
+        int user_id FK
+    }
+    ORDER_ITEM }|--|| PRODUCT : references
+    ORDER_ITEM {
+        int id PK
+        int quantity
+        int order_id FK
+        int product_id FK
+    }
+    PRODUCT {
+        int id PK
+        string name
+        float price
+    }
+```
+
+### 完整的配置示例
+
+```vue
+<template>
+  <MarkdownRenderer
+    :markdown="content"
+    :is-dark="isDark"
+    :enable-animate="true"
+    :code-x-props="{
+      codeLightTheme: 'github-light',
+      codeDarkTheme: 'github-dark',
+      showCodeBlockHeader: true,
+      codeMaxHeight: '400px',
+      enableAnimate: true,
+      codeBlockActions: [
+        {
+          key: 'run',
+          title: '运行代码',
+          icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7L8 5z" fill="currentColor"/></svg>',
+          onClick: (props) => {
+            console.log('运行代码:', props.code)
+            alert('运行代码功能（示例）')
+          },
+          show: (props) => ['javascript', 'typescript', 'js', 'ts'].includes(props.language)
+        }
+      ],
+      mermaidActions: [
+        {
+          key: 'edit',
+          title: '编辑图表',
+          icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+          onClick: (props) => {
+            console.log('编辑图表:', props.rawContent)
+            alert('编辑图表功能（示例）')
+          }
+        }
+      ]
+    }"
+    :code-x-render="codeXRender"
+  />
+</template>
+
+<script setup>
+// 自定义渲染器配置
+const codeXRender = {
+  json: ({ content, isDark }) => {
+    try {
+      const json = JSON.parse(content)
+      return `<div class="json-viewer" style="background: ${isDark ? '#1e1e1e' : '#f5f5f5'}; padding: 12px; border-radius: 4px; font-family: monospace; white-space: pre-wrap;">${JSON.stringify(json, null, 2)}</div>`
+    } catch {
+      return `<div style="color: red;">JSON 解析错误</div>`
+    }
+  },
+  echarts: ({ content, isDark }) => {
+    try {
+      const config = JSON.parse(content)
+      const chartId = 'chart-' + Math.random().toString(36).substr(2, 9)
+      return `<div id="${chartId}" style="height: 300px;"></div>
+      <script>
+        setTimeout(() => {
+          const chart = echarts.init(document.getElementById('${chartId}'), '${isDark ? 'dark' : 'default'}')
+          chart.setOption(${JSON.stringify(config)})
+        }, 100)
+      <\/script>`
+    } catch {
+      return `<div style="color: red;">ECharts 配置错误</div>`
+    }
+  }
+}
+</script>
+```
 
 ### 表格
 
 支持 GFM 表格语法：
 
 ```markdown
-| 特性 | 状态 |
-|------|------|
-| Markdown | ✅ |
-| 代码高亮 | ✅ |
-| LaTeX | ✅ |
-| Mermaid | ✅ |
+| 特性     | 状态 |
+| -------- | ---- |
+| Markdown | ✅   |
+| 代码高亮 | ✅   |
+| LaTeX    | ✅   |
+| Mermaid  | ✅   |
 ```
 
 ### 任务列表

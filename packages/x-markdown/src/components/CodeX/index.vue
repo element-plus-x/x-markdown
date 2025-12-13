@@ -26,7 +26,7 @@ export default defineComponent({
   },
   setup(props, { slots }) {
     const { codeXRender } = props
-    
+
     return (): ReturnType<typeof h> | null => {
       // 处理行内代码
       if (props.raw.inline) {
@@ -60,7 +60,7 @@ export default defineComponent({
       // 处理 Mermaid 图表
       if (language === 'mermaid') {
         const mermaidSlots: Record<string, any> = {}
-        Object.keys(slots).forEach(key => {
+        Object.keys(slots).forEach((key) => {
           if (key.startsWith('mermaid')) {
             mermaidSlots[key] = slots[key]
           }
