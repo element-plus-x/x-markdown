@@ -4,105 +4,106 @@
     <!-- 头部区域：支持完全自定义或默认渲染 -->
     <div
       v-if="showCodeBlockHeader"
-      class="x-md-code-header"
-      :class="{ 'x-md-code-header--sticky': props.stickyCodeBlockHeader }"
-      :style="props.stickyCodeBlockHeaderTop ? { top: typeof props.stickyCodeBlockHeaderTop === 'number' ? `${props.stickyCodeBlockHeaderTop}px` : props.stickyCodeBlockHeaderTop } : undefined"
+      class="x-md-code-header-wrapper"
+      :class="[{'x-md-code-header-wrapper--sticky': props.stickyCodeBlockHeader }, { 'x-md-code-header-wrapper--collapsed': collapsed }]"
     >
-      <!-- codeHeader 插槽：完全替换整个头部区域 -->
-      <slot
-        name="codeHeader"
-        :language="language"
-        :code="code"
-        :copy="copy"
-        :copied="copied"
-        :collapsed="collapsed"
-        :toggleCollapse="toggleCollapse"
-      >
-        <!-- 左侧：语言标识 + 折叠按钮 -->
-        <div class="x-md-code-header__left">
-          <!-- 折叠/展开图标 -->
-          <button
-            class="x-md-collapse-btn"
-            :class="{ 'x-md-collapse-btn--collapsed': collapsed }"
-            @click="toggleCollapse"
-            :title="collapsed ? '展开代码' : '折叠代码'"
-          >
-            <svg
-              class="x-md-collapse-icon"
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-          <!-- 语言标识 -->
-          <span class="x-md-code-lang">{{ language }}</span>
-        </div>
-        <!-- 右侧：操作按钮区域 -->
-        <div class="x-md-code-header__right">
-          <!-- codeActions 插槽：自定义操作按钮区域 -->
-          <slot name="codeActions" :code="code" :copy="copy" :copied="copied">
-            <!-- 通过 props 传入的自定义操作按钮 -->
+      <div class="x-md-code-header">
+        <!-- codeHeader 插槽：完全替换整个头部区域 -->
+        <slot
+          name="codeHeader"
+          :language="language"
+          :code="code"
+          :copy="copy"
+          :copied="copied"
+          :collapsed="collapsed"
+          :toggleCollapse="toggleCollapse"
+        >
+          <!-- 左侧：语言标识 + 折叠按钮 -->
+          <div class="x-md-code-header__left">
+            <!-- 折叠/展开图标 -->
             <button
-              v-for="action in filteredActions"
-              :key="action.key"
-              class="x-md-action-btn"
-              :class="[action.class, { 'x-md-action-btn--disabled': action.disabled }]"
-              :style="action.style"
-              :title="action.title"
-              :disabled="action.disabled"
-              @click="handleActionClick(action)"
+              class="x-md-collapse-btn"
+              :class="{ 'x-md-collapse-btn--collapsed': collapsed }"
+              @click="toggleCollapse"
+              :title="collapsed ? '展开代码' : '折叠代码'"
             >
-              <!-- 渲染图标：支持组件、字符串或渲染函数 -->
-              <component
-                :is="renderActionIcon(action)"
-                v-if="action.icon"
-              />
-            </button>
-            <!-- 默认复制按钮 -->
-            <button class="x-md-copy-btn" :class="{ 'x-md-copy-btn--copied': copied }" @click="copy(code)">
-              <!-- 复制成功状态：显示对勾图标 -->
               <svg
-                v-if="copied"
-                class="x-md-copy-icon"
-                width="16"
-                height="16"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 1024 1024"
+                class="x-md-collapse-icon"
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               >
-                <path
-                  fill="currentColor"
-                  d="M406.656 706.944 195.84 496.256a32 32 0 1 0-45.248 45.248l256 256 512-512a32 32 0 0 0-45.248-45.248L406.592 706.944z"
-                />
-              </svg>
-              <!-- 默认状态：显示复制图标 -->
-              <svg
-                v-else
-                class="x-md-copy-icon"
-                width="16"
-                height="16"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 1024 1024"
-              >
-                <path
-                  fill="currentColor"
-                  d="M768 832a128 128 0 0 1-128 128H192A128 128 0 0 1 64 832V384a128 128 0 0 1 128-128v64a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M384 128a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64V192a64 64 0 0 0-64-64zm0-64h448a128 128 0 0 1 128 128v448a128 128 0 0 1-128 128H384a128 128 0 0 1-128-128V192A128 128 0 0 1 384 64"
-                />
+                <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </button>
-          </slot>
-        </div>
-      </slot>
+            <!-- 语言标识 -->
+            <span class="x-md-code-lang">{{ language }}</span>
+          </div>
+          <!-- 右侧：操作按钮区域 -->
+          <div class="x-md-code-header__right">
+            <!-- codeActions 插槽：自定义操作按钮区域 -->
+            <slot name="codeActions" :code="code" :copy="copy" :copied="copied">
+              <!-- 通过 props 传入的自定义操作按钮 -->
+              <button
+                v-for="action in filteredActions"
+                :key="action.key"
+                class="x-md-action-btn"
+                :class="[action.class, { 'x-md-action-btn--disabled': action.disabled }]"
+                :style="action.style"
+                :title="action.title"
+                :disabled="action.disabled"
+                @click="handleActionClick(action)"
+              >
+                <!-- 渲染图标：支持组件、字符串或渲染函数 -->
+                <component
+                  :is="renderActionIcon(action)"
+                  v-if="action.icon"
+                />
+              </button>
+              <!-- 默认复制按钮 -->
+              <button class="x-md-copy-btn" :class="{ 'x-md-copy-btn--copied': copied }" @click="copy(code)">
+                <!-- 复制成功状态：显示对勾图标 -->
+                <svg
+                  v-if="copied"
+                  class="x-md-copy-icon"
+                  width="16"
+                  height="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 1024 1024"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M406.656 706.944 195.84 496.256a32 32 0 1 0-45.248 45.248l256 256 512-512a32 32 0 0 0-45.248-45.248L406.592 706.944z"
+                  />
+                </svg>
+                <!-- 默认状态：显示复制图标 -->
+                <svg
+                  v-else
+                  class="x-md-copy-icon"
+                  width="16"
+                  height="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 1024 1024"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M768 832a128 128 0 0 1-128 128H192A128 128 0 0 1 64 832V384a128 128 0 0 1 128-128v64a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M384 128a64 64 0 0 0-64 64v448a64 64 0 0 0 64 64h448a64 64 0 0 0 64-64V192a64 64 0 0 0-64-64zm0-64h448a128 128 0 0 1 128 128v448a128 128 0 0 1-128 128H384a128 128 0 0 1-128-128V192A128 128 0 0 1 384 64"
+                  />
+                </svg>
+              </button>
+            </slot>
+          </div>
+        </slot>
+      </div>
     </div>
     <!-- 代码块主体（可折叠） -->
     <div class="x-md-code-body" :class="{ 'x-md-code-body--collapsed': collapsed }">
@@ -160,7 +161,6 @@ const props = withDefaults(defineProps<CodeBlockProps>(), {
   enableAnimate: false,        // 默认不启用动画
   codeBlockActions: undefined, // 默认无自定义操作按钮
   stickyCodeBlockHeader: true, // 默认启用sticky
-  stickyCodeBlockHeaderTop: '0', // 默认top值为0
 })
 
 // 处理代码内容
@@ -267,6 +267,17 @@ defineExpose({
 }
 
 /* ==================== 头部工具栏样式 ==================== */
+.x-md-code-header-wrapper--sticky {
+  background: #fff;                  /* 白色背景用于覆盖代码块背景 */
+  position: sticky;
+  top: 0;
+}
+
+/* 暗色主题 Sticky 头部包裹器 */
+.x-md-code-block.x-md-code-block--dark .x-md-code-header-wrapper--sticky {
+  background: #1a1a1a;
+}
+
 .x-md-code-header {
   display: flex;                     /* 弹性布局 */
   justify-content: space-between;    /* 两端对齐 */
@@ -277,29 +288,30 @@ defineExpose({
 }
 
 /* Sticky 头部样式 */
-.x-md-code-header.x-md-code-header--sticky {
-  position: sticky;
-  top: 0;
-  z-index: 2;                       /* 确保在其他内容之上 */
-  will-change: transform;            /* 性能优化 */
+.x-md-code-block .x-md-code-header-wrapper--sticky .x-md-code-header{
   background: rgba(235, 235, 235);
   border-radius: 8px 8px 0 0;
 }
 
 /* 当启用 sticky header 时，移除 overflow hidden */
-.x-md-code-block:has(.x-md-code-header--sticky) {
-    overflow: visible;
+.x-md-code-block:has(.x-md-code-header-wrapper--sticky) {
+  overflow: visible;
 }
 
 /* 暗色主题头部 */
 .x-md-code-block.x-md-code-block--dark .x-md-code-header {
-  background: rgba(0, 0, 0, 0.25);   /* 更深的背景 */
-  color: #fff;                       /* 白色文字 */
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
 }
 
 /* 暗色主题Sticky头部 */
-.x-md-code-block.x-md-code-block--dark .x-md-code-header--sticky {
-    background: rgba(44, 44, 44);   /* 更深的背景 */
+.x-md-code-block.x-md-code-block--dark .x-md-code-header-wrapper--sticky .x-md-code-header {
+  background: rgba(44, 44, 44);
+}
+
+/* 折叠收起补齐圆角 */
+.x-md-code-block .x-md-code-header-wrapper--collapsed .x-md-code-header {
+    border-radius: 8px;
 }
 
 /* 头部左右区域布局 */

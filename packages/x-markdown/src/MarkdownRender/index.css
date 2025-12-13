@@ -18,7 +18,7 @@
   background: transparent !important;
 }
 
-.x-md-renderer pre:has(.x-md-code-header--sticky) {
+.x-md-renderer pre:has(.x-md-code-header-wrapper--sticky) {
   overflow: unset;
 }
 

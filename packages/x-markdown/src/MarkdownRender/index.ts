@@ -22,7 +22,6 @@ const markdownRendererProps = {
   },
   showCodeBlockHeader: { type: Boolean, default: true },
   stickyCodeBlockHeader: { type: Boolean, default: false },
-  stickyCodeBlockHeaderTop: { type: [Number, String] as PropType<number | string>, default: '0' },
   codeMaxHeight: { type: String, default: undefined },
   codeBlockActions: { type: Array as PropType<CodeBlockAction[]>, default: undefined },
   mermaidActions: { type: Array as PropType<MermaidAction[]>, default: undefined },
