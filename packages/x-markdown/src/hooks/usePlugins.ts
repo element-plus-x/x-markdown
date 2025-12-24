@@ -13,6 +13,7 @@ function usePlugins(props: any) {
     enableAnimate,
     enableLatex,
     enableBreaks,
+    enableGfm,
     rehypePlugins,
     remarkPlugins,
     rehypePluginsAhead,
@@ -32,11 +33,11 @@ function usePlugins(props: any) {
   const remark = computed(() => {
     const base: (Pluggable | { plugins: Pluggable[] })[] = [
       enableLatex.value && remarkMath,
+      enableGfm.value !== false && [remarkGfm, { singleTilde: false }],
       enableBreaks.value && remarkBreaks,
     ].filter(Boolean) as (Pluggable | { plugins: Pluggable[] })[]
 
     return [
-      [remarkGfm, { singleTilde: false }],
       ...(remarkPluginsAhead.value as (Pluggable | { plugins: Pluggable[] })[]),
       ...base,
       ...(remarkPlugins.value as (Pluggable | { plugins: Pluggable[] })[]),

@@ -6,7 +6,7 @@ import type { MermaidAction } from '../components/Mermaid/types'
 import type { CustomAttrs, SanitizeOptions } from '../core/types'
 import { computed, defineComponent, h, toValue } from 'vue'
 import { VueMarkdown, VueMarkdownAsync } from '../core'
-import { useComponents, usePlugins, useProcessMarkdown } from '../hooks'
+import { useComponents, usePlugins } from '../hooks'
 import './index.css'
 
 const markdownRendererProps = {
@@ -15,6 +15,7 @@ const markdownRendererProps = {
   enableLatex: { type: Boolean, default: true },
   enableAnimate: { type: Boolean, default: false },
   enableBreaks: { type: Boolean, default: true },
+  enableGfm: { type: Boolean, default: true },
   isDark: { type: Boolean, default: false },
   shikiTheme: {
     type: Array as unknown as PropType<[BuiltinTheme, BuiltinTheme]>,
@@ -55,12 +56,13 @@ function createMarkdownRenderer(name: string, coreComponent: typeof VueMarkdown 
 
       // 处理 markdown 内容（LaTeX 预处理）
       const markdown = computed(() => {
-        // 如果启用 LaTeX，则进行预处理
-        if (props.enableLatex) {
-          return useProcessMarkdown(props.markdown)
-        } else {
-          return props.markdown
-        }
+        // // 如果启用 LaTeX，则进行预处理
+        // if (props.enableLatex) {
+        //   return useProcessMarkdown(props.markdown)
+        // } else {
+        //   return props.markdown
+        // }
+        return props.markdown
       })
 
       // 核心组件需要的 props（只传递 sharedProps 中定义的属性，避免多余属性渲染到 DOM）
