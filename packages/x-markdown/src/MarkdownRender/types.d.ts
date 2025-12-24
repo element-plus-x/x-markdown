@@ -9,6 +9,7 @@ export interface MarkdownContext {
   enableLatex?: boolean
   enableAnimate?: boolean
   enableBreaks?: boolean
+  enableGfm?: boolean
   codeXRender?: Record<string, any>
   showCodeBlockHeader?: boolean
   stickyCodeBlockHeader?: boolean
