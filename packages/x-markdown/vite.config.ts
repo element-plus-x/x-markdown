@@ -16,11 +16,12 @@ export default defineConfig({
       fileName: 'index',
     },
     rollupOptions: {
-      external: ['vue', 'element-plus'],
+      external: ['vue', 'element-plus','mermaid'],
       output: {
         globals: {
           vue: 'Vue',
           'element-plus': 'ElementPlus',
+          mermaid: 'mermaid',
         },
       },
     },

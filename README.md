@@ -129,49 +129,6 @@ const content = ref('# Large Document\n...')
 | `sanitize` | `boolean` | `false` | 是否启用内容清洗 |
 | `sanitizeOptions` | `SanitizeOptions` | `{}` | 清洗配置选项 |
 
-### CodeXProps 代码块配置
-
-```ts
-interface CodeXProps {
-  codeLightTheme?: string        // 亮色主题，默认 'vitesse-light'
-  codeDarkTheme?: string         // 暗色主题，默认 'vitesse-dark'
-  showCodeBlockHeader?: boolean  // 是否显示代码块头部
-  codeMaxHeight?: string         // 代码块最大高度，如 '300px'
-  enableAnimate?: boolean        // 是否启用代码块动画
-  codeBlockActions?: CodeBlockAction[]  // 代码块自定义操作按钮
-  mermaidActions?: MermaidAction[]  // Mermaid 图表自定义操作按钮
-}
-
-interface CodeBlockAction {
-  key: string                    // 唯一标识符
-  title: string                  // 按钮标题
-  icon: string                   // 按钮图标（SVG 或文本）
-  onClick: (props: any) => void  // 点击回调函数
-  show?: (props: any) => boolean // 条件显示函数（可选）
-}
-
-interface MermaidAction {
-  key: string                    // 唯一标识符
-  title: string                  // 按钮标题
-  icon: string                   // 按钮图标（SVG 或文本）
-  onClick: (props: any) => void  // 点击回调函数
-  show?: (props: any) => boolean // 条件显示函数（可选）
-}
-```
-
-```vue
-<MarkdownRenderer
-  :markdown="content"
-  :is-dark="isDark"
-  :code-x-props="{
-    codeLightTheme: 'github-light',
-    codeDarkTheme: 'github-dark',
-    showCodeBlockHeader: true,
-    codeMaxHeight: '400px'
-  }"
-/>
-```
-
 ## 🎨 主题配置
 
 ### 深色模式
@@ -196,17 +153,7 @@ const toggleTheme = () => {
 
 ### 代码高亮主题
 
-支持所有 [Shiki 内置主题](https://shiki.style/themes)：
-
-```vue
-<MarkdownRenderer
-  :markdown="content"
-  :code-x-props="{
-    codeLightTheme: 'github-light',
-    codeDarkTheme: 'one-dark-pro'
-  }"
-/>
-```
+支持所有 [Shiki 内置主题](https://shiki.style/themes)。
 
 ## 🔧 自定义渲染
 
@@ -291,25 +238,6 @@ const codeXRender = {
 
 <template>
   <MarkdownRenderer :markdown="content" :code-x-render="codeXRender" />
-</template>
-```
-
-### 代码块插槽
-
-通过 `codeXSlots` 自定义代码块的头部区域：
-
-```vue
-<script setup>
-import { h } from 'vue'
-
-const codeXSlots = {
-  'header-left': ({ language }) => h('span', { class: 'lang-badge' }, language),
-  'header-right': ({ code, copy }) => h('button', { onClick: () => copy(code) }, '📋 复制')
-}
-</script>
-
-<template>
-  <MarkdownRenderer :markdown="content" :code-x-slots="codeXSlots" />
 </template>
 ```
 
@@ -559,78 +487,6 @@ erDiagram
         string name
         float price
     }
-```
-
-### 完整的配置示例
-
-```vue
-<template>
-  <MarkdownRenderer
-    :markdown="content"
-    :is-dark="isDark"
-    :enable-animate="true"
-    :code-x-props="{
-      codeLightTheme: 'github-light',
-      codeDarkTheme: 'github-dark',
-      showCodeBlockHeader: true,
-      codeMaxHeight: '400px',
-      enableAnimate: true,
-      codeBlockActions: [
-        {
-          key: 'run',
-          title: '运行代码',
-          icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7L8 5z" fill="currentColor"/></svg>',
-          onClick: (props) => {
-            console.log('运行代码:', props.code)
-            alert('运行代码功能（示例）')
-          },
-          show: (props) => ['javascript', 'typescript', 'js', 'ts'].includes(props.language)
-        }
-      ],
-      mermaidActions: [
-        {
-          key: 'edit',
-          title: '编辑图表',
-          icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-          onClick: (props) => {
-            console.log('编辑图表:', props.rawContent)
-            alert('编辑图表功能（示例）')
-          }
-        }
-      ]
-    }"
-    :code-x-render="codeXRender"
-  />
-</template>
-
-<script setup>
-// 自定义渲染器配置
-const codeXRender = {
-  json: ({ content, isDark }) => {
-    try {
-      const json = JSON.parse(content)
-      return `<div class="json-viewer" style="background: ${isDark ? '#1e1e1e' : '#f5f5f5'}; padding: 12px; border-radius: 4px; font-family: monospace; white-space: pre-wrap;">${JSON.stringify(json, null, 2)}</div>`
-    } catch {
-      return `<div style="color: red;">JSON 解析错误</div>`
-    }
-  },
-  echarts: ({ content, isDark }) => {
-    try {
-      const config = JSON.parse(content)
-      const chartId = 'chart-' + Math.random().toString(36).substr(2, 9)
-      return `<div id="${chartId}" style="height: 300px;"></div>
-      <script>
-        setTimeout(() => {
-          const chart = echarts.init(document.getElementById('${chartId}'), '${isDark ? 'dark' : 'default'}')
-          chart.setOption(${JSON.stringify(config)})
-        }, 100)
-      <\/script>`
-    } catch {
-      return `<div style="color: red;">ECharts 配置错误</div>`
-    }
-  }
-}
-</script>
 ```
 
 ### 表格

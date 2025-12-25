@@ -128,50 +128,6 @@ const content = ref('# Large Document\n...')
 | `sanitize`            | `boolean`           | `false`     | 是否启用内容清洗            |
 | `sanitizeOptions`     | `SanitizeOptions`   | `{}`        | 清洗配置选项                |
 
-### CodeXProps 代码块配置
-
-```ts
-interface CodeXProps {
-  codeLightTheme?: string // 亮色主题，默认 'vitesse-light'
-  codeDarkTheme?: string // 暗色主题，默认 'vitesse-dark'
-  showCodeBlockHeader?: boolean // 是否显示代码块头部
-  stickyCodeBlockHeader?: boolean // 代码块头部是否sticky定位
-  codeMaxHeight?: string // 代码块最大高度，如 '300px'
-  enableAnimate?: boolean // 是否启用代码块动画
-  codeBlockActions?: CodeBlockAction[] // 代码块自定义操作按钮
-  mermaidActions?: MermaidAction[] // Mermaid 图表自定义操作按钮
-}
-
-interface CodeBlockAction {
-  key: string // 唯一标识符
-  title: string // 按钮标题
-  icon: string // 按钮图标（SVG 或文本）
-  onClick: (props: any) => void // 点击回调函数
-  show?: (props: any) => boolean // 条件显示函数（可选）
-}
-
-interface MermaidAction {
-  key: string // 唯一标识符
-  title: string // 按钮标题
-  icon: string // 按钮图标（SVG 或文本）
-  onClick: (props: any) => void // 点击回调函数
-  show?: (props: any) => boolean // 条件显示函数（可选）
-}
-```
-
-```vue
-<MarkdownRenderer
-  :markdown="content"
-  :is-dark="isDark"
-  :code-x-props="{
-    codeLightTheme: 'github-light',
-    codeDarkTheme: 'github-dark',
-    showCodeBlockHeader: true,
-    codeMaxHeight: '400px',
-  }"
-/>
-```
-
 ## 🎨 主题配置
 
 ### 深色模式
@@ -196,17 +152,7 @@ const toggleTheme = () => {
 
 ### 代码高亮主题
 
-支持所有 [Shiki 内置主题](https://shiki.style/themes)：
-
-```vue
-<MarkdownRenderer
-  :markdown="content"
-  :code-x-props="{
-    codeLightTheme: 'github-light',
-    codeDarkTheme: 'one-dark-pro',
-  }"
-/>
-```
+支持所有 [Shiki 内置主题](https://shiki.style/themes)。
 
 ## 🔧 自定义渲染
 
@@ -294,25 +240,6 @@ const codeXRender = {
 </template>
 ```
 
-### 代码块插槽
-
-通过 `codeXSlots` 自定义代码块的头部区域：
-
-```vue
-<script setup>
-import { h } from 'vue'
-
-const codeXSlots = {
-  'header-left': ({ language }) => h('span', { class: 'lang-badge' }, language),
-  'header-right': ({ code, copy }) => h('button', { onClick: () => copy(code) }, '📋 复制'),
-}
-</script>
-
-<template>
-  <MarkdownRenderer :markdown="content" :code-x-slots="codeXSlots" />
-</template>
-```
-
 ## 🌊 流式渲染动画
 
 启用 `enableAnimate` 属性后，代码块中的每个 token 会添加 `x-md-animated-word` class，可配合 CSS 实现流式输出动画效果：
@@ -383,6 +310,495 @@ const rehypePlugins = [rehypeSlug, rehypeAutolinkHeadings]
     },
   }"
 />
+```
+
+## 🎯 代码块自定义操作
+
+通过 `codeBlockActions` 属性，可以为代码块添加自定义操作按钮，实现代码运行、复制、格式化等功能。
+
+### CodeBlockAction 类型定义
+
+```typescript
+interface CodeBlockAction {
+  key: string;                                          // 操作的唯一标识
+  icon?: Component | FunctionalComponent | string | IconRenderFn;  // 图标（组件、SVG字符串或渲染函数）
+  title?: string;                                       // 悬停提示文字
+  onClick?: (props: CodeBlockSlotProps) => void;       // 点击回调函数
+  disabled?: boolean;                                   // 是否禁用
+  class?: string;                                       // 自定义 CSS 类名
+  style?: Record<string, string>;                       // 自定义样式
+  show?: (props: CodeBlockSlotProps) => boolean;       // 控制按钮显示逻辑
+}
+
+interface CodeBlockSlotProps {
+  language: string;           // 代码块语言
+  code: string;               // 代码内容
+  copy: (text: string) => void;  // 复制函数
+  copied: boolean;            // 是否已复制
+  collapsed: boolean;         // 是否折叠
+  toggleCollapse: () => void; // 切换折叠状态
+}
+```
+
+### 基础用法
+
+```vue
+<script setup lang="ts">
+import { MarkdownRenderer } from 'x-markdown-vue'
+import type { CodeBlockAction } from 'x-markdown-vue'
+
+const codeBlockActions: CodeBlockAction[] = [
+  {
+    key: 'run',
+    title: '运行代码',
+    // 使用 SVG 字符串作为图标
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z" fill="currentColor"/></svg>',
+    onClick: (props) => {
+      console.log('运行代码:', props.code)
+      alert(`运行 ${props.language} 代码`)
+    },
+    // 仅在 JavaScript/TypeScript 代码块显示
+    show: (props) => ['javascript', 'typescript', 'js', 'ts'].includes(props.language),
+  },
+  {
+    key: 'format',
+    title: '格式化代码',
+    icon: '✨',
+    onClick: (props) => {
+      // 格式化代码逻辑
+      console.log('格式化代码:', props.code)
+    },
+  },
+]
+</script>
+
+<template>
+  <MarkdownRenderer :markdown="content" :code-block-actions="codeBlockActions" />
+</template>
+```
+
+### 高级示例
+
+#### 1. 使用 Vue 组件作为图标
+
+```vue
+<script setup lang="ts">
+import { h } from 'vue'
+import PlayIcon from './components/PlayIcon.vue'
+
+const codeBlockActions = [
+  {
+    key: 'run',
+    icon: PlayIcon,  // 使用 Vue 组件
+    title: '运行代码',
+    onClick: (props) => {
+      // 执行代码
+    },
+  },
+]
+</script>
+```
+
+#### 2. 使用图标渲染函数
+
+```vue
+<script setup lang="ts">
+import { h } from 'vue'
+
+const codeBlockActions = [
+  {
+    key: 'custom',
+    // 图标渲染函数，可以访问 props
+    icon: (props) => h('span', {
+      style: { color: props.copied ? 'green' : 'currentColor' }
+    }, '📋'),
+    title: '自定义操作',
+    onClick: (props) => {
+      props.copy(props.code)
+    },
+  },
+]
+</script>
+```
+
+#### 3. 条件显示和动态样式
+
+```vue
+<script setup lang="ts">
+const codeBlockActions = [
+  {
+    key: 'save',
+    icon: '💾',
+    title: '保存代码',
+    // 只在代码长度超过 100 时显示
+    show: (props) => props.code.length > 100,
+    // 动态样式
+    style: {
+      color: '#42b883',
+      fontWeight: 'bold',
+    },
+    onClick: async (props) => {
+      // 保存代码到服务器
+      await saveCode(props.code, props.language)
+    },
+  },
+  {
+    key: 'expand',
+    icon: '⬇️',
+    title: '展开/折叠',
+    onClick: (props) => {
+      props.toggleCollapse()
+    },
+  },
+]
+</script>
+```
+
+#### 4. 集成第三方工具
+
+```vue
+<script setup lang="ts">
+import { Notify } from 'quasar'
+
+const codeBlockActions = [
+  {
+    key: 'copy-enhanced',
+    icon: '📋',
+    title: '复制代码',
+    onClick: (props) => {
+      props.copy(props.code)
+      // 显示通知
+      Notify.create({
+        message: '代码已复制到剪贴板',
+        color: 'positive',
+        icon: 'check',
+      })
+    },
+  },
+]
+</script>
+```
+
+## 📊 Mermaid 图表自定义操作
+
+通过 `mermaidActions` 属性，可以为 Mermaid 图表添加自定义操作按钮，实现图表编辑、导出、分享等功能。
+
+### MermaidAction 类型定义
+
+```typescript
+interface MermaidAction {
+  key: string;                                          // 操作的唯一标识
+  icon?: Component | FunctionalComponent | string | MermaidIconRenderFn;  // 图标
+  title?: string;                                       // 悬停提示文字
+  onClick?: (props: MermaidSlotProps) => void;         // 点击回调函数
+  disabled?: boolean;                                   // 是否禁用
+  class?: string;                                       // 自定义 CSS 类名
+  style?: Record<string, string>;                       // 自定义样式
+  show?: (props: MermaidSlotProps) => boolean;         // 控制按钮显示逻辑
+}
+
+interface MermaidSlotProps {
+  showSourceCode: boolean;      // 是否显示源码
+  svg: string;                  // SVG 内容
+  rawContent: string;           // 原始 Mermaid 代码
+  isLoading: boolean;           // 是否加载中
+  copied: boolean;              // 是否已复制
+  zoomIn: () => void;           // 放大
+  zoomOut: () => void;          // 缩小
+  reset: () => void;            // 重置缩放
+  fullscreen: () => void;       // 全屏显示
+  toggleCode: () => void;       // 切换源码显示
+  copyCode: () => Promise<void>; // 复制源码
+  download: () => void;         // 下载 SVG
+  raw: any;                     // 原始数据对象
+}
+```
+
+### 基础用法
+
+```vue
+<script setup lang="ts">
+import { MarkdownRenderer } from 'x-markdown-vue'
+import type { MermaidAction } from 'x-markdown-vue'
+
+const mermaidActions: MermaidAction[] = [
+  {
+    key: 'edit',
+    title: '编辑图表',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2"/></svg>',
+    onClick: (props) => {
+      // 打开编辑器，传入原始内容
+      openMermaidEditor(props.rawContent)
+    },
+    // 仅在非源码模式下显示
+    show: (props) => !props.showSourceCode,
+  },
+  {
+    key: 'share',
+    title: '分享图表',
+    icon: '🔗',
+    onClick: async (props) => {
+      // 生成分享链接
+      const shareUrl = await generateShareUrl(props.rawContent)
+      navigator.clipboard.writeText(shareUrl)
+      alert('分享链接已复制')
+    },
+  },
+]
+</script>
+
+<template>
+  <MarkdownRenderer :markdown="content" :mermaid-actions="mermaidActions" />
+</template>
+```
+
+### 高级示例
+
+#### 1. 使用内置方法
+
+```vue
+<script setup lang="ts">
+const mermaidActions = [
+  {
+    key: 'zoom-in',
+    icon: '🔍+',
+    title: '放大',
+    onClick: (props) => props.zoomIn(),
+  },
+  {
+    key: 'zoom-out',
+    icon: '🔍-',
+    title: '缩小',
+    onClick: (props) => props.zoomOut(),
+  },
+  {
+    key: 'reset',
+    icon: '↺',
+    title: '重置',
+    onClick: (props) => props.reset(),
+  },
+  {
+    key: 'fullscreen',
+    icon: '⛶',
+    title: '全屏',
+    onClick: (props) => props.fullscreen(),
+  },
+  {
+    key: 'download-svg',
+    icon: '💾',
+    title: '下载 SVG',
+    onClick: (props) => props.download(),
+  },
+]
+</script>
+```
+
+#### 2. 导出为 PNG
+
+```vue
+<script setup lang="ts">
+const mermaidActions = [
+  {
+    key: 'export-png',
+    icon: '🖼️',
+    title: '导出为 PNG',
+    onClick: async (props) => {
+      // 将 SVG 转换为 PNG
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const img = new Image()
+
+      img.onload = () => {
+        canvas.width = img.width
+        canvas.height = img.height
+        ctx?.drawImage(img, 0, 0)
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'mermaid-chart.png'
+            a.click()
+            URL.revokeObjectURL(url)
+          }
+        })
+      }
+
+      img.src = 'data:image/svg+xml;base64,' + btoa(props.svg)
+    },
+  },
+]
+</script>
+```
+
+#### 3. 在线编辑器集成
+
+```vue
+<script setup lang="ts">
+const mermaidActions = [
+  {
+    key: 'edit-online',
+    icon: '✏️',
+    title: '在 Mermaid Live Editor 中编辑',
+    onClick: (props) => {
+      // 编码 Mermaid 内容并打开在线编辑器
+      const encoded = btoa(encodeURIComponent(props.rawContent))
+      window.open(`https://mermaid.live/edit#base64:${encoded}`, '_blank')
+    },
+  },
+]
+</script>
+```
+
+#### 4. 条件显示和状态管理
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const favorites = ref<Set<string>>(new Set())
+
+const mermaidActions = [
+  {
+    key: 'favorite',
+    icon: (props) => favorites.value.has(props.rawContent) ? '❤️' : '🤍',
+    title: '收藏',
+    onClick: (props) => {
+      if (favorites.value.has(props.rawContent)) {
+        favorites.value.delete(props.rawContent)
+      } else {
+        favorites.value.add(props.rawContent)
+      }
+    },
+  },
+  {
+    key: 'copy',
+    icon: (props) => props.copied ? '✅' : '📋',
+    title: '复制源码',
+    onClick: async (props) => {
+      await props.copyCode()
+    },
+  },
+]
+</script>
+```
+
+#### 5. 完整示例：图表管理工具栏
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const isFullscreen = ref(false)
+
+const mermaidActions = [
+  // 视图控制组
+  {
+    key: 'toggle-code',
+    icon: (props) => props.showSourceCode ? '👁️' : '📝',
+    title: '切换源码',
+    onClick: (props) => props.toggleCode(),
+  },
+  {
+    key: 'fullscreen',
+    icon: isFullscreen.value ? '⛶' : '⛶',
+    title: '全屏',
+    onClick: (props) => {
+      props.fullscreen()
+      isFullscreen.value = !isFullscreen.value
+    },
+  },
+
+  // 缩放控制组
+  {
+    key: 'zoom-in',
+    icon: '🔍+',
+    title: '放大',
+    onClick: (props) => props.zoomIn(),
+  },
+  {
+    key: 'zoom-out',
+    icon: '🔍-',
+    title: '缩小',
+    onClick: (props) => props.zoomOut(),
+  },
+  {
+    key: 'reset-zoom',
+    icon: '↺',
+    title: '重置缩放',
+    onClick: (props) => props.reset(),
+  },
+
+  // 导出操作组
+  {
+    key: 'download',
+    icon: '💾',
+    title: '下载 SVG',
+    onClick: (props) => props.download(),
+    show: (props) => !props.isLoading,
+  },
+  {
+    key: 'copy',
+    icon: (props) => props.copied ? '✅' : '📋',
+    title: '复制源码',
+    onClick: async (props) => await props.copyCode(),
+  },
+
+  // 编辑操作
+  {
+    key: 'edit',
+    icon: '✏️',
+    title: '编辑',
+    onClick: (props) => {
+      console.log('编辑 Mermaid 图表:', props.rawContent)
+    },
+    show: (props) => !props.showSourceCode && !props.isLoading,
+  },
+]
+</script>
+
+<template>
+  <MarkdownRenderer
+    :markdown="content"
+    :mermaid-actions="mermaidActions"
+  />
+</template>
+```
+
+### 样式自定义
+
+可以通过 `class` 和 `style` 属性自定义按钮样式：
+
+```vue
+<script setup lang="ts">
+const mermaidActions = [
+  {
+    key: 'custom-style',
+    icon: '⭐',
+    title: '自定义样式按钮',
+    class: 'my-custom-btn',
+    style: {
+      color: '#42b883',
+      backgroundColor: '#e8f5f0',
+      padding: '8px 12px',
+      borderRadius: '6px',
+      fontWeight: 'bold',
+    },
+    onClick: () => {
+      console.log('点击了自定义样式按钮')
+    },
+  },
+]
+</script>
+
+<style>
+.my-custom-btn:hover {
+  background-color: #d1ede3 !important;
+  transform: scale(1.05);
+  transition: all 0.2s;
+}
+</style>
 ```
 
 ## 🌟 功能演示
@@ -559,78 +975,6 @@ erDiagram
         string name
         float price
     }
-```
-
-### 完整的配置示例
-
-```vue
-<template>
-  <MarkdownRenderer
-    :markdown="content"
-    :is-dark="isDark"
-    :enable-animate="true"
-    :code-x-props="{
-      codeLightTheme: 'github-light',
-      codeDarkTheme: 'github-dark',
-      showCodeBlockHeader: true,
-      codeMaxHeight: '400px',
-      enableAnimate: true,
-      codeBlockActions: [
-        {
-          key: 'run',
-          title: '运行代码',
-          icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7L8 5z" fill="currentColor"/></svg>',
-          onClick: (props) => {
-            console.log('运行代码:', props.code)
-            alert('运行代码功能（示例）')
-          },
-          show: (props) => ['javascript', 'typescript', 'js', 'ts'].includes(props.language)
-        }
-      ],
-      mermaidActions: [
-        {
-          key: 'edit',
-          title: '编辑图表',
-          icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-          onClick: (props) => {
-            console.log('编辑图表:', props.rawContent)
-            alert('编辑图表功能（示例）')
-          }
-        }
-      ]
-    }"
-    :code-x-render="codeXRender"
-  />
-</template>
-
-<script setup>
-// 自定义渲染器配置
-const codeXRender = {
-  json: ({ content, isDark }) => {
-    try {
-      const json = JSON.parse(content)
-      return `<div class="json-viewer" style="background: ${isDark ? '#1e1e1e' : '#f5f5f5'}; padding: 12px; border-radius: 4px; font-family: monospace; white-space: pre-wrap;">${JSON.stringify(json, null, 2)}</div>`
-    } catch {
-      return `<div style="color: red;">JSON 解析错误</div>`
-    }
-  },
-  echarts: ({ content, isDark }) => {
-    try {
-      const config = JSON.parse(content)
-      const chartId = 'chart-' + Math.random().toString(36).substr(2, 9)
-      return `<div id="${chartId}" style="height: 300px;"></div>
-      <script>
-        setTimeout(() => {
-          const chart = echarts.init(document.getElementById('${chartId}'), '${isDark ? 'dark' : 'default'}')
-          chart.setOption(${JSON.stringify(config)})
-        }, 100)
-      <\/script>`
-    } catch {
-      return `<div style="color: red;">ECharts 配置错误</div>`
-    }
-  }
-}
-</script>
 ```
 
 ### 表格
