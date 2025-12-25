@@ -55,7 +55,23 @@ yarn add x-markdown-vue
 pnpm add vue@^3.3.0
 ```
 
-如果需要 LaTeX 支持，还需要引入 KaTeX 样式:
+#### 可选依赖
+
+X-Markdown 采用按需加载策略，以下功能需要安装对应的依赖包：
+
+**代码高亮功能**（如果需要使用代码块语法高亮）:
+
+```bash
+pnpm add shiki shiki-stream
+```
+
+**Mermaid 图表功能**（如果需要渲染 Mermaid 图表）:
+
+```bash
+pnpm add mermaid
+```
+
+**LaTeX 数学公式**（如果需要渲染数学公式，还需要引入 KaTeX 样式）:
 
 ```ts
 import 'katex/dist/katex.min.css'
