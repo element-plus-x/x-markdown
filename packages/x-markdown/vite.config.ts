@@ -16,12 +16,13 @@ export default defineConfig({
       fileName: 'index',
     },
     rollupOptions: {
-      external: ['vue', 'element-plus','mermaid'],
+      external: ['vue', 'element-plus', 'mermaid', 'shiki', 'shiki-stream', '@shikijs/core'],
       output: {
         globals: {
           vue: 'Vue',
           'element-plus': 'ElementPlus',
           mermaid: 'mermaid',
+          shiki: 'shiki',
         },
       },
     },
