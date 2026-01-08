@@ -1,5 +1,6 @@
 export * from './useComponents'
 export * from './useHighlight'
+export { useHighlight as useHighlightCached } from './useHighlightCached'
 export * from './useMarkdown'
 export * from './useMermaid'
 export * from './usePlugins'

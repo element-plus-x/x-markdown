@@ -3,18 +3,29 @@
   "version": "0.0.1-beta.107",
   "description": "A markdown component library for Vue",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
+  "main": "./dist/x-markdown.cjs",
+  "module": "./dist/x-markdown.es.js",
   "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/types/index.d.ts"
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/x-markdown.es.js"
+      },
+      "require": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/x-markdown.cjs"
+      }
     },
     "./style": "./dist/style.css"
   },
   "files": [
     "dist"
+  ],
+  "sideEffects": [
+    "*.css",
+    "*.scss",
+    "*.vue"
   ],
   "scripts": {
     "dev": "vite",

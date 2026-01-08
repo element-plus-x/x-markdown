@@ -1,7 +1,12 @@
+/**
+ * 优化版的 useHighlight Hook
+ *
+ * 使用 Shiki 缓存机制，避免重复初始化开销
+ */
+
 import { ref, watch, onUnmounted, computed, isRef, toValue, type Ref, type MaybeRef, type CSSProperties } from 'vue'
 import type { BuiltinTheme, ThemedToken } from 'shiki'
 import { ShikiStreamTokenizer, ShikiStreamTokenizerOptions } from 'shiki-stream'
-import type { getSingletonHighlighter } from 'shiki'
 import { getHighlighterCached } from '../utils/shiki-cache'
 
 // 流式高亮结果接口
@@ -23,7 +28,7 @@ interface UseHighlightOptions {
   useCache?: boolean
 }
 
-let shikiModulePromise: Promise<typeof import('shiki') | null> | null = null
+let shikiModulePromise: Promise<typeof import('shiki')> | null = null
 
 const loadShiki = () => {
   if (!shikiModulePromise) {
@@ -94,8 +99,8 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
   let tokenizer: ShikiStreamTokenizer | null = null
   // 上一次处理的文本（用于增量更新）
   let previousText = ''
-  // Shiki 高亮器实例
-  let highlighter: Awaited<ReturnType<typeof getSingletonHighlighter>> | null = null
+  // Shiki 高亮器实例（使用缓存）
+  let highlighter: Awaited<ReturnType<typeof import('shiki').getSingletonHighlighter>> | null = null
   // 当前实际使用的语言（可能是 fallback 后的 plaintext）
   let currentUsedLang = ''
   // 上次请求的语言（用于检测语言变化后是否需要重试）
@@ -165,7 +170,7 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     }
   }
 
-  // 初始化高亮器
+  // 初始化高亮器（使用缓存）
   const initHighlighter = async () => {
     isLoading.value = true
     error.value = null
@@ -184,28 +189,17 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
         highlighter = await getHighlighterCached(currentTheme, [currentLang])
         console.log(`[x-markdown] Using cached highlighter for theme: ${currentTheme}`)
       } else {
-        // 不使用缓存，创建新实例
+        // 不使用缓存，创建新实例（原逻辑）
         highlighter = await mod.getSingletonHighlighter({
           langs: [],
           themes: [currentTheme],
         })
+        await highlighter.loadLanguage(currentLang as any)
       }
 
       // 记录本次请求的语言
       lastRequestedLang = currentLang
-
-      // 尝试加载指定语言，如果失败则回退到 plaintext
-      try {
-        if (!useCache) {
-          // 只有非缓存模式才需要手动加载语言
-          await highlighter.loadLanguage(currentLang as any)
-        }
-        currentUsedLang = currentLang
-      } catch {
-        console.warn(`Failed to load language: ${currentLang}, falling back to plaintext`)
-        currentLang = 'plaintext'
-        currentUsedLang = 'plaintext'
-      }
+      currentUsedLang = currentLang
 
       // 创建流式 tokenizer
       tokenizer = new ShikiStreamTokenizer({
