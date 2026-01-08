@@ -7,7 +7,6 @@
 
 // ========== 核心组件 ==========
 export { VueMarkdown, VueMarkdownAsync } from './core/components'
-export type { VueMarkdownProps, VueMarkdownAsyncProps } from './core/components'
 
 // ========== 高级渲染器（包含样式和容器） ==========
 export { MarkdownRenderer, MarkdownRendererAsync } from './MarkdownRender'
@@ -19,7 +18,7 @@ export { createProcessor, useMarkdownProcessor } from './core/useProcessor'
 // ========== Vue Hooks ==========
 export { useComponents } from './hooks/useComponents'
 export { useHighlight } from './hooks/useHighlight'
-export { useMarkdown } from './hooks/useMarkdown'
+export { useProcessMarkdown, preprocessLaTeX } from './hooks/useMarkdown'
 export { useMermaid } from './hooks/useMermaid'
 export { usePlugins } from './hooks/usePlugins'
 export { useTheme } from './hooks/useTheme'
@@ -33,6 +32,5 @@ export type * from './core/types'
 export type { CodeLineProps } from './components/CodeLine/types'
 export type { CodeBlockProps } from './components/CodeBlock/types'
 export type { MermaidProps } from './components/Mermaid/types'
-export type { CodeXProps } from './components/CodeX/types'
 export type { MarkdownContext } from './MarkdownRender/types'
-export type { CustomAttrs, SanitizeOptions, Schema } from './core/types'
+export type { CustomAttrs, SanitizeOptions } from './core/types'

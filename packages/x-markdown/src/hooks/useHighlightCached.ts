@@ -7,7 +7,7 @@
 import { ref, watch, onUnmounted, computed, isRef, toValue, type Ref, type MaybeRef, type CSSProperties } from 'vue'
 import type { BuiltinTheme, ThemedToken } from 'shiki'
 import { ShikiStreamTokenizer, ShikiStreamTokenizerOptions } from 'shiki-stream'
-import { getHighlighterCached } from '../utils/shiki-cache'
+import { getHighlighterCached, type CachedHighlighter } from '../utils/shiki-cache'
 
 // 流式高亮结果接口
 interface StreamingHighlightResult {
@@ -26,15 +26,6 @@ interface UseHighlightOptions {
    * 禁用缓存时，每次都会创建新的 highlighter 实例
    */
   useCache?: boolean
-}
-
-let shikiModulePromise: Promise<typeof import('shiki')> | null = null
-
-const loadShiki = () => {
-  if (!shikiModulePromise) {
-    shikiModulePromise = import('shiki').catch(() => null)
-  }
-  return shikiModulePromise
 }
 
 const tokensToLineTokens = (tokens: ThemedToken[]): ThemedToken[][] => {
@@ -100,14 +91,7 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
   // 上一次处理的文本（用于增量更新）
   let previousText = ''
   // Shiki 高亮器实例（使用缓存）
-  let highlighter: Awaited<ReturnType<typeof import('shiki').getSingletonHighlighter>> | null = null
-  // 当前实际使用的语言（可能是 fallback 后的 plaintext）
-  let currentUsedLang = ''
-  // 上次请求的语言（用于检测语言变化后是否需要重试）
-  let lastRequestedLang = ''
-
-  // 是否使用缓存（默认 true）
-  const useCache = options.useCache !== false
+  let highlighter: CachedHighlighter | null = null
 
   // 计算当前有效主题
   const effectiveTheme = computed(() => {
@@ -179,27 +163,13 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     const currentTheme = effectiveTheme.value
 
     try {
-      const mod = await loadShiki()
-      if (!mod) {
-        throw new Error('Failed to load shiki module')
-      }
-
       // 使用缓存的 highlighter
-      if (useCache) {
-        highlighter = await getHighlighterCached(currentTheme, [currentLang])
-        console.log(`[x-markdown] Using cached highlighter for theme: ${currentTheme}`)
-      } else {
-        // 不使用缓存，创建新实例（原逻辑）
-        highlighter = await mod.getSingletonHighlighter({
-          langs: [],
-          themes: [currentTheme],
-        })
-        await highlighter.loadLanguage(currentLang as any)
-      }
+      highlighter = await getHighlighterCached(currentTheme, [currentLang])
 
-      // 记录本次请求的语言
-      lastRequestedLang = currentLang
-      currentUsedLang = currentLang
+      // 检查 highlighter 是否可用
+      if (!highlighter) {
+        throw new Error('Shiki highlighter is not available')
+      }
 
       // 创建流式 tokenizer
       tokenizer = new ShikiStreamTokenizer({
@@ -239,29 +209,9 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
   // 监听语言、主题变化，重新初始化
   watch(
     () => [effectiveLanguage.value, effectiveTheme.value],
-    async ([newLang]) => {
-      const requestedLang = newLang as string
-
-      // 如果语言变化了，且当前使用的是 plaintext（fallback），尝试重新加载新语言
-      if (
-        highlighter &&
-        currentUsedLang === 'plaintext' &&
-        requestedLang !== lastRequestedLang &&
-        requestedLang !== 'plaintext'
-      ) {
-        try {
-          await highlighter.loadLanguage(requestedLang as any)
-          // 语言加载成功，重新初始化以使用正确的语言
-          console.log(`Language ${requestedLang} loaded successfully, re-highlighting`)
-          initHighlighter()
-          return
-        } catch {
-          // 新语言仍然加载失败，保持 plaintext
-          lastRequestedLang = requestedLang
-          return
-        }
-      }
-
+    async () => {
+      // 语言或主题变化时，直接重新初始化
+      // getHighlighter() 会自动处理新语言（通过重新创建实例）
       initHighlighter()
     },
     { immediate: true },
@@ -269,26 +219,6 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
 
   // 监听文本变化，增量更新高亮
   watch(text, async (newText) => {
-    // 检查语言是否已经变得有效（流式输出中语言可能从 typ 变成 typescript）
-    const requestedLang = effectiveLanguage.value
-    if (
-      highlighter &&
-      currentUsedLang === 'plaintext' &&
-      requestedLang !== lastRequestedLang &&
-      requestedLang !== 'plaintext'
-    ) {
-      try {
-        await highlighter.loadLanguage(requestedLang as any)
-        // 语言加载成功，重新初始化
-        console.log(`Language ${requestedLang} now available, re-highlighting`)
-        await initHighlighter()
-        return
-      } catch {
-        // 语言仍然无效，继续使用 plaintext
-        lastRequestedLang = requestedLang
-      }
-    }
-
     if (tokenizer) {
       updateTokens(newText)
     }

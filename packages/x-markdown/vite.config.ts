@@ -22,9 +22,13 @@ export default defineConfig({
         'vue',
         'element-plus',
         'mermaid',
-        'shiki',
-        'shiki-stream',
-        '@shikijs/core',
+        /^shiki($|\/|\\)/,
+        /^shiki\/core/,
+        /^shiki\/engine/,
+        /^shiki\/themes/,
+        /^shiki\/langs/,
+        /^@shikijs\/.*/,
+        'shiki-stream', // externalize shiki-stream only
         // unified 生态系统
         'unified',
         'remark',
@@ -63,8 +67,6 @@ export default defineConfig({
         exports: 'named', // 使用命名导出，优化 tree-shaking
         // 手动代码分割
         manualChunks: undefined, // 库模式不需要代码分割
-        // 生成 sourcemap
-        sourcemap: true,
         // 内联动态导入
         inlineDynamicImports: true,
       },
@@ -96,6 +98,8 @@ export default defineConfig({
     // 报告压缩后的文件大小
     reportCompressedSize: true,
     //chunkSizeWarningLimit: 500,
+    // 生成 sourcemap
+    sourcemap: true,
   },
   // 优化依赖预构建
   optimizeDeps: {

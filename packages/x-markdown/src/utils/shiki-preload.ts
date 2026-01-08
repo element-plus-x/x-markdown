@@ -141,7 +141,8 @@ export function getPreloadStatus() {
  * 检查指定主题是否已预加载
  */
 export function isThemePreloaded(theme: BuiltinTheme): boolean {
-  return shikiCache.has(theme)
+  // 单例模式下，检查主题是否在已加载列表中
+  return shikiCache.cachedThemes.includes(theme)
 }
 
 /**

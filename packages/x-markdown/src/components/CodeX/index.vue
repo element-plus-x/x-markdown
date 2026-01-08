@@ -1,11 +1,12 @@
 <script lang="ts">
-import { defineComponent, h, type PropType } from 'vue'
+import { defineComponent, h, type PropType, defineAsyncComponent } from 'vue'
 import type { BuiltinTheme } from 'shiki'
 import type { CodeBlockAction } from '../CodeBlock/types'
 import type { MermaidAction } from '../Mermaid/types'
 import CodeBlock from '../CodeBlock/index.vue'
 import CodeLine from '../CodeLine/index.vue'
-import Mermaid from '../Mermaid/index.vue'
+// Mermaid 组件改为动态导入，实现按需加载
+const Mermaid = defineAsyncComponent(() => import('../Mermaid/index.vue'))
 
 export default defineComponent({
   props: {
