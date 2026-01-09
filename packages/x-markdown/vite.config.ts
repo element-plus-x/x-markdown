@@ -21,6 +21,21 @@ export default defineConfig({
           shiki: 'Shiki',
           mermaid: 'Mermaid',
         },
+        // 优化输出
+        preserveModules: false, // 不保留模块结构，生成单一 bundle
+        preserveModulesRoot: resolve(__dirname, 'src'),
+        // 启用 Tree Shaking
+        exports: 'named', // 使用命名导出，优化 tree-shaking
+        // 手动代码分割
+        manualChunks: undefined, // 库模式不需要代码分割
+        // 保留动态导入以支持代码分割 (Mermaid 按需加载)
+        inlineDynamicImports: false,
+      },
+      // Tree Shaking 配置
+      treeshake: {
+        moduleSideEffects: false, // 假设所有模块都是纯净的（无副作用）
+        propertyReadSideEffects: true, // 优化属性读取
+        unknownGlobalSideEffects: false, // 假设全局变量无副作用
       },
     },
     cssCodeSplit: false,

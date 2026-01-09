@@ -157,13 +157,13 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
 
       lastRequestedLang = currentLang
 
+      // 统一的语言加载逻辑：先确定最终使用的语言
       const loaded = await tryLoadLanguage(currentTheme, currentLang)
-      if (loaded) {
-        currentUsedLang = currentLang
-      } else {
-        currentLang = 'plaintext'
-        currentUsedLang = 'plaintext'
-      }
+      const finalLang = loaded ? currentLang : 'plaintext'
+
+      // 统一设置语言状态
+      currentLang = finalLang
+      currentUsedLang = finalLang
 
       tokenizer = new ShikiStreamTokenizer({
         highlighter: highlighter as unknown as ShikiStreamTokenizerOptions['highlighter'],
@@ -201,13 +201,21 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     async ([newLang]) => {
       const requestedLang = newLang as string
 
+      // 如果已经是正确的语言，不需要重新初始化
+      if (currentUsedLang === requestedLang) {
+        return
+      }
+
       if (highlighter && shouldRetryLanguage(currentUsedLang, requestedLang, lastRequestedLang)) {
+        // 先更新 lastRequestedLang，避免重复尝试
+        lastRequestedLang = requestedLang
+
         const loaded = await tryLoadLanguage(effectiveTheme.value, requestedLang)
         if (loaded) {
+          // 语言加载成功，重新初始化
           initHighlighter()
-          return
         }
-        lastRequestedLang = requestedLang
+        return
       }
 
       initHighlighter()
@@ -217,13 +225,24 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
 
   watch(text, async (newText) => {
     const requestedLang = effectiveLanguage.value
+
+    // 如果已经是正确的语言，不需要重试
+    if (currentUsedLang === requestedLang) {
+      if (tokenizer) {
+        updateTokens(newText)
+      }
+      return
+    }
+
     if (highlighter && shouldRetryLanguage(currentUsedLang, requestedLang, lastRequestedLang)) {
+      // 先更新 lastRequestedLang，避免重复尝试
+      lastRequestedLang = requestedLang
+
       const loaded = await tryLoadLanguage(effectiveTheme.value, requestedLang)
       if (loaded) {
         await initHighlighter()
         return
       }
-      lastRequestedLang = requestedLang
     }
 
     if (tokenizer) {

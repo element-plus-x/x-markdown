@@ -44,16 +44,25 @@ export async function preloadShikiThemes(
   try {
     const sortedThemes = [...themes].sort((a, b) => (a.priority || 0) - (b.priority || 0))
 
-    const loadPromises = sortedThemes.map(async (config, index) => {
+    // 使用原子计数器来跟踪实际完成的数量，避免并发导致的进度混乱
+    let completed = 0
+
+    const loadPromises = sortedThemes.map(async (config) => {
       try {
         await preloadTheme(config.theme)
 
-        preloadStatus.progress = index + 1
+        // 原子地增加已完成计数
+        completed++
+        preloadStatus.progress = completed
         options?.onProgress?.(preloadStatus.progress, preloadStatus.total)
       } catch (error) {
         const err = error as Error
         preloadStatus.errors.push(err)
         options?.onError?.(err)
+
+        // 即使失败也增加计数，确保进度能正确推进
+        completed++
+        preloadStatus.progress = completed
       }
     })
 
