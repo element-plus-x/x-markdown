@@ -9,9 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@shikijs/core": "^3.21.0",
     "echarts": "^6.0.0",
     "github-markdown-css": "^5.8.1",
     "katex": "^0.16.25",
+    "shiki": "^3.17.1",
     "vue": "^3.3.0",
     "x-markdown-vue": "workspace:*"
   },
