@@ -134,6 +134,9 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
   const error = ref<unknown>(null)
   const isLoading = ref(false)
 
+  // 卸载标志，防止已卸载组件继续执行队列任务
+  let isUnmounted = false
+
   const getRenderContainer = () => {
     const containerOption = optionsRef.value.container
     if (containerOption) {
@@ -157,6 +160,9 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
 
       // 将实际渲染任务添加到队列
       addToRenderQueue(async () => {
+        // 如果组件已卸载，跳过渲染
+        if (isUnmounted) return
+
         try {
           const mermaidInstance = await loadMermaid()
           if (!mermaidInstance) {
@@ -199,12 +205,12 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
         }
       })
     },
-    300,
+    100,
     { leading: false, trailing: true },
   )
 
   watch(
-    () => [typeof content === 'string' ? content : content.value, mermaidConfig.value],
+    [() => (typeof content === 'string' ? content : content.value), () => mermaidConfig.value],
     () => {
       throttledRender()
     },
@@ -212,12 +218,233 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
   )
 
   onUnmounted(() => {
-    throttledRender.cancel()
+    isUnmounted = true
   })
 
   return {
     data,
     error,
     isLoading,
+  }
+}
+
+export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomControls {
+  const { container } = options
+
+  const scale = ref(1)
+  const posX = ref(0)
+  const posY = ref(0)
+  const isDragging = ref(false)
+
+  let removeEvents: (() => void) | null = null
+
+  const getSvg = () => container.value?.querySelector('.syntax-mermaid__content svg') as HTMLElement
+
+  const updateTransform = (svg: HTMLElement) => {
+    svg.style.transformOrigin = 'center center'
+    svg.style.transform = `translate(${posX.value}px, ${posY.value}px) scale(${scale.value})`
+  }
+
+  const resetState = () => {
+    scale.value = 1
+    posX.value = 0
+    posY.value = 0
+    isDragging.value = false
+  }
+
+  const addInteractionEvents = (containerEl: HTMLElement) => {
+    let startX = 0
+    let startY = 0
+    let isInteractingWithMermaid = false
+
+    const onStart = (clientX: number, clientY: number) => {
+      isDragging.value = true
+      startX = clientX - posX.value
+      startY = clientY - posY.value
+      document.body.style.userSelect = 'none'
+    }
+
+    const onMove = (clientX: number, clientY: number) => {
+      if (isDragging.value && isInteractingWithMermaid) {
+        posX.value = clientX - startX
+        posY.value = clientY - startY
+        const svg = getSvg()
+        if (svg) {
+          updateTransform(svg)
+        }
+      }
+    }
+
+    const onEnd = () => {
+      isDragging.value = false
+      isInteractingWithMermaid = false
+      document.body.style.userSelect = ''
+    }
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return
+      // 只在点击Mermaid容器时才阻止默认行为
+      if (e.target === containerEl || containerEl.contains(e.target as Node)) {
+        e.preventDefault()
+        isInteractingWithMermaid = true
+        onStart(e.clientX, e.clientY)
+      }
+    }
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (isInteractingWithMermaid) {
+        onMove(e.clientX, e.clientY)
+      }
+    }
+
+    const handleWheelZoom = (e: WheelEvent) => {
+      const svg = getSvg()
+      if (!svg) return
+
+      const containerRect = containerEl.getBoundingClientRect()
+      const svgRect = svg.getBoundingClientRect()
+
+      const mouseX = e.clientX - containerRect.left
+      const mouseY = e.clientY - containerRect.top
+
+      const svgCenterX = svgRect.left - containerRect.left + svgRect.width / 2
+      const svgCenterY = svgRect.top - containerRect.top + svgRect.height / 2
+
+      const offsetX = (mouseX - svgCenterX - posX.value) / scale.value
+      const offsetY = (mouseY - svgCenterY - posY.value) / scale.value
+
+      const delta = e.deltaY > 0 ? -0.05 : 0.05
+      const newScale = Math.min(Math.max(scale.value + delta, 0.1), 10)
+
+      if (newScale === scale.value) return
+
+      scale.value = newScale
+
+      posX.value = mouseX - svgCenterX - offsetX * scale.value
+      posY.value = mouseY - svgCenterY - offsetY * scale.value
+
+      updateTransform(svg)
+    }
+
+    const throttledWheelZoom = throttle(handleWheelZoom, 20, { leading: true, trailing: true })
+
+    const onWheel = (e: WheelEvent) => {
+      // 只在鼠标在Mermaid容器内时才阻止滚动
+      if (e.target === containerEl || containerEl.contains(e.target as Node)) {
+        e.preventDefault()
+        throttledWheelZoom(e)
+      }
+    }
+
+    const onTouchStart = (e: TouchEvent) => {
+      // 只在触摸Mermaid容器时才处理
+      if (e.target === containerEl || containerEl.contains(e.target as Node)) {
+        if (e.touches.length === 1) {
+          e.preventDefault()
+          isInteractingWithMermaid = true
+          onStart(e.touches[0].clientX, e.touches[0].clientY)
+        }
+      }
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      // 只在触摸Mermaid容器时才处理
+      if (isInteractingWithMermaid) {
+        e.preventDefault()
+        onMove(e.touches[0].clientX, e.touches[0].clientY)
+      }
+    }
+
+    containerEl.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onEnd)
+    containerEl.addEventListener('wheel', onWheel, { passive: false })
+    containerEl.addEventListener('touchstart', onTouchStart, { passive: false })
+    // 只在Mermaid容器上监听touchmove，而不是document
+    containerEl.addEventListener('touchmove', onTouchMove, { passive: false })
+    document.addEventListener('touchend', onEnd)
+
+    return () => {
+      containerEl.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onEnd)
+      containerEl.removeEventListener('wheel', onWheel)
+      containerEl.removeEventListener('touchstart', onTouchStart)
+      containerEl.removeEventListener('touchmove', onTouchMove)
+      document.removeEventListener('touchend', onEnd)
+      document.body.style.userSelect = ''
+    }
+  }
+
+  const zoomIn = () => {
+    const svg = getSvg()
+    if (svg) {
+      scale.value = Math.min(scale.value + 0.2, 10)
+      updateTransform(svg)
+    }
+  }
+
+  const zoomOut = () => {
+    const svg = getSvg()
+    if (svg) {
+      scale.value = Math.max(scale.value - 0.2, 0.1)
+      updateTransform(svg)
+    }
+  }
+
+  const reset = () => {
+    const svg = getSvg()
+    if (svg) {
+      resetState()
+      updateTransform(svg)
+    }
+  }
+
+  const fullscreen = () => {
+    if (!container.value) return
+
+    if (document.fullscreenElement) {
+      document.exitFullscreen()
+    } else {
+      container.value.requestFullscreen?.()
+    }
+  }
+
+  const initialize = () => {
+    if (!container.value) return
+
+    resetState()
+
+    removeEvents = addInteractionEvents(container.value)
+
+    const svg = getSvg()
+    if (svg) {
+      updateTransform(svg)
+    }
+  }
+
+  const destroy = () => {
+    removeEvents?.()
+    removeEvents = null
+    resetState()
+  }
+
+  watch(
+    () => container.value,
+    () => {
+      destroy()
+      resetState()
+    },
+  )
+
+  onUnmounted(destroy)
+
+  return {
+    zoomIn,
+    zoomOut,
+    reset,
+    fullscreen,
+    destroy,
+    initialize,
   }
 }
