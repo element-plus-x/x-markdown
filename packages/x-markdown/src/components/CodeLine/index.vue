@@ -25,11 +25,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type CSSProperties } from 'vue'
+import { computed, onMounted, type CSSProperties } from 'vue'
 import type { ThemedToken } from 'shiki'
-import { getTokenStyleObject } from '@shikijs/core'
 import { useHighlight } from '../../hooks/useHighlight'
 import type { CodeLineProps } from './types'
+
+// 动态加载 getTokenStyleObject，支持优雅降级
+// 使用变量名存储模块路径，避免 Vite 静态分析
+const SHIKI_CORE_PKG = '@shikijs/core'
+
+let getTokenStyleObjectFn: any = null
+
+onMounted(async () => {
+  const mod = await (Function(`return import('${SHIKI_CORE_PKG}')`)())
+    .catch(() => {
+      // @shikijs/core 不可用时，使用空函数作为降级
+      // 此时 token.htmlStyle 应该已经被 useHighlight 填充
+      return { getTokenStyleObject: () => ({}) }
+    })
+  getTokenStyleObjectFn = mod.getTokenStyleObject
+})
 
 // 定义组件 props，支持行内代码的原始数据、主题配置和动画开关
 const props = withDefaults(defineProps<CodeLineProps>(), {
@@ -72,7 +87,18 @@ const normalizeStyleKeys = (style: Record<string, string | number>): CSSProperti
 
 // 获取 token 样式
 const getTokenStyle = (token: ThemedToken): CSSProperties => {
-  const rawStyle = token.htmlStyle || getTokenStyleObject(token)
+  // 优先使用 token.htmlStyle（降级模式下 useHighlight 会填充这个）
+  if (token.htmlStyle) {
+    return normalizeStyleKeys(token.htmlStyle)
+  }
+
+  // 如果 @shikijs/core 还没加载完成，返回空样式
+  if (!getTokenStyleObjectFn) {
+    return {}
+  }
+
+  // 使用动态加载的 getTokenStyleObject
+  const rawStyle = getTokenStyleObjectFn(token)
   return normalizeStyleKeys(rawStyle)
 }
 </script>

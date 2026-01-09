@@ -23,10 +23,6 @@ export { useMermaid } from './hooks/useMermaid'
 export { usePlugins } from './hooks/usePlugins'
 export { useTheme } from './hooks/useTheme'
 
-// ========== Shiki 缓存和预加载工具 ==========
-export { preloadDefaultShikiThemes, getPreloadStatus, isThemePreloaded, getPreloadedThemes } from './utils/shiki-preload'
-export { getHighlighterCached, preloadTheme, clearShikiCache } from './utils/shiki-cache'
-
 // ========== 类型导出 ==========
 export type * from './core/types'
 export type { CodeLineProps } from './components/CodeLine/types'

@@ -82,13 +82,46 @@ interface UseMermaidOptions {
 
 type UseMermaidOptionsInput = UseMermaidOptions | Ref<UseMermaidOptions>
 
+// 使用变量名存储模块路径，避免 Vite 静态分析
+const MERMAID_PKG = 'mermaid'
+
 // 缓存 mermaid 模块，避免重复加载
 let mermaidPromise: Promise<any> | null = null
+// 标记是否已显示过 Mermaid 提示
+let hasShownMermaidHint = false
+
+const showMermaidHint = () => {
+  if (hasShownMermaidHint) return
+  hasShownMermaidHint = true
+
+  console.log(
+    '%c[x-markdown]%c Mermaid 图表功能已降级为代码块显示',
+    'font-weight: bold; color: #9333ea;',
+    'color: #666;'
+  )
+  console.log(
+    '%c如需 Mermaid 图表渲染功能，请安装：',
+    'color: #666; font-weight: bold;'
+  )
+  console.log(
+    '%c  pnpm add mermaid',
+    'color: #9333ea; font-family: monospace;'
+  )
+  console.log(
+    '%c安装后请重启开发服务器',
+    'color: #999; font-size: 12px;'
+  )
+}
 
 async function loadMermaid() {
   if (typeof window === 'undefined') return null
   if (!mermaidPromise) {
-    mermaidPromise = import('mermaid').then((m) => m.default)
+    mermaidPromise = (Function(`return import('${MERMAID_PKG}')`)())
+      .then((m) => m.default)
+      .catch(() => {
+        showMermaidHint()
+        return null
+      })
   }
   return mermaidPromise
 }

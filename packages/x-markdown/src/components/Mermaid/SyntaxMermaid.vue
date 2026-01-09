@@ -17,6 +17,10 @@ const props = withDefaults(defineProps<SyntaxMermaidProps>(), {
   config: () => ({}),
 })
 
+const emit = defineEmits<{
+  degraded: []
+}>()
+
 const renderContainerRef = ref<HTMLElement | null>(null)
 
 const mermaidContent = computed(() => props.content)
@@ -29,9 +33,7 @@ const mermaidOptions = computed(() => ({
 const mermaidResult = useMermaid(mermaidContent, mermaidOptions)
 
 const svg = ref('')
-
 const isLoading = computed(() => mermaidResult.isLoading.value)
-
 const error = computed(() => mermaidResult.error.value)
 
 const containerRef = ref<HTMLElement | null>(null)
@@ -59,8 +61,13 @@ watch(
     if (newSvg) {
       svg.value = newSvg
       debouncedInitialize()
+
+      if (!newSvg.trim().startsWith('<svg')) {
+        emit('degraded')
+      }
     }
   },
+  { immediate: true },
 )
 
 watch(svg, (newSvg) => {

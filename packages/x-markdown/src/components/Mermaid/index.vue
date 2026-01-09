@@ -5,7 +5,7 @@ import type { VNode } from 'vue'
 import { computed, ref, h } from 'vue'
 import { useClipboard } from '@vueuse/core'
 import SyntaxMermaid from './SyntaxMermaid.vue'
-import SyntaxCodeBlock from '../CodeBlock/SyntaxCodeBlock.vue'
+import CodeBlock from '../CodeBlock/index.vue'
 
 interface MermaidProps extends MdComponent {
   isDark?: boolean
@@ -29,6 +29,11 @@ const mermaidId = computed(() => `mermaid-${props.raw?.key || 'default'}`)
 const isLoading = computed(() => syntaxMermaidRef.value?.isLoading ?? true)
 const svg = computed(() => syntaxMermaidRef.value?.svg ?? '')
 const activeTab = computed(() => (showSourceCode.value ? 'code' : 'diagram'))
+
+// 当 mermaid 不可用时，自动切换到代码视图
+function handleMermaidDegraded() {
+  showSourceCode.value = true
+}
 
 function handleZoomIn(event?: Event) {
   event?.stopPropagation()
@@ -170,7 +175,7 @@ const exposedMethods = computed(
 <template>
   <div :key="props.raw.key" class="markdown-mermaid" :class="{ 'markdown-mermaid--dark': props.isDark }">
     <Transition name="toolbar" appear>
-      <div class="toolbar-container">
+      <div v-show="!showSourceCode" class="toolbar-container">
         <slot name="mermaidHeader" v-bind="exposedMethods">
           <div class="mermaid-toolbar">
             <div class="toolbar-left">
@@ -322,15 +327,15 @@ const exposedMethods = computed(
       </div>
     </Transition>
 
-    <div v-show="showSourceCode" class="mermaid-source-code">
-      <SyntaxCodeBlock
-        :code="props.raw?.content || ''"
-        language="mermaid"
-        :light-theme="props.shikiTheme[0]"
-        :dark-theme="props.shikiTheme[1]"
-        :is-dark="props.isDark"
-      />
-    </div>
+    <CodeBlock
+      v-show="showSourceCode"
+      :code="props.raw?.content || ''"
+      language="mermaid"
+      :light-theme="props.shikiTheme[0]"
+      :dark-theme="props.shikiTheme[1]"
+      :is-dark="props.isDark"
+      :show-code-block-header="true"
+    />
 
     <SyntaxMermaid
       v-show="!showSourceCode"
@@ -339,6 +344,7 @@ const exposedMethods = computed(
       :id="mermaidId"
       :is-dark="props.isDark"
       :config="props.config"
+      @degraded="handleMermaidDegraded"
     />
   </div>
 </template>
@@ -509,15 +515,6 @@ const exposedMethods = computed(
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-}
-
-.markdown-mermaid .mermaid-source-code {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  width: 100%;
-  overflow: auto;
-  box-sizing: border-box;
 }
 
 .toolbar-enter-active,
