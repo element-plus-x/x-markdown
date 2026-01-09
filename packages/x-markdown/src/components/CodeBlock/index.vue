@@ -127,13 +127,13 @@ const toggleCollapse = () => {
 }
 
 const props = withDefaults(defineProps<CodeBlockProps>(), {
-  lightTheme: 'vitesse-light', // 默认亮色主题
-  darkTheme: 'vitesse-dark',   // 默认暗色主题
-  isDark: false,               // 默认亮色模式
-  showCodeBlockHeader: true,   // 默认显示代码块头部
-  enableAnimate: false,        // 默认不启用动画
-  codeBlockActions: undefined, // 默认无自定义操作按钮
-  stickyCodeBlockHeader: true, // 默认启用sticky
+  lightTheme: 'vitesse-light',
+  darkTheme: 'vitesse-dark',
+  isDark: false,
+  showCodeBlockHeader: true,
+  enableAnimate: false,
+  codeBlockActions: undefined,
+  stickyCodeBlockHeader: true,
 })
 
 const code = computed(() => props.code.trim())
@@ -210,14 +210,12 @@ defineExpose({
   background: rgba(255, 255, 255, 0.13);
 }
 
-/* ==================== 头部工具栏样式 ==================== */
 .x-md-code-header-wrapper--sticky {
-  background: #fff;                  /* 白色背景用于覆盖代码块背景 */
+  background: #fff;
   position: sticky;
   top: 0;
 }
 
-/* 暗色主题 Sticky 头部包裹器 */
 .x-md-code-block.x-md-code-block--dark .x-md-code-header-wrapper--sticky {
   background: #1a1a1a;
 }
@@ -231,29 +229,24 @@ defineExpose({
   color: #333;
 }
 
-/* Sticky 头部样式 */
 .x-md-code-block .x-md-code-header-wrapper--sticky .x-md-code-header{
   background: rgba(235, 235, 235);
   border-radius: 8px 8px 0 0;
 }
 
-/* 当启用 sticky header 时，移除 overflow hidden */
 .x-md-code-block:has(.x-md-code-header-wrapper--sticky) {
   overflow: visible;
 }
 
-/* 暗色主题头部 */
 .x-md-code-block.x-md-code-block--dark .x-md-code-header {
   background: rgba(0, 0, 0, 0.25);
   color: #fff;
 }
 
-/* 暗色主题Sticky头部 */
 .x-md-code-block.x-md-code-block--dark .x-md-code-header-wrapper--sticky .x-md-code-header {
   background: rgba(44, 44, 44);
 }
 
-/* 折叠收起补齐圆角 */
 .x-md-code-block .x-md-code-header-wrapper--collapsed .x-md-code-header {
     border-radius: 8px;
 }

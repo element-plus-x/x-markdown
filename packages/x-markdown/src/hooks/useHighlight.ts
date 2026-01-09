@@ -1,8 +1,5 @@
 import { ref, watch, onUnmounted, computed, isRef, toValue, type Ref, type MaybeRef, type CSSProperties } from 'vue'
 
-// ========== 本地类型定义（不依赖 shiki） ==========
-
-// Token 结构（简化版，兼容 shiki 的 ThemedToken）
 interface HighlightToken {
   content?: string
   color?: string
@@ -11,29 +8,23 @@ interface HighlightToken {
   htmlStyle?: Record<string, string>
 }
 
-// 流式高亮结果接口
 interface StreamingHighlightResult {
-  colorReplacements?: Record<string, string> // 颜色替换映射
-  lines: HighlightToken[][] // 按行分组的 token
-  preStyle?: CSSProperties // pre 元素的样式
+  colorReplacements?: Record<string, string>
+  lines: HighlightToken[][]
+  preStyle?: CSSProperties
 }
 
-// useHighlight 配置选项接口
 interface UseHighlightOptions {
-  language: MaybeRef<string> // 语言（支持响应式）
-  theme?: string | Ref<string> // 主题（支持响应式，移除 BuiltinTheme 依赖）
-  colorReplacements?: Record<string, string> // 颜色替换映射
+  language: MaybeRef<string>
+  theme?: string | Ref<string>
+  colorReplacements?: Record<string, string>
 }
 
-// ========== 动态加载模块 ==========
-
-// 使用变量名存储模块路径，避免 Vite 静态分析
 const SHIKI_PKG = 'shiki'
 const SHIKI_STREAM_PKG = 'shiki-stream'
 
 let shikiModulePromise: Promise<any | null> | null = null
 let shikiStreamModulePromise: Promise<any | null> | null = null
-// 标记是否已显示过提示
 let hasShownDependencyHint = false
 
 const showDependencyHint = () => {
@@ -80,8 +71,6 @@ const loadShikiStream = () => {
   }
   return shikiStreamModulePromise
 }
-
-// ========== 工具函数 ==========
 
 const tokensToLineTokens = (tokens: HighlightToken[]): HighlightToken[][] => {
   if (!tokens.length) return [[]]
@@ -133,41 +122,27 @@ const createPreStyle = (bg?: string, fg?: string): CSSProperties | undefined => 
   }
 }
 
-// ========== 主要 Hook ==========
-
 export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
-  // 流式高亮结果
   const streaming = ref<StreamingHighlightResult>()
-  // 加载状态
   const isLoading = ref(false)
-  // 错误状态
   const error = ref<Error | null>(null)
 
-  // 流式 tokenizer 实例（使用 any 避免类型依赖）
   let tokenizer: any | null = null
-  // 上一次处理的文本（用于增量更新）
   let previousText = ''
-  // Shiki 高亮器实例
   let highlighter: any | null = null
-  // 当前实际使用的语言（可能是 fallback 后的 plaintext）
   let currentUsedLang = ''
-  // 上次请求的语言（用于检测语言变化后是否需要重试）
   let lastRequestedLang = ''
 
-  // 计算当前有效主题
   const effectiveTheme = computed(() => {
     const theme = isRef(options.theme) ? options.theme.value : options.theme
     return theme || 'slack-dark'
   })
 
-  // 计算当前有效语言（支持响应式）
   const effectiveLanguage = computed(() => {
     return toValue(options.language) || 'text'
   })
 
-  // 计算结果：按行分组的 tokens
   const lines = computed(() => streaming.value?.lines || [[]])
-  // 计算结果：pre 元素样式
   const preStyle = computed(() => streaming.value?.preStyle)
 
   const updateTokens = async (nextText: string, forceReset = false) => {
@@ -215,7 +190,6 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     }
   }
 
-  // 初始化高亮器
   const initHighlighter = async () => {
     isLoading.value = true
     error.value = null
@@ -224,29 +198,24 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     const currentTheme = effectiveTheme.value
 
     try {
-      // 动态加载 shiki
       const mod = await loadShiki()
       if (!mod) {
-        // Shiki 不可用，降级为纯文本模式
         console.warn('[x-markdown] Shiki not available, falling back to plain text mode')
         streaming.value = {
           colorReplacements: options.colorReplacements,
-          lines: [[{ content: text.value }]], // 纯文本，无高亮
+          lines: [[{ content: text.value }]],
           preStyle: undefined,
         }
         return
       }
 
-      // 获取单例高亮器（先不加载语言）
       highlighter = await mod.getSingletonHighlighter({
         langs: [],
         themes: [currentTheme],
       })
 
-      // 记录本次请求的语言
       lastRequestedLang = currentLang
 
-      // 尝试加载指定语言，如果失败则回退到 plaintext
       try {
         await highlighter.loadLanguage(currentLang as any)
         currentUsedLang = currentLang
@@ -254,13 +223,10 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
         console.warn(`[x-markdown] Failed to load language: ${currentLang}, falling back to plaintext`)
         currentLang = 'plaintext'
         currentUsedLang = 'plaintext'
-        // plaintext 是内置的，不需要额外加载
       }
 
-      // 动态加载 shiki-stream
       const StreamMod = await loadShikiStream()
       if (!StreamMod) {
-        // shiki-stream 不可用，使用非流式高亮（降级）
         console.warn('[x-markdown] shiki-stream not available, using non-streaming mode')
         const tokens = highlighter.codeToThemedTokens(text.value, currentLang, currentTheme)
         streaming.value = {
@@ -274,7 +240,6 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
         return
       }
 
-      // 创建流式 tokenizer
       const ShikiStreamTokenizer = StreamMod.ShikiStreamTokenizer || StreamMod.default
       tokenizer = new ShikiStreamTokenizer({
         highlighter: highlighter,
@@ -282,14 +247,11 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
         theme: currentTheme,
       })
 
-      // 重置状态
       previousText = ''
 
-      // 获取主题信息，设置 pre 样式
       const themeInfo = highlighter.getTheme(currentTheme)
       const preStyleValue = createPreStyle(themeInfo?.bg, themeInfo?.fg)
 
-      // 如果有初始文本，进行初次高亮
       if (text.value) {
         await updateTokens(text.value, true)
         if (streaming.value) {
@@ -305,7 +267,6 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     } catch (err) {
       console.error('[x-markdown] Highlighter initialization failed:', err)
       error.value = err as Error
-      // 出错时降级为纯文本
       streaming.value = {
         colorReplacements: options.colorReplacements,
         lines: [[{ content: text.value }]],
@@ -316,13 +277,11 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     }
   }
 
-  // 监听语言、主题变化，重新初始化
   watch(
     () => [effectiveLanguage.value, effectiveTheme.value],
     async ([newLang]) => {
       const requestedLang = newLang as string
 
-      // 如果语言变化了，且当前使用的是 plaintext（fallback），尝试重新加载新语言
       if (
         highlighter &&
         currentUsedLang === 'plaintext' &&
@@ -331,12 +290,9 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
       ) {
         try {
           await highlighter.loadLanguage(requestedLang as any)
-          // 语言加载成功，重新初始化以使用正确的语言
-          console.log(`[x-markdown] Language ${requestedLang} loaded successfully, re-highlighting`)
           initHighlighter()
           return
         } catch {
-          // 新语言仍然加载失败，保持 plaintext
           lastRequestedLang = requestedLang
           return
         }
@@ -347,9 +303,7 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     { immediate: true },
   )
 
-  // 监听文本变化，增量更新高亮
   watch(text, async (newText) => {
-    // 检查语言是否已经变得有效（流式输出中语言可能从 typ 变成 typescript）
     const requestedLang = effectiveLanguage.value
     if (
       highlighter &&
@@ -359,12 +313,9 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     ) {
       try {
         await highlighter.loadLanguage(requestedLang as any)
-        // 语言加载成功，重新初始化
-        console.log(`[x-markdown] Language ${requestedLang} now available, re-highlighting`)
         await initHighlighter()
         return
       } catch {
-        // 语言仍然无效，继续使用 plaintext
         lastRequestedLang = requestedLang
       }
     }
@@ -372,10 +323,9 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     if (tokenizer) {
       updateTokens(newText)
     } else if (!highlighter) {
-      // Shiki 完全不可用时的降级处理
       streaming.value = {
         colorReplacements: options.colorReplacements,
-        lines: [[{ content: newText }]], // 纯文本，无高亮
+        lines: [[{ content: newText }]],
         preStyle: streaming.value?.preStyle,
       }
     }
