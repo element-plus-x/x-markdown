@@ -45,7 +45,7 @@ export function downloadSvgAsPng(svg: string): void {
             0.95,
           )
         } catch (toBlobError) {
-          console.error('toBlobError:', toBlobError)
+          console.error('Failed to convert canvas to blob:', toBlobError)
           try {
             const dataUrl = canvas.toDataURL('image/png', 0.95)
             const link = document.createElement('a')
@@ -55,21 +55,21 @@ export function downloadSvgAsPng(svg: string): void {
             link.click()
             document.body.removeChild(link)
           } catch (dataUrlError) {
-            console.error('dataUrlError:', dataUrlError)
+            console.error('Failed to convert canvas to data URL:', dataUrlError)
           }
         }
       } catch (canvasError) {
-        console.error('Canvas操作失败:', canvasError)
+        console.error('Canvas operation failed:', canvasError)
       }
     }
 
     img.onerror = (error) => {
-      console.error('Image load error:', error)
+      console.error('Failed to load image:', error)
     }
 
     img.src = svgDataUrl
   } catch (error) {
-    console.error('下载失败:', error)
+    console.error('Failed to download SVG:', error)
   }
 }
 
@@ -82,12 +82,9 @@ interface UseMermaidOptions {
 
 type UseMermaidOptionsInput = UseMermaidOptions | Ref<UseMermaidOptions>
 
-// 使用变量名存储模块路径，避免 Vite 静态分析
 const MERMAID_PKG = 'mermaid'
 
-// 缓存 mermaid 模块，避免重复加载
 let mermaidPromise: Promise<any> | null = null
-// 标记是否已显示过 Mermaid 提示
 let hasShownMermaidHint = false
 
 const showMermaidHint = () => {
@@ -126,7 +123,6 @@ async function loadMermaid() {
   return mermaidPromise
 }
 
-// 全局渲染队列，确保 mermaid 渲染不互相干扰，但尽快处理
 type RenderTask = () => Promise<void>
 const renderQueue: RenderTask[] = []
 let isProcessingQueue = false
@@ -167,7 +163,6 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
   const error = ref<unknown>(null)
   const isLoading = ref(false)
 
-  // 卸载标志，防止已卸载组件继续执行队列任务
   let isUnmounted = false
 
   const getRenderContainer = () => {
@@ -178,7 +173,6 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
     return null
   }
 
-  // 每个实例有自己的 throttle 函数
   const throttledRender = throttle(
     () => {
       const contentValue = typeof content === 'string' ? content : content.value
@@ -191,9 +185,7 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
 
       isLoading.value = true
 
-      // 将实际渲染任务添加到队列
       addToRenderQueue(async () => {
-        // 如果组件已卸载，跳过渲染
         if (isUnmounted) return
 
         try {
@@ -205,13 +197,10 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
             return
           }
 
-          // 先初始化配置
           mermaidInstance.initialize(mermaidConfig.value)
 
-          // 使用 parse 验证语法
           const isValid = await mermaidInstance.parse(contentValue.trim())
           if (!isValid) {
-            // Mermaid parse error: Invalid syntax
             data.value = ''
             error.value = new Error('Mermaid parse error: Invalid syntax')
             isLoading.value = false
@@ -221,7 +210,6 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
           const renderId = `${optionsRef.value.id || 'mermaid'}-${Math.random().toString(36).substring(2, 11)}`
           const container = getRenderContainer()
           if (!container) {
-            // Mermaid render container not found
             isLoading.value = false
             return
           }
@@ -316,7 +304,6 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
 
     const onMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return
-      // 只在点击Mermaid容器时才阻止默认行为
       if (e.target === containerEl || containerEl.contains(e.target as Node)) {
         e.preventDefault()
         isInteractingWithMermaid = true
@@ -362,7 +349,6 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     const throttledWheelZoom = throttle(handleWheelZoom, 20, { leading: true, trailing: true })
 
     const onWheel = (e: WheelEvent) => {
-      // 只在鼠标在Mermaid容器内时才阻止滚动
       if (e.target === containerEl || containerEl.contains(e.target as Node)) {
         e.preventDefault()
         throttledWheelZoom(e)
@@ -370,7 +356,6 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     }
 
     const onTouchStart = (e: TouchEvent) => {
-      // 只在触摸Mermaid容器时才处理
       if (e.target === containerEl || containerEl.contains(e.target as Node)) {
         if (e.touches.length === 1) {
           e.preventDefault()
@@ -381,7 +366,6 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     }
 
     const onTouchMove = (e: TouchEvent) => {
-      // 只在触摸Mermaid容器时才处理
       if (isInteractingWithMermaid) {
         e.preventDefault()
         onMove(e.touches[0].clientX, e.touches[0].clientY)
@@ -393,7 +377,6 @@ export function useMermaidZoom(options: UseMermaidZoomOptions): MermaidZoomContr
     document.addEventListener('mouseup', onEnd)
     containerEl.addEventListener('wheel', onWheel, { passive: false })
     containerEl.addEventListener('touchstart', onTouchStart, { passive: false })
-    // 只在Mermaid容器上监听touchmove，而不是document
     containerEl.addEventListener('touchmove', onTouchMove, { passive: false })
     document.addEventListener('touchend', onEnd)
 
