@@ -172,7 +172,7 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
           // 使用 parse 验证语法
           const isValid = await mermaidInstance.parse(contentValue.trim())
           if (!isValid) {
-            console.log('Mermaid parse error: Invalid syntax')
+            // Mermaid parse error: Invalid syntax
             data.value = ''
             error.value = new Error('Mermaid parse error: Invalid syntax')
             isLoading.value = false
@@ -182,7 +182,7 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
           const renderId = `${optionsRef.value.id || 'mermaid'}-${Math.random().toString(36).substring(2, 11)}`
           const container = getRenderContainer()
           if (!container) {
-            console.warn('Mermaid render container not found')
+            // Mermaid render container not found
             isLoading.value = false
             return
           }
@@ -192,7 +192,7 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
           error.value = null
           isLoading.value = false
         } catch (err) {
-          console.log('Mermaid render error:', err)
+          // Mermaid render error
           data.value = ''
           error.value = err
           isLoading.value = false
