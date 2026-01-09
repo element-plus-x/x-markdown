@@ -1,109 +1,31 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 
 export default defineConfig({
   plugins: [vue()],
-  resolve: {
-    alias: {
-      '@components': resolve(__dirname, 'src'),
-    },
-  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'XMarkdown',
-      fileName: (format) => `x-markdown.${format}.js`,
+      fileName: 'x-markdown',
       formats: ['es', 'cjs'],
     },
     rollupOptions: {
-      // 外部化依赖，不打包进 bundle
-      external: [
-        'vue',
-        'element-plus',
-        'mermaid',
-        /^shiki($|\/|\\)/,
-        /^shiki\/core/,
-        /^shiki\/engine/,
-        /^shiki\/themes/,
-        /^shiki\/langs/,
-        /^@shikijs\/.*/,
-        'shiki-stream', // externalize shiki-stream only
-        // unified 生态系统
-        'unified',
-        'remark',
-        'remark-parse',
-        'remark-rehype',
-        'remark-gfm',
-        'remark-breaks',
-        'remark-math',
-        'rehype',
-        'rehype-raw',
-        'rehype-sanitize',
-        'rehype-katex',
-        'mdast',
-        'hast',
-        'mdast-util-to-hast',
-        'unist-util-visit',
-        'property-information',
-        // 其他依赖
-        'dompurify',
-        'deepmerge',
-        'lodash-es',
-      ],
+      // 确保外部化处理那些你不想打包进库的依赖
+      external: ['vue', 'shiki', 'mermaid', 'shiki-stream', '@shikijs/core'],
       output: {
+        // 在 UMD 构建模式下为这些外部化的依赖提供一个全局变量
         globals: {
           vue: 'Vue',
-          'element-plus': 'ElementPlus',
-          mermaid: 'mermaid',
-          shiki: 'shiki',
-          'shiki-stream': 'ShikiStream',
-          'dompurify': 'DOMPurify',
+          shiki: 'Shiki',
+          mermaid: 'Mermaid',
         },
-        // 优化输出
-        preserveModules: false, // 不保留模块结构，生成单一 bundle
-        preserveModulesRoot: resolve(__dirname, 'src'),
-        // 启用 Tree Shaking
-        exports: 'named', // 使用命名导出，优化 tree-shaking
-        // 手动代码分割
-        manualChunks: undefined, // 库模式不需要代码分割
-        // 内联动态导入
-        inlineDynamicImports: true,
-      },
-      // Tree Shaking 配置
-      treeshake: {
-        moduleSideEffects: false, // 假设所有模块都是纯净的（无副作用）
-        propertyReadSideEffects: true, // 优化属性读取
-        unknownGlobalSideEffects: false, // 假设全局变量无副作用
       },
     },
-    // 压缩配置
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        ecma: 2020,
-        passes: 2,
-        drop_console: false,
-        drop_debugger: true,
-      },
-      format: {
-        comments: false,
-        ecma: 2020,
-      },
-    },
-    // CSS 代码分割
-    cssCodeSplit: true,
-    // 目标环境
-    target: 'es2020',
-    // 报告压缩后的文件大小
-    reportCompressedSize: true,
-    //chunkSizeWarningLimit: 500,
-    // 生成 sourcemap
+    cssCodeSplit: false,
     sourcemap: true,
-  },
-  // 优化依赖预构建
-  optimizeDeps: {
-    include: ['vue', 'element-plus'],
-    exclude: ['shiki', 'shiki-stream', 'mermaid'],
+    // 关键配置：不内联动态导入，允许 Mermaid 被分割成单独的 chunk
+    inlineDynamicImports: false,
   },
 })
