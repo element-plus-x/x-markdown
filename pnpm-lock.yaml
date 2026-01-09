@@ -30,7 +30,7 @@ importers:
         specifier: ^0.16.25
         version: 0.16.25
       shiki:
-        specifier: ^3.17.1
+        specifier: ^3.21.0
         version: 3.21.0
       vue:
         specifier: ^3.3.0
