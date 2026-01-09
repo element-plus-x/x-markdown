@@ -77,6 +77,43 @@ pnpm add mermaid
 import 'katex/dist/katex.min.css'
 ```
 
+#### 降级行为说明
+
+X-Markdown 采用优雅降级策略，即使不安装可选依赖，组件也能正常工作：
+
+- **未安装 shiki/shiki-stream**：代码块以纯文本模式显示，无语法高亮
+- **未安装 mermaid**：Mermaid 图表以代码块形式显示原始内容
+
+当可选依赖缺失时，浏览器控制台会显示**一次**友好的提示信息：
+
+```
+[x-markdown] 代码高亮功能已降级为纯文本模式
+如需语法高亮功能，请安装以下依赖：
+  pnpm add shiki shiki-stream
+安装后请重启开发服务器
+```
+
+或
+
+```
+[x-markdown] Mermaid 图表功能已降级为代码块显示
+如需 Mermaid 图表渲染功能，请安装：
+  pnpm add mermaid
+安装后请重启开发服务器
+```
+
+**注意事项**：
+
+1. 控制台提示每个功能只会显示一次，不会重复打扰
+2. 安装依赖后**必须重启开发服务器**才能生效
+3. 如果安装后仍看到降级提示，请尝试清除 Vite 缓存：
+   ```bash
+   # 删除 node_modules/.vite 缓存目录
+   rm -rf node_modules/.vite
+   # 然后重启开发服务器
+   pnpm dev
+   ```
+
 ## 🚀 快速开始
 
 ### 基础用法

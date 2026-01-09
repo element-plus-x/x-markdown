@@ -19,11 +19,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type CSSProperties } from 'vue'
-import type { ThemedToken } from 'shiki'
-import { getTokenStyleObject } from '@shikijs/core'
+import { computed, onMounted, type CSSProperties } from 'vue'
 import { useHighlight } from '../../hooks/useHighlight'
 import type { SyntaxCodeBlockProps } from './types'
+
+// 动态加载 getTokenStyleObject，支持优雅降级
+// 使用变量名存储模块路径，避免 Vite 静态分析
+const SHIKI_CORE_PKG = '@shikijs/core'
+
+let getTokenStyleObjectFn: any = null
+
+onMounted(async () => {
+  const mod = await (Function(`return import('${SHIKI_CORE_PKG}')`)())
+    .catch(() => {
+      // @shikijs/core 不可用时，使用空函数作为降级
+      // 此时 token.htmlStyle 应该已经被 useHighlight 填充
+      return { getTokenStyleObject: () => ({}) }
+    })
+  getTokenStyleObjectFn = mod.getTokenStyleObject
+})
+
+// 本地 Token 类型（与 useHighlight.ts 保持一致）
+interface HighlightToken {
+  content?: string
+  color?: string
+  fontStyle?: 'italic' | null
+  fontWeight?: 'normal' | 'bold' | null
+  htmlStyle?: Record<string, string>
+}
 
 defineOptions({
   name: 'SyntaxCodeBlock',
@@ -62,8 +85,32 @@ const normalizeStyleKeys = (style: Record<string, string | number>): CSSProperti
   return normalized
 }
 
-const getTokenStyle = (token: ThemedToken): CSSProperties => {
-  const rawStyle = token.htmlStyle || getTokenStyleObject(token)
+const getTokenStyle = (token: HighlightToken): CSSProperties => {
+  // 优先使用 token.htmlStyle（降级模式下 useHighlight 会填充这个）
+  if (token.htmlStyle) {
+    const baseStyle = normalizeStyleKeys(token.htmlStyle)
+
+    if (!props.colorReplacements) return baseStyle
+
+    const style = { ...baseStyle }
+
+    if (style.color && typeof style.color === 'string') {
+      style.color = applyColorReplacement(style.color, props.colorReplacements)
+    }
+    if (style.backgroundColor && typeof style.backgroundColor === 'string') {
+      style.backgroundColor = applyColorReplacement(style.backgroundColor, props.colorReplacements)
+    }
+
+    return style
+  }
+
+  // 如果 @shikijs/core 还没加载完成，返回空样式
+  if (!getTokenStyleObjectFn) {
+    return {}
+  }
+
+  // 使用动态加载的 getTokenStyleObject
+  const rawStyle = getTokenStyleObjectFn(token as any)
   const baseStyle = normalizeStyleKeys(rawStyle)
 
   if (!props.colorReplacements) return baseStyle
