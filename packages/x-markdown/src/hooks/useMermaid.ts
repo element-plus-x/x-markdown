@@ -134,6 +134,9 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
   const error = ref<unknown>(null)
   const isLoading = ref(false)
 
+  // 卸载标志，防止已卸载组件继续执行队列任务
+  let isUnmounted = false
+
   const getRenderContainer = () => {
     const containerOption = optionsRef.value.container
     if (containerOption) {
@@ -157,6 +160,9 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
 
       // 将实际渲染任务添加到队列
       addToRenderQueue(async () => {
+        // 如果组件已卸载，跳过渲染
+        if (isUnmounted) return
+
         try {
           const mermaidInstance = await loadMermaid()
           if (!mermaidInstance) {
@@ -210,6 +216,10 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
     },
     { immediate: true },
   )
+
+  onUnmounted(() => {
+    isUnmounted = true
+  })
 
   return {
     data,
