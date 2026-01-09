@@ -67,8 +67,8 @@ export default defineConfig({
         exports: 'named', // 使用命名导出，优化 tree-shaking
         // 手动代码分割
         manualChunks: undefined, // 库模式不需要代码分割
-        // 内联动态导入
-        inlineDynamicImports: true,
+        // 保留动态导入以支持代码分割 (Mermaid 按需加载)
+        inlineDynamicImports: false,
       },
       // Tree Shaking 配置
       treeshake: {

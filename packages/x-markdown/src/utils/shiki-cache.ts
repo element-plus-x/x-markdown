@@ -70,8 +70,9 @@ class ShikiCacheManager {
     try {
       const { getSingletonHighlighter } = await import('shiki')
       return await getSingletonHighlighter({ langs: [], themes: [theme] })
-    } catch {
-      shikiAvailable = false
+    } catch (e) {
+      console.error(`[x-markdown] Failed to create highlighter for theme ${theme}:`, e)
+      // 不设置 shikiAvailable = false，因为单个主题失败不应禁用整个 Shiki
       return null
     }
   }
@@ -134,6 +135,6 @@ export async function preloadTheme(theme: BuiltinTheme): Promise<CachedHighlight
   return shikiCache.preload(theme)
 }
 
-export function clearShikiCache(_theme?: BuiltinTheme): void {
+export function clearShikiCache(): void {
   shikiCache.clearAll()
 }
