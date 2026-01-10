@@ -1,5 +1,3 @@
-import type { BuiltinTheme } from 'shiki';
-
 /**
  * CodeLine 组件的 Props 类型定义
  */
@@ -17,7 +15,7 @@ export interface CodeLineProps {
    * Shiki 主题配置，数组形式 [lightTheme, darkTheme]
    * @default ['vitesse-light', 'vitesse-dark']
    */
-  shikiTheme?: [BuiltinTheme, BuiltinTheme];
+  shikiTheme?: [string, string];
   /**
    * 是否启用动画效果
    * 启用后会给行内代码添加 x-md-animated-word class

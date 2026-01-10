@@ -82,10 +82,48 @@ interface UseMermaidOptions {
 
 type UseMermaidOptionsInput = UseMermaidOptions | Ref<UseMermaidOptions>
 
-const MERMAID_PKG = 'mermaid'
-
 let mermaidPromise: Promise<any> | null = null
 let hasShownMermaidHint = false
+let mermaidAvailableCache: boolean | null = null
+let mermaidCheckPromise: Promise<boolean> | null = null
+
+/**
+ * 同步检查缓存状态（不触发检测）
+ * @returns 缓存状态，null 表示未检测
+ */
+export function getMermaidAvailableCache(): boolean | null {
+  return mermaidAvailableCache
+}
+
+/**
+ * 检测 mermaid 是否可用（全局缓存，只检测一次）
+ */
+export async function checkMermaidAvailable(): Promise<boolean> {
+  // 如果已经有缓存结果，直接返回
+  if (mermaidAvailableCache !== null) {
+    return mermaidAvailableCache
+  }
+
+  // 如果正在检测，返回检测 Promise
+  if (mermaidCheckPromise) {
+    return mermaidCheckPromise
+  }
+
+  // 开始检测
+  mermaidCheckPromise = (async () => {
+    try {
+      // 尝试静态导入 mermaid
+      await import('mermaid')
+      mermaidAvailableCache = true
+      return true
+    } catch (error) {
+      mermaidAvailableCache = false
+      return false
+    }
+  })()
+
+  return mermaidCheckPromise
+}
 
 const showMermaidHint = () => {
   if (hasShownMermaidHint) return
@@ -113,12 +151,16 @@ const showMermaidHint = () => {
 async function loadMermaid() {
   if (typeof window === 'undefined') return null
   if (!mermaidPromise) {
-    mermaidPromise = (Function(`return import('${MERMAID_PKG}')`)())
-      .then((m) => m.default)
-      .catch(() => {
+    mermaidPromise = (async () => {
+      try {
+        // 直接静态导入，让 Vite/Rollup 在构建时处理
+        const mod = await import('mermaid')
+        return (mod as any).default
+      } catch {
         showMermaidHint()
         return null
-      })
+      }
+    })()
   }
   return mermaidPromise
 }

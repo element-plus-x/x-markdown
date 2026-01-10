@@ -1,6 +1,5 @@
 import type { PropType } from 'vue'
 import type { PluggableList } from 'unified'
-import type { BuiltinTheme } from 'shiki'
 import type { CodeBlockAction } from '../components/CodeBlock/types'
 import type { MermaidAction } from '../components/Mermaid/types'
 import type { CustomAttrs, SanitizeOptions } from '../core/types'
@@ -18,8 +17,8 @@ const markdownRendererProps = {
   enableGfm: { type: Boolean, default: true },
   isDark: { type: Boolean, default: false },
   shikiTheme: {
-    type: Array as unknown as PropType<[BuiltinTheme, BuiltinTheme]>,
-    default: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
+    type: Array as unknown as PropType<[string, string]>,
+    default: () => ['vitesse-light', 'vitesse-dark'] as unknown as [string, string],
   },
   showCodeBlockHeader: { type: Boolean, default: true },
   stickyCodeBlockHeader: { type: Boolean, default: false },

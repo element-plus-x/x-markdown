@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import type { MdComponent, MermaidExposeProps, MermaidAction, MermaidSlotProps } from './types'
-import type { BuiltinTheme } from 'shiki'
 import type { VNode } from 'vue'
-import { computed, ref, h } from 'vue'
+import { computed, ref, h, onMounted } from 'vue'
 import { useClipboard } from '@vueuse/core'
+// 使用运行时检测
+import { checkMermaidAvailable } from '../../hooks/useMermaid'
 import SyntaxMermaid from './SyntaxMermaid.vue'
 import CodeBlock from '../CodeBlock/index.vue'
 
 interface MermaidProps extends MdComponent {
   isDark?: boolean
-  shikiTheme?: [BuiltinTheme, BuiltinTheme]
+  shikiTheme?: [string, string]
   config?: Record<string, any>
   mermaidActions?: MermaidAction[]
 }
@@ -17,23 +18,20 @@ interface MermaidProps extends MdComponent {
 const props = withDefaults(defineProps<MermaidProps>(), {
   raw: () => ({}),
   isDark: false,
-  shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
+  shikiTheme: () => ['vitesse-light', 'vitesse-dark'],
   config: () => ({}),
   mermaidActions: undefined,
 })
 
 const syntaxMermaidRef = ref<InstanceType<typeof SyntaxMermaid> | null>(null)
 const showSourceCode = ref(false)
+// 运行时检测 mermaid 是否可用
+const isDegraded = ref(false)
 const mermaidContent = computed(() => props.raw?.content || '')
 const mermaidId = computed(() => `mermaid-${props.raw?.key || 'default'}`)
 const isLoading = computed(() => syntaxMermaidRef.value?.isLoading ?? true)
 const svg = computed(() => syntaxMermaidRef.value?.svg ?? '')
 const activeTab = computed(() => (showSourceCode.value ? 'code' : 'diagram'))
-
-// 当 mermaid 不可用时，自动切换到代码视图
-function handleMermaidDegraded() {
-  showSourceCode.value = true
-}
 
 function handleZoomIn(event?: Event) {
   event?.stopPropagation()
@@ -170,12 +168,29 @@ const exposedMethods = computed(
       raw: props.raw,
     }) satisfies MermaidExposeProps,
 )
+
+// 组件挂载时检测 mermaid 是否可用
+onMounted(async () => {
+  const hasMermaid = await checkMermaidAvailable()
+  isDegraded.value = !hasMermaid
+})
 </script>
 
 <template>
-  <div :key="props.raw.key" class="markdown-mermaid" :class="{ 'markdown-mermaid--dark': props.isDark }">
+  <!-- 当 Mermaid 不可用时（降级），渲染 CodeBlock -->
+  <CodeBlock
+    v-if="isDegraded"
+    :code="props.raw?.content || ''"
+    language="mermaid"
+    :is-dark="props.isDark"
+    :light-theme="props.shikiTheme[0]"
+    :dark-theme="props.shikiTheme[1]"
+  />
+
+  <!-- 当 Mermaid 可用时，渲染完整的 Mermaid 组件 -->
+  <div v-else :key="props.raw.key" class="markdown-mermaid" :class="{ 'markdown-mermaid--dark': props.isDark }">
     <Transition name="toolbar" appear>
-      <div v-show="!showSourceCode" class="toolbar-container">
+      <div class="toolbar-container">
         <slot name="mermaidHeader" v-bind="exposedMethods">
           <div class="mermaid-toolbar">
             <div class="toolbar-left">
@@ -327,15 +342,15 @@ const exposedMethods = computed(
       </div>
     </Transition>
 
-    <CodeBlock
-      v-show="showSourceCode"
-      :code="props.raw?.content || ''"
-      language="mermaid"
-      :light-theme="props.shikiTheme[0]"
-      :dark-theme="props.shikiTheme[1]"
-      :is-dark="props.isDark"
-      :show-code-block-header="true"
-    />
+    <div v-show="showSourceCode" class="mermaid-source-code">
+      <CodeBlock
+        :code="props.raw?.content || ''"
+        language="mermaid"
+        :is-dark="props.isDark"
+        :light-theme="props.shikiTheme[0]"
+        :dark-theme="props.shikiTheme[1]"
+      />
+    </div>
 
     <SyntaxMermaid
       v-show="!showSourceCode"
@@ -344,7 +359,6 @@ const exposedMethods = computed(
       :id="mermaidId"
       :is-dark="props.isDark"
       :config="props.config"
-      @degraded="handleMermaidDegraded"
     />
   </div>
 </template>
@@ -515,6 +529,15 @@ const exposedMethods = computed(
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+}
+
+.markdown-mermaid .mermaid-source-code {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  width: 100%;
+  overflow: auto;
+  box-sizing: border-box;
 }
 
 .toolbar-enter-active,

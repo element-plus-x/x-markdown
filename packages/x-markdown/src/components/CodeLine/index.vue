@@ -26,7 +26,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted, type CSSProperties } from 'vue'
-import type { ThemedToken } from 'shiki'
 import { useHighlight } from '../../hooks/useHighlight'
 import type { CodeLineProps } from './types'
 
@@ -45,7 +44,7 @@ onMounted(async () => {
 const props = withDefaults(defineProps<CodeLineProps>(), {
   raw: () => ({}),
   isDark: false,
-  shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [import('shiki').BuiltinTheme, import('shiki').BuiltinTheme],
+  shikiTheme: () => ['vitesse-light', 'vitesse-dark'],
   enableAnimate: false,
 })
 

@@ -1,6 +1,5 @@
 <script lang="ts">
 import { defineComponent, h, type PropType, defineAsyncComponent } from 'vue'
-import type { BuiltinTheme } from 'shiki'
 import type { CodeBlockAction } from '../CodeBlock/types'
 import type { MermaidAction } from '../Mermaid/types'
 import CodeBlock from '../CodeBlock/index.vue'
@@ -14,8 +13,8 @@ export default defineComponent({
     codeXRender: { type: Object, default: () => ({}) },
     isDark: { type: Boolean, default: false },
     shikiTheme: {
-      type: Array as unknown as PropType<[BuiltinTheme, BuiltinTheme]>,
-      default: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
+      type: Array as PropType<[string, string]>,
+      default: () => ['vitesse-light', 'vitesse-dark'],
     },
     showCodeBlockHeader: { type: Boolean, default: true },
     stickyCodeBlockHeader: { type: Boolean, default: true },

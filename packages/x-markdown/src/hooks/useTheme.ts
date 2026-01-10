@@ -1,25 +1,25 @@
 import { computed, isRef, ref, type Ref } from 'vue'
-import type { BuiltinTheme } from 'shiki'
 
 export type ThemeMode = 'light' | 'dark' | 'auto'
+export type ShikiThemeName = string // Shiki 主题名称（字符串类型，支持动态导入）
 
 // 内置主题映射
 export const themeMap = {
-  light: 'vitesse-light' as BuiltinTheme,
-  dark: 'vitesse-dark' as BuiltinTheme,
+  light: 'vitesse-light',
+  dark: 'vitesse-dark',
 } as const
 
 export interface UseThemeOptions {
   mode?: ThemeMode | Ref<ThemeMode>
-  theme?: BuiltinTheme | Ref<BuiltinTheme | undefined>
-  lightTheme?: BuiltinTheme
-  darkTheme?: BuiltinTheme
+  theme?: ShikiThemeName | Ref<ShikiThemeName | undefined>
+  lightTheme?: ShikiThemeName
+  darkTheme?: ShikiThemeName
 }
 
 export interface UseThemeReturn {
   mode: Ref<ThemeMode>
   isDark: Ref<boolean>
-  actualTheme: Ref<BuiltinTheme>
+  actualTheme: Ref<ShikiThemeName>
   setMode: (mode: ThemeMode) => void
   toggleMode: () => void
 }
@@ -64,7 +64,7 @@ export function useTheme(options: UseThemeOptions = {}): UseThemeReturn {
   })
 
   // 实际使用的 Shiki 主题
-  const actualTheme = computed<BuiltinTheme>(() => {
+  const actualTheme = computed<ShikiThemeName>(() => {
     // 如果传入了具体的 theme，优先使用
     const customTheme = isRef(options.theme) ? options.theme.value : options.theme
     if (customTheme) return customTheme

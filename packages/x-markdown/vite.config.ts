@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
+import { mermaidCheckPlugin } from './vite-plugin-mermaid-check'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), mermaidCheckPlugin()],
   resolve: {
     alias: {
       '@components': resolve(__dirname, 'src'),
@@ -23,12 +24,8 @@ export default defineConfig({
         'element-plus',
         'mermaid',
         /^shiki($|\/|\\)/,
-        /^shiki\/core/,
-        /^shiki\/engine/,
-        /^shiki\/themes/,
-        /^shiki\/langs/,
         /^@shikijs\/.*/,
-        'shiki-stream', // externalize shiki-stream only
+        'shiki-stream',
         // unified 生态系统
         'unified',
         'remark',
@@ -91,8 +88,8 @@ export default defineConfig({
         ecma: 2020,
       },
     },
-    // CSS 代码分割
-    cssCodeSplit: true,
+    // CSS 代码分割（关闭以合并所有样式到一个文件）
+    cssCodeSplit: false,
     // 目标环境
     target: 'es2020',
     // 报告压缩后的文件大小

@@ -1,6 +1,6 @@
 {
-  "name": "x-markdown-vue",
-  "version": "0.0.1-beta.107",
+  "name": "@hejiayue/x-markdown-test",
+  "version": "0.0.1-beta.111",
   "description": "A markdown component library for Vue",
   "type": "module",
   "main": "./dist/x-markdown.cjs",
@@ -17,7 +17,7 @@
         "default": "./dist/x-markdown.cjs"
       }
     },
-    "./style": "./dist/index.css"
+    "./style": "./dist/style.css"
   },
   "files": [
     "dist"
@@ -42,7 +42,10 @@
   "author": "",
   "license": "MIT",
   "peerDependencies": {
-    "vue": "^3.3.0"
+    "vue": "^3.3.0",
+    "shiki": "^3.0.0",
+    "shiki-stream": "^0.1.0",
+    "mermaid": "^10.0.0"
   },
   "peerDependenciesMeta": {
     "mermaid": {

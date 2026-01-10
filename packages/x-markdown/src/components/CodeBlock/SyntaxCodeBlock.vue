@@ -19,21 +19,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, type CSSProperties } from 'vue'
+import { computed, type CSSProperties } from 'vue'
 import { useHighlight } from '../../hooks/useHighlight'
 import type { SyntaxCodeBlockProps } from './types'
-
-const SHIKI_CORE_PKG = '@shikijs/core'
-
-let getTokenStyleObjectFn: any = null
-
-onMounted(async () => {
-  const mod = await (Function(`return import('${SHIKI_CORE_PKG}')`)())
-    .catch(() => {
-      return { getTokenStyleObject: () => ({}) }
-    })
-  getTokenStyleObjectFn = mod.getTokenStyleObject
-})
 
 interface HighlightToken {
   content?: string
@@ -81,6 +69,7 @@ const normalizeStyleKeys = (style: Record<string, string | number>): CSSProperti
 }
 
 const getTokenStyle = (token: HighlightToken): CSSProperties => {
+  // 优先使用 htmlStyle（如果存在）
   if (token.htmlStyle) {
     const baseStyle = normalizeStyleKeys(token.htmlStyle)
 
@@ -98,22 +87,21 @@ const getTokenStyle = (token: HighlightToken): CSSProperties => {
     return style
   }
 
-  if (!getTokenStyleObjectFn) {
-    return {}
+  // 直接使用 token 的 color、fontStyle、fontWeight 属性
+  const style: CSSProperties = {}
+
+  if (token.color) {
+    style.color = props.colorReplacements
+      ? applyColorReplacement(token.color, props.colorReplacements)
+      : token.color
   }
 
-  const rawStyle = getTokenStyleObjectFn(token as any)
-  const baseStyle = normalizeStyleKeys(rawStyle)
-
-  if (!props.colorReplacements) return baseStyle
-
-  const style = { ...baseStyle }
-
-  if (style.color && typeof style.color === 'string') {
-    style.color = applyColorReplacement(style.color, props.colorReplacements)
+  if (token.fontStyle === 'italic') {
+    style.fontStyle = 'italic'
   }
-  if (style.backgroundColor && typeof style.backgroundColor === 'string') {
-    style.backgroundColor = applyColorReplacement(style.backgroundColor, props.colorReplacements)
+
+  if (token.fontWeight) {
+    style.fontWeight = token.fontWeight
   }
 
   return style

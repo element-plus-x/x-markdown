@@ -1,13 +1,19 @@
 import { h } from 'vue'
-import type { BuiltinTheme } from 'shiki'
 import type { CodeBlockAction } from '../components/CodeBlock/types'
 import type { MermaidAction } from '../components/Mermaid/types'
 import CodeX from '../components/CodeX/index.vue'
 
+// Shiki 主题类型（本地定义，避免直接依赖 shiki）
+type ShikiThemeName =
+  | 'vitesse-light' | 'vitesse-dark'
+  | 'github-light' | 'github-dark'
+  | 'nord' | 'one-dark-pro'
+  | string // 允许其他自定义主题名称
+
 interface UseComponentsOptions {
   codeXRender?: Record<string, any>
   isDark?: boolean
-  shikiTheme?: [BuiltinTheme, BuiltinTheme]
+  shikiTheme?: [ShikiThemeName, ShikiThemeName]
   enableAnimate?: boolean
   showCodeBlockHeader?: boolean
   stickyCodeBlockHeader?: boolean

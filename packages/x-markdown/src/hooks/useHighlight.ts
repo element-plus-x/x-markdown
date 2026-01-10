@@ -20,9 +20,6 @@ interface UseHighlightOptions {
   colorReplacements?: Record<string, string>
 }
 
-const SHIKI_PKG = 'shiki'
-const SHIKI_STREAM_PKG = 'shiki-stream'
-
 let shikiModulePromise: Promise<any | null> | null = null
 let shikiStreamModulePromise: Promise<any | null> | null = null
 let hasShownDependencyHint = false
@@ -50,24 +47,33 @@ const showDependencyHint = () => {
   )
 }
 
-const loadShiki = () => {
+const loadShiki = async () => {
   if (!shikiModulePromise) {
-    shikiModulePromise = (Function(`return import('${SHIKI_PKG}')`)())
-      .catch(() => {
+    shikiModulePromise = (async () => {
+      try {
+        // 直接静态导入，让 Vite/Rollup 在构建时处理
+        const mod = await import('shiki')
+        return mod
+      } catch {
         showDependencyHint()
         return null
-      })
+      }
+    })()
   }
   return shikiModulePromise
 }
 
-const loadShikiStream = () => {
+const loadShikiStream = async () => {
   if (!shikiStreamModulePromise) {
-    shikiStreamModulePromise = (Function(`return import('${SHIKI_STREAM_PKG}')`)())
-      .catch(() => {
+    shikiStreamModulePromise = (async () => {
+      try {
+        const mod = await import('shiki-stream')
+        return mod
+      } catch {
         showDependencyHint()
         return null
-      })
+      }
+    })()
   }
   return shikiStreamModulePromise
 }
