@@ -53,9 +53,9 @@ function createMarkdownRenderer(name: string, coreComponent: typeof VueMarkdown 
       // 获取自定义组件映射
       const components = useComponents(props)
 
-      // 处理 markdown 内容（LaTeX 预处理）
+      // 处理 markdown 内容（LA-TeX 预处理）
       const markdown = computed(() => {
-        // // 如果启用 LaTeX，则进行预处理
+        // // 如果启用 LA-TeX，则进行预处理
         // if (props.enableLatex) {
         //   return useProcessMarkdown(props.markdown)
         // } else {
