@@ -19,19 +19,23 @@
 
 </div>
 
+
 ## ✨ 特性
 
 - 🚀 **Vue 3 组合式 API** - 基于 Vue 3 Composition API 构建
 - 📝 **GitHub Flavored Markdown** - 完整支持 GFM 语法
 - 🎨 **代码高亮** - 基于 Shiki，支持 100+ 语言和多种主题
-- 🌊 **流式渲染** - 支持 AI 对话场景的实时输出动画
+  - ⚡ **Highlighter 缓存** - 智能缓存机制，避免重复创建实例
+  - 🌊 **流式高亮** - shiki-stream 支持 AI 流式输出场景
 - 🧮 **LaTeX 数学公式** - 支持行内和块级数学公式渲染
 - 📊 **Mermaid 图表** - 支持流程图、时序图等多种图表
 - 🌗 **深色模式** - 内置深浅色主题切换支持
 - 🔌 **高度可定制** - 支持自定义渲染、插槽和属性
 - 🎭 **灵活的插件系统** - 支持 remark 和 rehype 插件扩展
 - 🔒 **安全可靠** - 可选的 HTML 内容清理和消毒
+- 🔧 **Vite 插件** - 自动检测可选依赖，优雅降级
 - 📦 **Monorepo 架构** - 使用 pnpm workspace 和 Turbo 管理
+- 🎯 **清爽体验** - 优化的控制台输出，无多余调试信息
 
 ## 📦 安装
 
@@ -51,7 +55,13 @@ yarn add x-markdown-vue
 确保安装了对等依赖:
 
 ```bash
+# 必需依赖
 pnpm add vue@^3.3.0
+
+# 可选依赖（推荐安装以获得完整功能）
+pnpm add shiki@^1.0.0 || ^3.0.0
+pnpm add shiki-stream@^0.1.4
+pnpm add mermaid@^10.0.0 || ^11.0.0
 ```
 
 如果需要 LaTeX 支持，还需要引入 KaTeX 样式:
@@ -61,6 +71,89 @@ import 'katex/dist/katex.min.css'
 ```
 
 ## 🚀 快速开始
+
+### Vite 配置（推荐）
+
+使用内置的 Vite 插件自动检测可选依赖：
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { createXMarkdownVitePlugin } from 'x-markdown-vue/vite-plugin'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    // x-markdown 可选依赖自动检测插件
+    createXMarkdownVitePlugin({
+      showConsoleHints: true, // 显示控制台提示（默认）
+    }),
+  ],
+})
+```
+
+**插件功能**：
+- ✅ 自动检测 `shiki`、`shiki-stream`、`mermaid` 是否安装
+- ✅ 未安装时提供友好的控制台提示
+- ✅ 支持虚拟模块，优雅降级
+- ✅ 不影响生产构建
+- ✅ 零配置，开箱即用
+
+**插件配置选项**：
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `showConsoleHints` | `boolean` | `true` | 是否显示控制台提示 |
+
+**完整的 Vite 配置示例**：
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { createXMarkdownVitePlugin } from 'x-markdown-vue/vite-plugin'
+import { resolve } from 'path'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    createXMarkdownVitePlugin({
+      showConsoleHints: true,
+    }),
+  ],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
+  },
+  // 其他 Vite 配置...
+})
+```
+
+**如果不使用插件**：
+
+如果你不想使用 Vite 插件，也可以手动配置可选依赖的虚拟模块：
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      // 手动配置虚拟模块（不推荐）
+      'shiki': 'shiki/virtual',
+      'shiki-stream': 'shiki-stream/virtual',
+      'mermaid': 'mermaid/virtual',
+    },
+  },
+})
+```
+
+> ⚠️ **注意**：不使用插件时，你需要自己处理可选依赖的加载和降级逻辑。推荐使用插件以获得最佳体验。
 
 ### 基础用法
 
@@ -263,6 +356,47 @@ const codeXRender = {
   }
 }
 ```
+
+## ⚡ 性能优化
+
+### Highlighter 缓存机制
+
+x-markdown 内置智能 highlighter 缓存系统：
+
+```typescript
+// 按主题缓存 highlighter 实例
+const highlighterCache = new Map<string, any>()
+
+// 避免重复创建，提高性能
+if (!highlighterCache.has(cacheKey)) {
+  highlighter = await createHighlighter({ themes: [theme] })
+  highlighterCache.set(cacheKey, highlighter)
+}
+```
+
+**优化效果**：
+- ✅ 避免 Shiki 单例警告
+- ✅ 提升初始化性能
+- ✅ 减少内存占用
+- ✅ 支持多主题切换
+
+### 优雅降级策略
+
+当可选依赖未安装时，自动降级而不影响核心功能：
+
+```typescript
+// shiki 未安装 → 降级为纯文本代码块
+// shiki-stream 未安装 → 使用 shiki 静态高亮
+// mermaid 未安装 → 显示 mermaid 源码
+```
+
+### 控制台优化
+
+清理了不必要的调试信息，提供清爽的开发体验：
+
+- ❌ 移除流式高亮错误日志
+- ❌ 移除 Mermaid 渲染状态日志
+- ✅ 保留友好的依赖安装提示
 
 ## 🔌 插件系统
 
