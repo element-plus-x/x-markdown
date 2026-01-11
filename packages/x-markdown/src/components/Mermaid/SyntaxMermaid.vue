@@ -59,24 +59,14 @@ function initializeZoom() {
 watch(
   () => mermaidResult.data.value,
   (newSvg, oldSvg) => {
-    console.log('[SyntaxMermaid] mermaidResult.data.value changed:', {
-      oldSvg,
-      newSvg,
-      isNewSvg: !!newSvg,
-      startsWithSvg: newSvg?.trim().startsWith('<svg'),
-      preview: newSvg?.substring(0, 50)
-    })
-
     if (newSvg) {
       svg.value = newSvg
       debouncedInitialize()
 
       // 检测是否成功渲染了 SVG（以 <svg 开头）
       if (newSvg.trim().startsWith('<svg')) {
-        console.log('[SyntaxMermaid] Emitting ready event - Mermaid is available')
         emit('ready')
       } else {
-        console.log('[SyntaxMermaid] Emitting degraded event - Mermaid not available')
         emit('degraded')
       }
     }

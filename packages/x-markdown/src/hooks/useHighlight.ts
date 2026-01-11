@@ -33,6 +33,10 @@ let shikiStreamModulePromise: Promise<any | null> | null = null
 let hasShownShikiHint = false
 let hasShownShikiStreamHint = false
 
+// 全局 highlighter 缓存，避免重复创建实例
+const highlighterCache = new Map<string, any>()
+const getHighlighterCacheKey = (theme: string) => `highlighter-${theme}`
+
 
 const showShikiHint = () => {
   if (hasShownShikiHint) return
@@ -221,7 +225,7 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
           preStyle: streaming.value?.preStyle,
         }
       } catch (err) {
-        console.error('[x-markdown] Streaming highlighting failed:', err)
+        // 静默失败，降级为纯文本
         error.value = err as Error
       }
     } else if (highlighter) {
@@ -245,9 +249,7 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
           preStyle: streaming.value?.preStyle,
         }
       } catch (err) {
-        console.error('[x-markdown] Direct highlighting failed:', err)
-        console.error('[x-markdown] Current lang:', currentUsedLang, 'Requested lang:', effectiveLanguage.value)
-        // 降级为纯文本
+        // 静默降级为纯文本
         streaming.value = {
           colorReplacements: options.colorReplacements,
           lines: [[{ content: nextText }]],
@@ -263,6 +265,7 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
 
     let currentLang = effectiveLanguage.value
     const currentTheme = effectiveTheme.value
+    const cacheKey = getHighlighterCacheKey(currentTheme)
 
     try {
       const mod = await loadShiki()
@@ -284,11 +287,16 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
         return
       }
 
-      // shiki 3.x API
-      highlighter = await mod.createHighlighter({
-        themes: [currentTheme],
-        langs: [],  // 将动态加载语言
-      })
+      // 检查缓存，如果已有相同主题的 highlighter，直接复用
+      if (!highlighterCache.has(cacheKey)) {
+        highlighter = await mod.createHighlighter({
+          themes: [currentTheme],
+          langs: [],  // 将动态加载语言
+        })
+        highlighterCache.set(cacheKey, highlighter)
+      } else {
+        highlighter = highlighterCache.get(cacheKey)
+      }
 
       lastRequestedLang = currentLang
 
