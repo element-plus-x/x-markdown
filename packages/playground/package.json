@@ -15,6 +15,7 @@
     "katex": "^0.16.25",
     "mermaid": "^11.12.2",
     "shiki": "^3.21.0",
+    "shiki-stream": "^0.1.4",
     "vue": "^3.3.0"
   },
   "devDependencies": {
