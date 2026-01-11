@@ -9,13 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hejiayue/x-markdown-test": "workspace:*",
     "echarts": "^6.0.0",
     "github-markdown-css": "^5.8.1",
     "katex": "^0.16.25",
     "mermaid": "^11.12.2",
     "shiki": "^3.21.0",
-    "vue": "^3.3.0",
-    "x-markdown-vue": "workspace:*"
+    "vue": "^3.3.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",

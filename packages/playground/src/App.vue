@@ -144,7 +144,7 @@
 import 'katex/dist/katex.min.css'
 import 'github-markdown-css/github-markdown.css'
 import { ref, computed, onUnmounted, watch, h } from 'vue'
-import { MarkdownRenderer } from 'x-markdown-vue'
+import { MarkdownRenderer } from '@hejiayue/x-markdown-test'
 import type * as echarts from 'echarts'
 
 // ==================== 状态管理 ====================

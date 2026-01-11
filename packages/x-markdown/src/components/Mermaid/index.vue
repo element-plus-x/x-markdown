@@ -349,6 +349,8 @@ onMounted(async () => {
         :is-dark="props.isDark"
         :light-theme="props.shikiTheme[0]"
         :dark-theme="props.shikiTheme[1]"
+        :show-code-block-header="false"
+        :sticky-code-block-header="false"
       />
     </div>
 

@@ -24,6 +24,7 @@ let shikiModulePromise: Promise<any | null> | null = null
 let shikiStreamModulePromise: Promise<any | null> | null = null
 let hasShownDependencyHint = false
 
+
 const showDependencyHint = () => {
   if (hasShownDependencyHint) return
   hasShownDependencyHint = true
@@ -51,11 +52,10 @@ const loadShiki = async () => {
   if (!shikiModulePromise) {
     shikiModulePromise = (async () => {
       try {
-        // 直接静态导入，让 Vite/Rollup 在构建时处理
         const mod = await import('shiki')
         return mod
       } catch {
-        showDependencyHint()
+        // 静默失败，返回 null
         return null
       }
     })()
@@ -70,7 +70,7 @@ const loadShikiStream = async () => {
         const mod = await import('shiki-stream')
         return mod
       } catch {
-        showDependencyHint()
+        // 静默失败，返回 null
         return null
       }
     })()
@@ -206,18 +206,20 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     try {
       const mod = await loadShiki()
       if (!mod) {
-        console.warn('[x-markdown] Shiki not available, falling back to plain text mode')
+        // 静默降级为纯文本
         streaming.value = {
           colorReplacements: options.colorReplacements,
           lines: [[{ content: text.value }]],
           preStyle: undefined,
         }
+        showDependencyHint()
         return
       }
 
-      highlighter = await mod.getSingletonHighlighter({
-        langs: [],
+      // shiki 3.x API
+      highlighter = await mod.createHighlighter({
         themes: [currentTheme],
+        langs: [],  // 将动态加载语言
       })
 
       lastRequestedLang = currentLang
@@ -226,32 +228,19 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
         await highlighter.loadLanguage(currentLang as any)
         currentUsedLang = currentLang
       } catch {
-        console.warn(`[x-markdown] Failed to load language: ${currentLang}, falling back to plaintext`)
         currentLang = 'plaintext'
         currentUsedLang = 'plaintext'
       }
 
-      const StreamMod = await loadShikiStream()
-      if (!StreamMod) {
-        console.warn('[x-markdown] shiki-stream not available, using non-streaming mode')
-        const tokens = highlighter.codeToThemedTokens(text.value, currentLang, currentTheme)
-        streaming.value = {
-          colorReplacements: options.colorReplacements,
-          lines: tokensToLineTokens(tokens),
-          preStyle: createPreStyle(
-            highlighter.getTheme(currentTheme)?.bg,
-            highlighter.getTheme(currentTheme)?.fg
-          ),
-        }
-        return
+      // 动态加载 shiki-stream
+      const shikiStreamMod = await loadShikiStream()
+      if (shikiStreamMod) {
+        tokenizer = new shikiStreamMod.ShikiStreamTokenizer({
+          highlighter: highlighter,
+          lang: currentLang,
+          theme: currentTheme,
+        })
       }
-
-      const ShikiStreamTokenizer = StreamMod.ShikiStreamTokenizer || StreamMod.default
-      tokenizer = new ShikiStreamTokenizer({
-        highlighter: highlighter,
-        lang: currentLang,
-        theme: currentTheme,
-      })
 
       previousText = ''
 
@@ -271,8 +260,7 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
         }
       }
     } catch (err) {
-      console.error('[x-markdown] Highlighter initialization failed:', err)
-      error.value = err as Error
+      // 静默降级
       streaming.value = {
         colorReplacements: options.colorReplacements,
         lines: [[{ content: text.value }]],

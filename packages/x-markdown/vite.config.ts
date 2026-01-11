@@ -2,9 +2,10 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 import { mermaidCheckPlugin } from './vite-plugin-mermaid-check'
+import { externalDynamicImportsPlugin } from './vite-plugin-external-dynamic-imports'
 
 export default defineConfig({
-  plugins: [vue(), mermaidCheckPlugin()],
+  plugins: [vue(), mermaidCheckPlugin(), externalDynamicImportsPlugin()],
   resolve: {
     alias: {
       '@components': resolve(__dirname, 'src'),
@@ -19,14 +20,12 @@ export default defineConfig({
     },
     rollupOptions: {
       // 外部化依赖，不打包进 bundle
+      // 注意：在生产构建时外部化可选依赖（shiki, mermaid）
+      // 但为了让它们在 Vite 开发服务器中正常工作，我们使用条件 external
       external: [
         'vue',
         'element-plus',
-        'mermaid',
-        /^shiki($|\/|\\)/,
-        /^@shikijs\/.*/,
-        'shiki-stream',
-        // unified 生态系统
+        // unified 生态系统（始终外部化）
         'unified',
         'remark',
         'remark-parse',
@@ -47,6 +46,12 @@ export default defineConfig({
         'dompurify',
         'deepmerge',
         'lodash-es',
+        // 可选依赖：始终外部化，由消费者项目提供
+        // 消费者项目需要在 Vite 配置中确保这些模块可被动态导入
+        'mermaid',
+        /^shiki($|\/|\\)/,
+        /^@shikijs\/.*/,
+        /^shiki-stream($|\/|\\)/,
       ],
       output: {
         globals: {
@@ -54,18 +59,15 @@ export default defineConfig({
           'element-plus': 'ElementPlus',
           mermaid: 'mermaid',
           shiki: 'shiki',
-          'shiki-stream': 'ShikiStream',
           'dompurify': 'DOMPurify',
         },
-        // 优化输出
-        preserveModules: false, // 不保留模块结构，生成单一 bundle
+        // 保留模块结构，使动态导入能正确外部化
+        preserveModules: true,
         preserveModulesRoot: resolve(__dirname, 'src'),
         // 启用 Tree Shaking
         exports: 'named', // 使用命名导出，优化 tree-shaking
         // 手动代码分割
-        manualChunks: undefined, // 库模式不需要代码分割
-        // 保留动态导入以支持代码分割 (Mermaid 按需加载)
-        inlineDynamicImports: false,
+        manualChunks: undefined, // preserveModules 模式下不需要
       },
       // Tree Shaking 配置
       treeshake: {
@@ -98,9 +100,12 @@ export default defineConfig({
     // 生成 sourcemap
     sourcemap: true,
   },
-  // 优化依赖预构建
+  // 优化依赖预构建（仅用于 x-markdown 开发时的测试）
+  // 不影响消费者项目
   optimizeDeps: {
     include: ['vue', 'element-plus'],
-    exclude: ['shiki', 'shiki-stream', 'mermaid'],
+    // 排除 mermaid 和 shiki，防止 Vite 预构建这些可选依赖
+    // 这样它们只会在运行时动态导入时才加载，从而正确测试降级行为
+    exclude: ['mermaid', 'shiki', 'shiki-stream'],
   },
 })

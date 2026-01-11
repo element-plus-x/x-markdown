@@ -68,7 +68,12 @@ const normalizeStyleKeys = (style: Record<string, string | number>): CSSProperti
   return normalized
 }
 
-const getTokenStyle = (token: HighlightToken): CSSProperties => {
+const getTokenStyle = (token: HighlightToken | null | undefined): CSSProperties => {
+  // 处理 null/undefined token
+  if (!token) {
+    return {}
+  }
+
   // 优先使用 htmlStyle（如果存在）
   if (token.htmlStyle) {
     const baseStyle = normalizeStyleKeys(token.htmlStyle)

@@ -112,11 +112,11 @@ export async function checkMermaidAvailable(): Promise<boolean> {
   // 开始检测
   mermaidCheckPromise = (async () => {
     try {
-      // 尝试静态导入 mermaid
-      await import('mermaid')
-      mermaidAvailableCache = true
-      return true
+      const mod = await import('mermaid')
+      mermaidAvailableCache = !!mod
+      return mermaidAvailableCache
     } catch (error) {
+      console.error('[x-markdown] Failed to load mermaid:', error)
       mermaidAvailableCache = false
       return false
     }
@@ -153,10 +153,10 @@ async function loadMermaid() {
   if (!mermaidPromise) {
     mermaidPromise = (async () => {
       try {
-        // 直接静态导入，让 Vite/Rollup 在构建时处理
         const mod = await import('mermaid')
-        return (mod as any).default
-      } catch {
+        return (mod as any)?.default
+      } catch (error) {
+        console.error('[x-markdown] Failed to load mermaid:', error)
         showMermaidHint()
         return null
       }

@@ -1,9 +1,9 @@
 {
   "name": "@hejiayue/x-markdown-test",
-  "version": "0.0.1-beta.111",
+  "version": "0.0.1-beta.131",
   "description": "A markdown component library for Vue",
   "type": "module",
-  "main": "./dist/x-markdown.cjs",
+  "main": "./dist/x-markdown.cjs.js",
   "module": "./dist/x-markdown.es.js",
   "types": "./dist/types/index.d.ts",
   "exports": {
@@ -14,7 +14,7 @@
       },
       "require": {
         "types": "./dist/types/index.d.ts",
-        "default": "./dist/x-markdown.cjs"
+        "default": "./dist/x-markdown.cjs.js"
       }
     },
     "./style": "./dist/style.css"
@@ -41,23 +41,6 @@
   ],
   "author": "",
   "license": "MIT",
-  "peerDependencies": {
-    "vue": "^3.3.0",
-    "shiki": "^3.0.0",
-    "shiki-stream": "^0.1.0",
-    "mermaid": "^10.0.0"
-  },
-  "peerDependenciesMeta": {
-    "mermaid": {
-      "optional": true
-    },
-    "shiki": {
-      "optional": true
-    },
-    "shiki-stream": {
-      "optional": true
-    }
-  },
   "dependencies": {
     "deepmerge": "^4.3.1",
     "dompurify": "^3.0.0",
@@ -79,6 +62,12 @@
     "remark-rehype": "^11.0.0",
     "unified": "^11.0.0",
     "unist-util-visit": "^5.0.0"
+  },
+  "peerDependencies": {
+    "vue": "^3.3.0",
+    "shiki": "^1.0.0 || ^3.0.0",
+    "shiki-stream": "^0.1.4",
+    "mermaid": "^10.0.0"
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.0",
