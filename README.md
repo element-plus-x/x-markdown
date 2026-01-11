@@ -25,14 +25,17 @@
 - 🚀 **Vue 3 组合式 API** - 基于 Vue 3 Composition API 构建
 - 📝 **GitHub Flavored Markdown** - 完整支持 GFM 语法
 - 🎨 **代码高亮** - 基于 Shiki，支持 100+ 语言和多种主题
-- 🌊 **流式渲染** - 支持 AI 对话场景的实时输出动画
+  - ⚡ **Highlighter 缓存** - 智能缓存机制，避免重复创建实例
+  - 🌊 **流式高亮** - shiki-stream 支持 AI 流式输出场景
 - 🧮 **LaTeX 数学公式** - 支持行内和块级数学公式渲染
 - 📊 **Mermaid 图表** - 支持流程图、时序图等多种图表
 - 🌗 **深色模式** - 内置深浅色主题切换支持
 - 🔌 **高度可定制** - 支持自定义渲染、插槽和属性
 - 🎭 **灵活的插件系统** - 支持 remark 和 rehype 插件扩展
 - 🔒 **安全可靠** - 可选的 HTML 内容清理和消毒
+- 🔧 **Vite 插件** - 自动检测可选依赖，优雅降级
 - 📦 **Monorepo 架构** - 使用 pnpm workspace 和 Turbo 管理
+- 🎯 **清爽体验** - 优化的控制台输出，无多余调试信息
 
 ## 📦 安装
 
@@ -87,19 +90,14 @@ X-Markdown 采用优雅降级策略，即使不安装可选依赖，组件也能
 当可选依赖缺失时，浏览器控制台会显示**一次**友好的提示信息：
 
 ```
-[x-markdown] 代码高亮功能已降级为纯文本模式
-如需语法高亮功能，请安装以下依赖：
-  pnpm add shiki shiki-stream
-安装后请重启开发服务器
+[x-markdown] 需安装 shiki: pnpm add shiki
+[x-markdown] AI 流式可选: pnpm add shiki-stream (需先装 shiki)
 ```
 
 或
 
 ```
-[x-markdown] Mermaid 图表功能已降级为代码块显示
-如需 Mermaid 图表渲染功能，请安装：
-  pnpm add mermaid
-安装后请重启开发服务器
+[x-markdown] 图表可选: pnpm add mermaid
 ```
 
 **注意事项**：
@@ -113,6 +111,83 @@ X-Markdown 采用优雅降级策略，即使不安装可选依赖，组件也能
    # 然后重启开发服务器
    pnpm dev
    ```
+
+## 🔧 Vite 配置（推荐）
+
+使用内置的 Vite 插件自动检测可选依赖，实现优雅降级：
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { createXMarkdownVitePlugin } from 'x-markdown-vue/vite-plugin'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    createXMarkdownVitePlugin({
+      showConsoleHints: true,
+    }),
+  ],
+})
+```
+
+### 插件功能
+
+- ✅ **自动检测可选依赖**：检测 shiki、shiki-stream、mermaid 是否已安装
+- ✅ **虚拟模块注入**：未安装的依赖会被替换为虚拟模块
+- ✅ **优雅降级提示**：控制台友好提示用户安装缺失的依赖
+- ✅ **构建优化**：移除未使用的依赖代码，减小打包体积
+
+### 插件配置选项
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `showConsoleHints` | `boolean` | `true` | 是否显示控制台提示 |
+
+### 完整配置示例
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { createXMarkdownVitePlugin } from 'x-markdown-vue/vite-plugin'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    createXMarkdownVitePlugin({
+      // 开启控制台提示（默认）
+      showConsoleHints: true,
+    }),
+  ],
+  // 其他 Vite 配置...
+})
+```
+
+### 手动配置（不推荐）
+
+如果不使用 Vite 插件，需要手动配置 `resolve.alias`：
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      // 为可选依赖添加虚拟模块
+      'shiki': 'virtual:shiki',
+      'shiki-stream': 'virtual:shiki-stream',
+      'mermaid': 'virtual:mermaid',
+    },
+  },
+})
+```
+
+**注意**：手动配置需要在代码中处理虚拟模块的导入和错误处理，推荐使用内置 Vite 插件。
 
 ## 🚀 快速开始
 

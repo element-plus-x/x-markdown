@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@hejiayue/x-markdown-test": "workspace:*",
+    "x-markdown-vue": "workspace:*",
     "echarts": "^6.0.0",
     "github-markdown-css": "^5.8.1",
     "katex": "^0.16.25",

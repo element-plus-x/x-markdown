@@ -270,24 +270,19 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     try {
       const mod = await loadShiki()
       if (!mod) {
-        // shiki 完全不可用
+        // shiki 完全不可用，降级为纯文本
         streaming.value = {
           colorReplacements: options.colorReplacements,
           lines: [[{ content: text.value }]],
           preStyle: undefined,
         }
         showShikiHint()
-
-        // 即使 shiki 不可用，也检查 shiki-stream 并显示提示
-        const shikiStreamMod = await loadShikiStream()
-        if (!shikiStreamMod) {
-          // shiki 和 shiki-stream 都不可用
-          showShikiStreamHint()
-        }
+        showShikiStreamHint()
         return
       }
 
       // 检查缓存，如果已有相同主题的 highlighter，直接复用
+      // 这避免了 Shiki 单例警告并提高了性能
       if (!highlighterCache.has(cacheKey)) {
         highlighter = await mod.createHighlighter({
           themes: [currentTheme],
@@ -300,6 +295,7 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
 
       lastRequestedLang = currentLang
 
+      // 尝试加载请求的语言，失败则降级为纯文本
       try {
         await highlighter.loadLanguage(currentLang as any)
         currentUsedLang = currentLang
