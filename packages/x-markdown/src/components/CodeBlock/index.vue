@@ -4,7 +4,7 @@
     <div
       v-if="showCodeBlockHeader"
       class="x-md-code-header-wrapper"
-      :class="[{'x-md-code-header-wrapper--sticky': props.stickyCodeBlockHeader }, { 'x-md-code-header-wrapper--collapsed': collapsed }]"
+      :class="[{ 'x-md-code-header-wrapper--sticky': props.stickyCodeBlockHeader }, { 'x-md-code-header-wrapper--collapsed': collapsed }]"
     >
       <div class="x-md-code-header">
         <slot
@@ -176,8 +176,7 @@ function renderActionIcon(action: CodeBlockAction): VNode | null {
       if (result && typeof result === 'object' && '__v_isVNode' in result) {
         return result
       }
-    } catch {
-    }
+    } catch {}
     return h(action.icon as any)
   }
 
