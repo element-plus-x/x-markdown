@@ -472,7 +472,7 @@ def fibonacci(n):
 
 块级公式:
 $$
-\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
 $$
 ```
 
@@ -514,7 +514,6 @@ sequenceDiagram
 
 ## 甘特图 (Gantt Chart)
 
-```mermaid
 gantt
     title 项目开发计划
     dateFormat  YYYY-MM-DD
