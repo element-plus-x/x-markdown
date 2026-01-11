@@ -18,11 +18,11 @@
       }
     },
     "./style": "./dist/style.css",
-    "./vite-plugin": "./src/vite-plugin.js"
+    "./vite-plugin": "./src/vite-plugin.ts"
   },
   "files": [
     "dist",
-    "src/vite-plugin.js"
+    "src/vite-plugin.ts"
   ],
   "sideEffects": [
     "*.css",
