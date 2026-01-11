@@ -1,5 +1,5 @@
 {
-  "name": "@hejiayue/x-markdown-test",
+  "name": "x-markdown-vue",
   "version": "0.0.1-beta.148",
   "description": "A markdown component library for Vue",
   "type": "module",

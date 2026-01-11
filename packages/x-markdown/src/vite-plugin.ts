@@ -37,7 +37,7 @@ export interface XMarkdownVitePluginOptions {
 export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = {}): Plugin {
   const {
     optionalDeps = ['mermaid', 'shiki', 'shiki-stream'],
-    virtualModulesDir = './node_modules/@hejiayue/x-markdown-test/virtual-modules',
+    virtualModulesDir = './node_modules/x-markdown-vue/virtual-modules',
     showConsoleHints = true,
   } = options
 
@@ -45,7 +45,7 @@ export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = 
   const virtualModuleMap = new Map<string, string>()
 
   return {
-    name: '@hejiayue/x-markdown-test:vite-plugin',
+    name: 'x-markdown-vue:vite-plugin',
     enforce: 'pre', // 在其他插件之前执行
 
     // 拦截模块解析，包括动态导入
@@ -104,7 +104,7 @@ export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = 
             // 在开发环境显示提示信息
             if (config.mode === 'development') {
               console.log(
-                `\x1b[33m[@hejiayue/x-markdown-test]\x1b[0m ${dep} 未安装，使用虚拟模块: ${virtualModulePath}`
+                `\x1b[33m[x-markdown-vue]\x1b[0m ${dep} 未安装，使用虚拟模块: ${virtualModulePath}`
               )
             }
           }

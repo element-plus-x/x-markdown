@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
-import { createXMarkdownVitePlugin } from '@hejiayue/x-markdown-test/vite-plugin'
+import { createXMarkdownVitePlugin } from 'x-markdown-vue/vite-plugin'
 
 export default defineConfig({
   plugins: [
