@@ -1,6 +1,6 @@
 {
   "name": "@hejiayue/x-markdown-test",
-  "version": "0.0.1-beta.131",
+  "version": "0.0.1-beta.137",
   "description": "A markdown component library for Vue",
   "type": "module",
   "main": "./dist/x-markdown.cjs.js",
@@ -17,10 +17,12 @@
         "default": "./dist/x-markdown.cjs.js"
       }
     },
-    "./style": "./dist/style.css"
+    "./style": "./dist/style.css",
+    "./vite-plugin": "./src/vite-plugin.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/vite-plugin.js"
   ],
   "sideEffects": [
     "*.css",
@@ -67,7 +69,18 @@
     "vue": "^3.3.0",
     "shiki": "^1.0.0 || ^3.0.0",
     "shiki-stream": "^0.1.4",
-    "mermaid": "^10.0.0"
+    "mermaid": "^10.0.0 || ^11.0.0"
+  },
+  "peerDependenciesMeta": {
+    "shiki": {
+      "optional": true
+    },
+    "shiki-stream": {
+      "optional": true
+    },
+    "mermaid": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.0",
