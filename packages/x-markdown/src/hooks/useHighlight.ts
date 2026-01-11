@@ -22,24 +22,48 @@ interface UseHighlightOptions {
 
 let shikiModulePromise: Promise<any | null> | null = null
 let shikiStreamModulePromise: Promise<any | null> | null = null
-let hasShownDependencyHint = false
+let hasShownShikiHint = false
+let hasShownShikiStreamHint = false
 
 
-const showDependencyHint = () => {
-  if (hasShownDependencyHint) return
-  hasShownDependencyHint = true
+const showShikiHint = () => {
+  if (hasShownShikiHint) return
+  hasShownShikiHint = true
 
   console.log(
-    '%c[x-markdown]%c 代码高亮功能已降级为纯文本模式',
+    '%c[x-markdown]%c Shiki 代码高亮库未安装，已降级为纯文本模式',
     'font-weight: bold; color: #0066cc;',
     'color: #666;'
   )
   console.log(
-    '%c如需语法高亮功能，请安装以下依赖：',
+    '%c如需语法高亮功能，请安装：',
     'color: #666; font-weight: bold;'
   )
   console.log(
-    '%c  pnpm add shiki shiki-stream',
+    '%c  pnpm add shiki',
+    'color: #00aa00; font-family: monospace;'
+  )
+  console.log(
+    '%c安装后请重启开发服务器',
+    'color: #999; font-size: 12px;'
+  )
+}
+
+const showShikiStreamHint = () => {
+  if (hasShownShikiStreamHint) return
+  hasShownShikiStreamHint = true
+
+  console.log(
+    '%c[x-markdown]%c shiki-stream 未安装，已降级为非流式高亮',
+    'font-weight: bold; color: #0066cc;',
+    'color: #666;'
+  )
+  console.log(
+    '%c如需流式代码高亮功能（推荐用于 AI 场景），请安装：',
+    'color: #666; font-weight: bold;'
+  )
+  console.log(
+    '%c  pnpm add shiki-stream',
     'color: #00aa00; font-family: monospace;'
   )
   console.log(
@@ -53,6 +77,10 @@ const loadShiki = async () => {
     shikiModulePromise = (async () => {
       try {
         const mod = await import('shiki')
+        // 检查是否是虚拟模块（虚拟模块返回 { default: null }）
+        if (mod && (mod as any).default === null) {
+          return null
+        }
         return mod
       } catch {
         // 静默失败，返回 null
@@ -68,6 +96,10 @@ const loadShikiStream = async () => {
     shikiStreamModulePromise = (async () => {
       try {
         const mod = await import('shiki-stream')
+        // 检查是否是虚拟模块（虚拟模块返回 { default: null }）
+        if (mod && (mod as any).default === null) {
+          return null
+        }
         return mod
       } catch {
         // 静默失败，返回 null
@@ -152,47 +184,73 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
   const preStyle = computed(() => streaming.value?.preStyle)
 
   const updateTokens = async (nextText: string, forceReset = false) => {
-    if (!tokenizer) return
-
-    if (forceReset) {
-      tokenizer.clear()
-      previousText = ''
-    }
-
-    const canAppend = !forceReset && nextText.startsWith(previousText)
-    let chunk = nextText
-
-    if (canAppend) {
-      chunk = nextText.slice(previousText.length)
-    } else if (!forceReset) {
-      tokenizer.clear()
-    }
-
-    previousText = nextText
-
-    if (!chunk) {
-      const mergedTokens = [...tokenizer.tokensStable, ...tokenizer.tokensUnstable]
-      streaming.value = {
-        colorReplacements: options.colorReplacements,
-        lines: mergedTokens.length ? tokensToLineTokens(mergedTokens) : [[]],
-        preStyle: streaming.value?.preStyle,
+    // 当有 tokenizer 时使用流式处理
+    if (tokenizer) {
+      if (forceReset) {
+        tokenizer.clear()
+        previousText = ''
       }
-      return
-    }
 
-    try {
-      await tokenizer.enqueue(chunk)
+      const canAppend = !forceReset && nextText.startsWith(previousText)
+      let chunk = nextText
 
-      const mergedTokens = [...tokenizer.tokensStable, ...tokenizer.tokensUnstable]
-
-      streaming.value = {
-        colorReplacements: options.colorReplacements,
-        lines: tokensToLineTokens(mergedTokens),
-        preStyle: streaming.value?.preStyle,
+      if (canAppend) {
+        chunk = nextText.slice(previousText.length)
+      } else if (!forceReset) {
+        tokenizer.clear()
       }
-    } catch (err) {
-      console.error('[x-markdown] Streaming highlighting failed:', err)
-      error.value = err as Error
+
+      previousText = nextText
+
+      if (!chunk) {
+        const mergedTokens = [...tokenizer.tokensStable, ...tokenizer.tokensUnstable]
+        streaming.value = {
+          colorReplacements: options.colorReplacements,
+          lines: mergedTokens.length ? tokensToLineTokens(mergedTokens) : [[]],
+          preStyle: streaming.value?.preStyle,
+        }
+        return
+      }
+
+      try {
+        await tokenizer.enqueue(chunk)
+
+        const mergedTokens = [...tokenizer.tokensStable, ...tokenizer.tokensUnstable]
+
+        streaming.value = {
+          colorReplacements: options.colorReplacements,
+          lines: tokensToLineTokens(mergedTokens),
+          preStyle: streaming.value?.preStyle,
+        }
+      } catch (err) {
+        console.error('[x-markdown] Streaming highlighting failed:', err)
+        error.value = err as Error
+      }
+    } else if (highlighter) {
+      // 当没有 tokenizer 但有 highlighter 时，使用非流式方式高亮
+      // 这发生在 shiki 可用但 shiki-stream 不可用时
+      try {
+        const currentLang = currentUsedLang || 'plaintext'
+        const currentTheme = effectiveTheme.value
+        const tokens = highlighter.codeToTokens(nextText, {
+          lang: currentLang,
+          theme: currentTheme,
+        })
+
+        streaming.value = {
+          colorReplacements: options.colorReplacements,
+          lines: tokensToLineTokens(tokens),
+          preStyle: streaming.value?.preStyle,
+        }
+      } catch (err) {
+        console.error('[x-markdown] Direct highlighting failed:', err)
+        // 降级为纯文本
+        streaming.value = {
+          colorReplacements: options.colorReplacements,
+          lines: [[{ content: nextText }]],
+          preStyle: streaming.value?.preStyle,
+        }
+      }
     }
   }
 
@@ -206,13 +264,20 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     try {
       const mod = await loadShiki()
       if (!mod) {
-        // 静默降级为纯文本
+        // shiki 完全不可用
         streaming.value = {
           colorReplacements: options.colorReplacements,
           lines: [[{ content: text.value }]],
           preStyle: undefined,
         }
-        showDependencyHint()
+        showShikiHint()
+
+        // 即使 shiki 不可用，也检查 shiki-stream 并显示提示
+        const shikiStreamMod = await loadShikiStream()
+        if (!shikiStreamMod) {
+          // shiki 和 shiki-stream 都不可用
+          showShikiStreamHint()
+        }
         return
       }
 
@@ -240,6 +305,9 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
           lang: currentLang,
           theme: currentTheme,
         })
+      } else {
+        // shiki 可用但 shiki-stream 不可用
+        showShikiStreamHint()
       }
 
       previousText = ''
@@ -314,9 +382,12 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
       }
     }
 
-    if (tokenizer) {
+    if (tokenizer || highlighter) {
+      // 当有 tokenizer 或 highlighter 时都调用 updateTokens
+      // updateTokens 内部会处理两种情况
       updateTokens(newText)
-    } else if (!highlighter) {
+    } else {
+      // 两者都没有时降级为纯文本
       streaming.value = {
         colorReplacements: options.colorReplacements,
         lines: [[{ content: newText }]],

@@ -23,9 +23,22 @@ export function createXMarkdownVitePlugin(options = {}) {
     virtualModulesDir = './node_modules/@hejiayue/x-markdown-test/virtual-modules',
   } = options
 
+  // 存储虚拟模块的路径映射
+  const virtualModuleMap = new Map()
+
   return {
     name: '@hejiayue/x-markdown-test:vite-plugin',
     enforce: 'pre', // 在其他插件之前执行
+
+    // 拦截模块解析，包括动态导入
+    resolveId(id, importer) {
+      // 检查是否是我们需要处理的可选依赖
+      if (virtualModuleMap.has(id)) {
+        return virtualModuleMap.get(id)
+      }
+      return null
+    },
+
     config(config) {
       // 获取项目根目录
       const projectRoot = process.cwd()
@@ -55,15 +68,19 @@ export function createXMarkdownVitePlugin(options = {}) {
           }
 
           if (virtualModulePath) {
+            // 同时添加到 alias 和 resolveId 映射
             optionalAliases.push({
               find: dep,
               replacement: virtualModulePath,
             })
 
+            // 添加到 resolveId 映射表（用于动态导入）
+            virtualModuleMap.set(dep, virtualModulePath)
+
             // 在开发环境显示提示信息
             if (config.mode === 'development') {
               console.log(
-                `\x1b[33m[@hejiayue/x-markdown-test]\x1b[0m ${dep} 未安装，使用虚拟模块`
+                `\x1b[33m[@hejiayue/x-markdown-test]\x1b[0m ${dep} 未安装，使用虚拟模块: ${virtualModulePath}`
               )
             }
           }

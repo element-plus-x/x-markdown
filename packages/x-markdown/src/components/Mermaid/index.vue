@@ -26,7 +26,9 @@ const props = withDefaults(defineProps<MermaidProps>(), {
 const syntaxMermaidRef = ref<InstanceType<typeof SyntaxMermaid> | null>(null)
 const showSourceCode = ref(false)
 // 运行时检测 mermaid 是否可用
-const isDegraded = ref(false)
+// 默认为 true（降级模式），检测到可用后才切换到正常模式
+// 这样可以避免首次渲染时的闪烁问题
+const isDegraded = ref(true)
 const mermaidContent = computed(() => props.raw?.content || '')
 const mermaidId = computed(() => `mermaid-${props.raw?.key || 'default'}`)
 const isLoading = computed(() => syntaxMermaidRef.value?.isLoading ?? true)

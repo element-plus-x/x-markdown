@@ -85,46 +85,11 @@ type UseMermaidOptionsInput = UseMermaidOptions | Ref<UseMermaidOptions>
 let mermaidPromise: Promise<any> | null = null
 let hasShownMermaidHint = false
 let mermaidAvailableCache: boolean | null = null
-let mermaidCheckPromise: Promise<boolean> | null = null
+let mermaidCheckPromise: Promise<boolean | null> | null = null
 
 /**
- * 同步检查缓存状态（不触发检测）
- * @returns 缓存状态，null 表示未检测
+ * 显示 mermaid 安装提示
  */
-export function getMermaidAvailableCache(): boolean | null {
-  return mermaidAvailableCache
-}
-
-/**
- * 检测 mermaid 是否可用（全局缓存，只检测一次）
- */
-export async function checkMermaidAvailable(): Promise<boolean> {
-  // 如果已经有缓存结果，直接返回
-  if (mermaidAvailableCache !== null) {
-    return mermaidAvailableCache
-  }
-
-  // 如果正在检测，返回检测 Promise
-  if (mermaidCheckPromise) {
-    return mermaidCheckPromise
-  }
-
-  // 开始检测
-  mermaidCheckPromise = (async () => {
-    try {
-      const mod = await import('mermaid')
-      mermaidAvailableCache = !!mod
-      return mermaidAvailableCache
-    } catch (error) {
-      console.error('[x-markdown] Failed to load mermaid:', error)
-      mermaidAvailableCache = false
-      return false
-    }
-  })()
-
-  return mermaidCheckPromise
-}
-
 const showMermaidHint = () => {
   if (hasShownMermaidHint) return
   hasShownMermaidHint = true
@@ -148,15 +113,74 @@ const showMermaidHint = () => {
   )
 }
 
+/**
+ * 同步检查缓存状态（不触发检测）
+ * @returns 缓存状态，null 表示未检测
+ */
+export function getMermaidAvailableCache(): boolean | null {
+  return mermaidAvailableCache
+}
+
+/**
+ * 检测 mermaid 是否可用（全局缓存，只检测一次）
+ */
+export async function checkMermaidAvailable(): Promise<boolean> {
+  // 如果已经有缓存结果，直接返回
+  if (mermaidAvailableCache !== null) {
+    return mermaidAvailableCache
+  }
+
+  // 如果正在检测，返回检测 Promise
+  if (mermaidCheckPromise) {
+    return mermaidCheckPromise as Promise<boolean>
+  }
+
+  // 开始检测
+  mermaidCheckPromise = (async () => {
+    try {
+      const mod = await import('mermaid')
+      // 检查模块是否有实际的 mermaid 功能
+      // 虚拟模块返回 { default: null }，所以需要检查 default 是否存在且有效
+      const mermaidInstance = (mod as any)?.default
+      // 检查是否有 mermaid 的关键方法或属性
+      const hasMermaidAPI = mermaidInstance && (
+        typeof mermaidInstance.render === 'function' ||
+        typeof mermaidInstance.initialize === 'function' ||
+        typeof mermaidInstance.run === 'function'
+      )
+      mermaidAvailableCache = hasMermaidAPI
+
+      // 当 mermaid 不可用时，显示提示
+      if (!hasMermaidAPI) {
+        showMermaidHint()
+      }
+
+      return mermaidAvailableCache
+    } catch {
+      // 静默失败，mermaid 不可用
+      mermaidAvailableCache = false
+      showMermaidHint()
+      return false
+    }
+  })()
+
+  return mermaidCheckPromise as Promise<boolean>
+}
+
 async function loadMermaid() {
   if (typeof window === 'undefined') return null
   if (!mermaidPromise) {
     mermaidPromise = (async () => {
       try {
         const mod = await import('mermaid')
+        // 检查是否是虚拟模块（虚拟模块返回 { default: null }）
+        if (mod && (mod as any).default === null) {
+          showMermaidHint()
+          return null
+        }
         return (mod as any)?.default
-      } catch (error) {
-        console.error('[x-markdown] Failed to load mermaid:', error)
+      } catch {
+        // 静默失败，显示友好提示
         showMermaidHint()
         return null
       }
