@@ -1,4 +1,4 @@
-import { ref, watch, onUnmounted, computed, isRef, toValue, type Ref, type MaybeRef, type CSSProperties } from 'vue'
+import { computed, nextTick, ref, watch, onUnmounted, type Ref, type MaybeRef, type CSSProperties } from 'vue'
 
 // 获取是否启用控制台提示的辅助函数
 const consoleHintsEnabled = () => {
@@ -123,7 +123,7 @@ const tokensToLineTokens = (tokens: HighlightToken[] | HighlightToken[][]): High
     lines.push(currentLine)
   }
 
-  (tokens as HighlightToken[]).forEach((token) => {
+  ;(tokens as HighlightToken[]).forEach((token) => {
     const content = token.content ?? ''
 
     if (content === '\n') {
@@ -174,12 +174,13 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
   let lastRequestedLang = ''
 
   const effectiveTheme = computed(() => {
-    const theme = isRef(options.theme) ? options.theme.value : options.theme
+    const theme = typeof options.theme === 'object' && 'value' in options.theme ? options.theme.value : options.theme
     return theme || 'slack-dark'
   })
 
   const effectiveLanguage = computed(() => {
-    return toValue(options.language) || 'text'
+    const lang = typeof options.language === 'object' && 'value' in options.language ? options.language.value : options.language
+    return lang || 'text'
   })
 
   const lines = computed(() => streaming.value?.lines || [[]])
