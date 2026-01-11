@@ -3,6 +3,14 @@ import { throttle } from 'lodash-es'
 import { computed, ref, watch, onUnmounted } from 'vue'
 import type { MermaidZoomControls, UseMermaidZoomOptions, UseMermaidResult } from '../components/Mermaid/types'
 
+// 获取是否启用控制台提示的辅助函数
+const consoleHintsEnabled = () => {
+  if (typeof __X_MARKDOWN_CONSOLE_HINTS_ENABLED__ === 'boolean') {
+    return __X_MARKDOWN_CONSOLE_HINTS_ENABLED__
+  }
+  return true // 默认启用
+}
+
 export function downloadSvgAsPng(svg: string): void {
   if (!svg) return
 
@@ -92,24 +100,16 @@ let mermaidCheckPromise: Promise<boolean | null> | null = null
  */
 const showMermaidHint = () => {
   if (hasShownMermaidHint) return
+  if (!consoleHintsEnabled()) return
+
   hasShownMermaidHint = true
 
   console.log(
-    '%c[x-markdown]%c Mermaid 图表功能已降级为代码块显示',
+    '%c[x-markdown]%c 图表可选: %cpnpm add mermaid%c',
     'font-weight: bold; color: #9333ea;',
-    'color: #666;'
-  )
-  console.log(
-    '%c如需 Mermaid 图表渲染功能，请安装：',
-    'color: #666; font-weight: bold;'
-  )
-  console.log(
-    '%c  pnpm add mermaid',
-    'color: #9333ea; font-family: monospace;'
-  )
-  console.log(
-    '%c安装后请重启开发服务器',
-    'color: #999; font-size: 12px;'
+    'color: #666;',
+    'color: #9333ea; font-family: monospace;',
+    'color: #999;'
   )
 }
 

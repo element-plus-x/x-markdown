@@ -1,10 +1,29 @@
 import { resolve, dirname } from 'node:path'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import type { Plugin, UserConfig } from 'vite'
 
 // 在 ES 模块中获取 __dirname
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
+
+/**
+ * x-markdown Vite 插件配置选项
+ */
+export interface XMarkdownVitePluginOptions {
+  /**
+   * 可选依赖列表（默认：['mermaid', 'shiki', 'shiki-stream']）
+   */
+  optionalDeps?: string[]
+  /**
+   * 虚拟模块目录（相对于项目根目录）
+   */
+  virtualModulesDir?: string
+  /**
+   * 是否显示控制台提示（默认：true）
+   */
+  showConsoleHints?: boolean
+}
 
 /**
  * x-markdown Vite 插件
@@ -12,26 +31,25 @@ const __dirname = dirname(__filename)
  * 自动处理可选依赖（shiki、shiki-stream、mermaid）的虚拟模块配置
  * 当这些依赖未安装时，自动映射到虚拟模块避免构建失败
  *
- * @param {Object} options - 插件配置选项
- * @param {string[]} options.optionalDeps - 可选依赖列表（默认：['mermaid', 'shiki', 'shiki-stream']）
- * @param {string} options.virtualModulesDir - 虚拟模块目录（相对于项目根目录）
- * @returns {import('vite').Plugin} Vite 插件
+ * @param options - 插件配置选项
+ * @returns Vite 插件
  */
-export function createXMarkdownVitePlugin(options = {}) {
+export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = {}): Plugin {
   const {
     optionalDeps = ['mermaid', 'shiki', 'shiki-stream'],
     virtualModulesDir = './node_modules/@hejiayue/x-markdown-test/virtual-modules',
+    showConsoleHints = true,
   } = options
 
   // 存储虚拟模块的路径映射
-  const virtualModuleMap = new Map()
+  const virtualModuleMap = new Map<string, string>()
 
   return {
     name: '@hejiayue/x-markdown-test:vite-plugin',
     enforce: 'pre', // 在其他插件之前执行
 
     // 拦截模块解析，包括动态导入
-    resolveId(id, importer) {
+    resolveId(id) {
       // 检查是否是我们需要处理的可选依赖
       if (virtualModuleMap.has(id)) {
         return virtualModuleMap.get(id)
@@ -39,12 +57,18 @@ export function createXMarkdownVitePlugin(options = {}) {
       return null
     },
 
-    config(config) {
+    config(config: UserConfig) {
       // 获取项目根目录
       const projectRoot = process.cwd()
 
+      // 注入全局变量，控制是否显示控制台提示
+      if (!config.define) {
+        config.define = {}
+      }
+      config.define.__X_MARKDOWN_CONSOLE_HINTS_ENABLED__ = JSON.stringify(showConsoleHints)
+
       // 动态生成可选依赖的 alias 配置
-      const optionalAliases = []
+      const optionalAliases: Array<{ find: string; replacement: string }> = []
 
       for (const dep of optionalDeps) {
         const depPath = resolve(projectRoot, 'node_modules', dep)
@@ -59,7 +83,7 @@ export function createXMarkdownVitePlugin(options = {}) {
             resolve(__dirname, 'virtual-modules', `${dep}.js`),
           ]
 
-          let virtualModulePath = null
+          let virtualModulePath: string | null = null
           for (const path of virtualModulePaths) {
             if (existsSync(path)) {
               virtualModulePath = path
@@ -108,7 +132,7 @@ export function createXMarkdownVitePlugin(options = {}) {
       const includeDeps = optimizeDeps.include || []
 
       // 移除未安装的依赖从 include
-      const filteredInclude = includeDeps.filter(dep => {
+      const filteredInclude = includeDeps.filter((dep: string) => {
         const depPath = resolve(projectRoot, 'node_modules', dep)
         return existsSync(depPath)
       })

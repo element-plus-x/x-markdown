@@ -1,6 +1,6 @@
 {
   "name": "@hejiayue/x-markdown-test",
-  "version": "0.0.1-beta.142",
+  "version": "0.0.1-beta.148",
   "description": "A markdown component library for Vue",
   "type": "module",
   "main": "./dist/x-markdown.cjs.js",

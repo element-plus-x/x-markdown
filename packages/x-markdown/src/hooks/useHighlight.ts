@@ -1,5 +1,13 @@
 import { ref, watch, onUnmounted, computed, isRef, toValue, type Ref, type MaybeRef, type CSSProperties } from 'vue'
 
+// 获取是否启用控制台提示的辅助函数
+const consoleHintsEnabled = () => {
+  if (typeof __X_MARKDOWN_CONSOLE_HINTS_ENABLED__ === 'boolean') {
+    return __X_MARKDOWN_CONSOLE_HINTS_ENABLED__
+  }
+  return true // 默认启用
+}
+
 interface HighlightToken {
   content?: string
   color?: string
@@ -28,47 +36,31 @@ let hasShownShikiStreamHint = false
 
 const showShikiHint = () => {
   if (hasShownShikiHint) return
+  if (!consoleHintsEnabled()) return
+
   hasShownShikiHint = true
 
   console.log(
-    '%c[x-markdown]%c Shiki 代码高亮库未安装，已降级为纯文本模式',
+    '%c[x-markdown]%c 需安装 shiki: %cpnpm add shiki%c',
     'font-weight: bold; color: #0066cc;',
-    'color: #666;'
-  )
-  console.log(
-    '%c如需语法高亮功能，请安装：',
-    'color: #666; font-weight: bold;'
-  )
-  console.log(
-    '%c  pnpm add shiki',
-    'color: #00aa00; font-family: monospace;'
-  )
-  console.log(
-    '%c安装后请重启开发服务器',
-    'color: #999; font-size: 12px;'
+    'color: #666;',
+    'color: #00aa00; font-family: monospace;',
+    'color: #999;'
   )
 }
 
 const showShikiStreamHint = () => {
   if (hasShownShikiStreamHint) return
+  if (!consoleHintsEnabled()) return
+
   hasShownShikiStreamHint = true
 
   console.log(
-    '%c[x-markdown]%c shiki-stream 未安装，已降级为非流式高亮',
+    '%c[x-markdown]%c AI 流式可选: %cpnpm add shiki-stream%c (需先装 shiki)',
     'font-weight: bold; color: #0066cc;',
-    'color: #666;'
-  )
-  console.log(
-    '%c如需流式代码高亮功能（推荐用于 AI 场景），请安装：',
-    'color: #666; font-weight: bold;'
-  )
-  console.log(
-    '%c  pnpm add shiki-stream',
-    'color: #00aa00; font-family: monospace;'
-  )
-  console.log(
-    '%c安装后请重启开发服务器',
-    'color: #999; font-size: 12px;'
+    'color: #666;',
+    'color: #00aa00; font-family: monospace;',
+    'color: #999;'
   )
 }
 
@@ -110,9 +102,15 @@ const loadShikiStream = async () => {
   return shikiStreamModulePromise
 }
 
-const tokensToLineTokens = (tokens: HighlightToken[]): HighlightToken[][] => {
+const tokensToLineTokens = (tokens: HighlightToken[] | HighlightToken[][]): HighlightToken[][] => {
   if (!tokens.length) return [[]]
 
+  // 检查是否已经是二维数组（shiki 3.x codeToTokens 的返回格式）
+  if (Array.isArray(tokens[0])) {
+    return tokens as HighlightToken[][]
+  }
+
+  // 处理一维数组（shiki-stream 的格式）
   const lines: HighlightToken[][] = [[]]
   let currentLine = lines[0]
 
@@ -121,7 +119,7 @@ const tokensToLineTokens = (tokens: HighlightToken[]): HighlightToken[][] => {
     lines.push(currentLine)
   }
 
-  tokens.forEach((token) => {
+  (tokens as HighlightToken[]).forEach((token) => {
     const content = token.content ?? ''
 
     if (content === '\n') {
@@ -135,7 +133,7 @@ const tokensToLineTokens = (tokens: HighlightToken[]): HighlightToken[][] => {
     }
 
     const segments = content.split('\n')
-    segments.forEach((segment, index) => {
+    segments.forEach((segment: string, index: number) => {
       if (segment) {
         currentLine.push({
           ...token,
@@ -237,13 +235,18 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
           theme: currentTheme,
         })
 
+        // shiki 3.x 的 codeToTokens 返回一个对象，包含 tokens、fg、bg 等属性
+        // 需要从返回对象中提取 tokens 数组
+        const tokensArray = (tokens as any).tokens || tokens
+
         streaming.value = {
           colorReplacements: options.colorReplacements,
-          lines: tokensToLineTokens(tokens),
+          lines: tokensToLineTokens(tokensArray),
           preStyle: streaming.value?.preStyle,
         }
       } catch (err) {
         console.error('[x-markdown] Direct highlighting failed:', err)
+        console.error('[x-markdown] Current lang:', currentUsedLang, 'Requested lang:', effectiveLanguage.value)
         // 降级为纯文本
         streaming.value = {
           colorReplacements: options.colorReplacements,
