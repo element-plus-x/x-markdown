@@ -18,11 +18,19 @@
       }
     },
     "./style": "./dist/style.css",
-    "./vite-plugin": "./src/vite-plugin.ts"
+    "./vite-plugin": {
+      "import": {
+        "types": "./dist/types/vite-plugin.d.ts",
+        "default": "./dist/vite-plugin.js"
+      },
+      "require": {
+        "types": "./dist/types/vite-plugin.d.ts",
+        "default": "./dist/vite-plugin.cjs"
+      }
+    }
   },
   "files": [
-    "dist",
-    "src/vite-plugin.ts"
+    "dist"
   ],
   "sideEffects": [
     "*.css",
@@ -31,7 +39,9 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build && tsc --project tsconfig.build.json",
+    "build": "pnpm build:lib && pnpm build:plugin && tsc --project tsconfig.build.json",
+    "build:lib": "vite build",
+    "build:plugin": "cross-env VITE_BUILD_TARGET=vite-plugin vite build",
     "lint": "eslint src --ext .ts,.tsx,.vue",
     "clean": "rm -rf dist node_modules"
   },
@@ -66,10 +76,10 @@
     "unist-util-visit": "^5.0.0"
   },
   "peerDependencies": {
-    "vue": "^3.3.0",
+    "mermaid": "^10.0.0 || ^11.0.0",
     "shiki": "^1.0.0 || ^3.0.0",
     "shiki-stream": "^0.1.4",
-    "mermaid": "^10.0.0 || ^11.0.0"
+    "vue": "^3.3.0"
   },
   "peerDependenciesMeta": {
     "shiki": {
@@ -88,8 +98,13 @@
     "@types/lodash-es": "^4.17.12",
     "@types/mdast": "^4.0.4",
     "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
     "@vitejs/plugin-vue": "^5.0.0",
     "@vueuse/core": "^14.1.0",
+    "cross-env": "^10.1.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.0.0",
     "sass": "^1.70.0",
     "terser": "^5.44.1",
     "typescript": "^5.3.0",

@@ -1,6 +1,7 @@
 import { resolve, dirname } from 'node:path'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { createRequire } from 'module'
 import type { Plugin, UserConfig } from 'vite'
 
 // 在 ES 模块中获取 __dirname
@@ -57,6 +58,9 @@ export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = 
       return null
     },
 
+    configResolved(config) {
+      console.log('[x-markdown-plugin] Final aliases:', config.resolve.alias)
+    },
     config(config: UserConfig) {
       // 获取项目根目录
       const projectRoot = process.cwd()
@@ -70,17 +74,53 @@ export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = 
       // 动态生成可选依赖的 alias 配置
       const optionalAliases: Array<{ find: string; replacement: string }> = []
 
-      for (const dep of optionalDeps) {
-        const depPath = resolve(projectRoot, 'node_modules', dep)
+      // 创建 require 函数，用于解析依赖
+      const projectRequire = createRequire(resolve(projectRoot, 'package.json'))
+      let declaredDeps: Record<string, any> | null = null
+      try {
+        const pkgJsonPath = resolve(projectRoot, 'package.json')
+        const pkgRaw = readFileSync(pkgJsonPath, 'utf-8')
+        declaredDeps = JSON.parse(pkgRaw)
+      } catch {
+        declaredDeps = null
+      }
 
-        if (!existsSync(depPath)) {
+      const isDeclaredInProject = (dep: string) => {
+        if (!declaredDeps) return false
+        const fields = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'] as const
+        const declared = fields.some((field) => Boolean((declaredDeps as any)?.[field]?.[dep]))
+        // console.log(`[x-markdown-plugin] Check ${dep} declared: ${declared}`)
+        return declared
+      }
+
+      for (const dep of optionalDeps) {
+        let isInstalled = false
+        try {
+          if (!isDeclaredInProject(dep)) {
+            isInstalled = false
+            console.log(`[x-markdown-plugin] ${dep} NOT declared in package.json`)
+          } else {
+            projectRequire.resolve(dep)
+            isInstalled = true
+            console.log(`[x-markdown-plugin] ${dep} is installed and declared`)
+          }
+        } catch {
+          isInstalled = false
+        }
+
+        if (!isInstalled) {
           // 依赖未安装，使用虚拟模块
           // 尝试从多个可能的位置查找虚拟模块
           const virtualModulePaths = [
             resolve(projectRoot, virtualModulesDir, `${dep}.js`),
+            resolve(projectRoot, virtualModulesDir, `${dep}.ts`),
             resolve(projectRoot, 'src/virtual-modules', `${dep}.js`),
+            resolve(projectRoot, 'src/virtual-modules', `${dep}.ts`),
             // 最后尝试：从 x-markdown 包内部获取
             resolve(__dirname, 'virtual-modules', `${dep}.js`),
+            // 开发环境兼容：如果是在 monorepo 中运行编译后的插件，尝试从源码目录获取
+            resolve(__dirname, '../src/virtual-modules', `${dep}.js`),
+            resolve(__dirname, '../src/virtual-modules', `${dep}.ts`),
           ]
 
           let virtualModulePath: string | null = null
@@ -103,9 +143,7 @@ export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = 
 
             // 在开发环境显示提示信息
             if (config.mode === 'development') {
-              console.log(
-                `\x1b[33m[x-markdown-vue]\x1b[0m ${dep} 未安装，使用虚拟模块: ${virtualModulePath}`
-              )
+              console.log(`\x1b[33m[x-markdown-vue]\x1b[0m ${dep} 未安装，使用虚拟模块: ${virtualModulePath}`)
             }
           }
         }
@@ -116,13 +154,22 @@ export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = 
         // 保留原有的 alias 配置
         const existingAlias = config.resolve?.alias || []
 
+        // 规范化现有 alias 为数组格式
+        let normalizedExistingAlias: Array<any> = []
+        if (Array.isArray(existingAlias)) {
+          normalizedExistingAlias = existingAlias
+        } else if (typeof existingAlias === 'object') {
+          // 对象格式转换为数组格式
+          normalizedExistingAlias = Object.entries(existingAlias).map(([find, replacement]) => ({
+            find,
+            replacement,
+          }))
+        }
+
         // 合并 alias 配置
         config.resolve = {
           ...config.resolve,
-          alias: [
-            ...optionalAliases,
-            ...(Array.isArray(existingAlias) ? existingAlias : [existingAlias]),
-          ],
+          alias: [...optionalAliases, ...normalizedExistingAlias],
         }
       }
 
@@ -133,15 +180,28 @@ export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = 
 
       // 移除未安装的依赖从 include
       const filteredInclude = includeDeps.filter((dep: string) => {
-        const depPath = resolve(projectRoot, 'node_modules', dep)
-        return existsSync(depPath)
+        try {
+          if (!isDeclaredInProject(dep)) return false
+          projectRequire.resolve(dep)
+          return true
+        } catch {
+          return false
+        }
       })
 
       // 添加未安装的依赖到 exclude
-      const newExclude = [...optionalDeps.filter(dep => {
-        const depPath = resolve(projectRoot, 'node_modules', dep)
-        return !existsSync(depPath)
-      }), ...excludeDeps]
+      const newExclude = [
+        ...optionalDeps.filter((dep) => {
+          try {
+            if (!isDeclaredInProject(dep)) return true
+            projectRequire.resolve(dep)
+            return false
+          } catch {
+            return true
+          }
+        }),
+        ...excludeDeps,
+      ]
 
       config.optimizeDeps = {
         ...optimizeDeps,

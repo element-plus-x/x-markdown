@@ -1,4 +1,14 @@
-import { ref, watch, onUnmounted, computed, isRef, toValue, type Ref, type MaybeRef, type CSSProperties } from 'vue'
+import {
+  ref,
+  watch,
+  onUnmounted,
+  computed,
+  isRef,
+  toValue,
+  type Ref,
+  type MaybeRefOrGetter,
+  type CSSProperties,
+} from 'vue'
 
 // 获取是否启用控制台提示的辅助函数
 const consoleHintsEnabled = () => {
@@ -8,7 +18,7 @@ const consoleHintsEnabled = () => {
   return true // 默认启用
 }
 
-interface HighlightToken {
+export interface HighlightToken {
   content?: string
   color?: string
   fontStyle?: 'italic' | null
@@ -23,7 +33,7 @@ interface StreamingHighlightResult {
 }
 
 interface UseHighlightOptions {
-  language: MaybeRef<string>
+  language: MaybeRefOrGetter<string>
   theme?: string | Ref<string>
   colorReplacements?: Record<string, string>
 }
@@ -37,7 +47,6 @@ let hasShownShikiStreamHint = false
 const highlighterCache = new Map<string, any>()
 const getHighlighterCacheKey = (theme: string) => `highlighter-${theme}`
 
-
 const showShikiHint = () => {
   if (hasShownShikiHint) return
   if (!consoleHintsEnabled()) return
@@ -49,7 +58,7 @@ const showShikiHint = () => {
     'font-weight: bold; color: #0066cc;',
     'color: #666;',
     'color: #00aa00; font-family: monospace;',
-    'color: #999;'
+    'color: #999;',
   )
 }
 
@@ -64,7 +73,7 @@ const showShikiStreamHint = () => {
     'font-weight: bold; color: #0066cc;',
     'color: #666;',
     'color: #00aa00; font-family: monospace;',
-    'color: #999;'
+    'color: #999;',
   )
 }
 
@@ -123,7 +132,7 @@ const tokensToLineTokens = (tokens: HighlightToken[] | HighlightToken[][]): High
     lines.push(currentLine)
   }
 
-  (tokens as HighlightToken[]).forEach((token) => {
+  ;(tokens as HighlightToken[]).forEach((token) => {
     const content = token.content ?? ''
 
     if (content === '\n') {
@@ -283,10 +292,11 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
 
       // 检查缓存，如果已有相同主题的 highlighter，直接复用
       // 这避免了 Shiki 单例警告并提高了性能
+      console.log('%c[x-markdown] Shiki loaded successfully', 'background: #0b0; color: #fff; padding: 2px 4px;')
       if (!highlighterCache.has(cacheKey)) {
         highlighter = await mod.createHighlighter({
           themes: [currentTheme],
-          langs: [],  // 将动态加载语言
+          langs: [], // 将动态加载语言
         })
         highlighterCache.set(cacheKey, highlighter)
       } else {

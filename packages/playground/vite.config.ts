@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
+import { dirname, resolve } from 'path'
+import { fileURLToPath } from 'url'
 import { createXMarkdownVitePlugin } from 'x-markdown-vue/vite-plugin'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   plugins: [
@@ -14,6 +17,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      'x-markdown-vue/style': resolve(__dirname, '../x-markdown/src/MarkdownRender/index.css'),
+      'x-markdown-vue': resolve(__dirname, '../x-markdown/src/index.ts'),
     },
   },
   server: {

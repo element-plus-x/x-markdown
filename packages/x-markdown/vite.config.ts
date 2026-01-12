@@ -1,9 +1,41 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
+import { fileURLToPath } from 'url'
 
-export default defineConfig({
-  plugins: [vue()],
+// 判断是否是构建 vite-plugin
+const isVitePluginBuild = process.env.VITE_BUILD_TARGET === 'vite-plugin'
+
+export default defineConfig(({ mode }) => {
+  // 构建 vite-plugin 的配置
+  if (isVitePluginBuild) {
+    return {
+      build: {
+        emptyOutDir: false,
+        lib: {
+          entry: resolve(__dirname, 'src/vite-plugin.ts'),
+          fileName: (format) => `vite-plugin.${format}.js`,
+          formats: ['es', 'cjs'],
+        },
+        rollupOptions: {
+          external: ['vite'],
+          output: {
+            globals: {
+              vite: 'Vite',
+            },
+          },
+        },
+        target: 'node18',
+        ssr: true,
+        minify: false,
+        sourcemap: true,
+      },
+    }
+  }
+
+  // 主库的配置
+  return {
+    plugins: [vue()],
   resolve: {
     alias: {
       '@components': resolve(__dirname, 'src'),
@@ -106,4 +138,5 @@ export default defineConfig({
     // 这样它们只会在运行时动态导入时才加载，从而正确测试降级行为
     exclude: ['mermaid', 'shiki', 'shiki-stream'],
   },
+  }
 })

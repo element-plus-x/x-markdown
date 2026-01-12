@@ -140,7 +140,9 @@ function renderActionIcon(action: MermaidAction): VNode | null {
       if (result && typeof result === 'object' && '__v_isVNode' in result) {
         return result
       }
-    } catch {}
+    } catch {
+      // ignore
+    }
     return h(action.icon as any)
   }
 

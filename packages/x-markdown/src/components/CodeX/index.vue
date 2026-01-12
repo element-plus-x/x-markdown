@@ -13,8 +13,8 @@ export default defineComponent({
     codeXRender: { type: Object, default: () => ({}) },
     isDark: { type: Boolean, default: false },
     shikiTheme: {
-      type: Array as PropType<[string, string]>,
-      default: () => ['vitesse-light', 'vitesse-dark'],
+      type: Array as unknown as PropType<[string, string]>,
+      default: () => ['vitesse-light', 'vitesse-dark'] as [string, string],
     },
     showCodeBlockHeader: { type: Boolean, default: true },
     stickyCodeBlockHeader: { type: Boolean, default: true },

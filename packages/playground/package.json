@@ -4,19 +4,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "pnpm -C ../x-markdown build && vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite build && vite preview"
   },
   "dependencies": {
-    "x-markdown-vue": "workspace:*",
     "echarts": "^6.0.0",
     "github-markdown-css": "^5.8.1",
     "katex": "^0.16.25",
     "mermaid": "^11.12.2",
     "shiki": "^3.21.0",
     "shiki-stream": "^0.1.4",
-    "vue": "^3.3.0"
+    "vue": "^3.3.0",
+    "x-markdown-vue": "workspace:*"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",

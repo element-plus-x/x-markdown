@@ -14,10 +14,19 @@ export function rehypeAnimatedPlugin() {
         const newChildren: Array<ElementContent> = []
         for (const child of node.children) {
           if (child.type === 'text') {
-            // @ts-expect-error Segmenter is not available in all environments
-            const segmenter = new Intl.Segmenter('zh', { granularity: 'word' })
-            const segments = segmenter.segment(child.value)
-            const words = [...segments].map((segment) => segment.segment).filter(Boolean)
+            const Segmenter = (Intl as any).Segmenter as
+              | (new (locales?: string | string[], options?: { granularity?: string }) => {
+                  segment: (input: string) => Iterable<{ segment: string }>
+                })
+              | undefined
+
+            const words =
+              typeof Segmenter === 'function'
+                ? [...new Segmenter('zh', { granularity: 'word' }).segment(child.value)]
+                    .map((segment) => segment.segment)
+                    .filter(Boolean)
+                : Array.from(child.value).filter(Boolean)
+
             words.forEach((word: string) => {
               newChildren.push({
                 children: [{ type: 'text', value: word }],

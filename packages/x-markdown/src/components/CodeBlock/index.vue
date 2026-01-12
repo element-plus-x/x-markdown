@@ -177,6 +177,7 @@ function renderActionIcon(action: CodeBlockAction): VNode | null {
         return result
       }
     } catch {
+      // ignore
     }
     return h(action.icon as any)
   }

@@ -1,17 +1,14 @@
 <template>
   <!-- 行内代码容器 - 支持深浅色主题和语法高亮 -->
-  <div
-    class="x-md-inline-code"
-    :class="{
-      'x-md-inline-code--dark': props.isDark,
-      'x-md-animated-word': props.enableAnimate,
-    }"
-  >
+  <div class="x-md-inline-code" :class="{
+    'x-md-inline-code--dark': props.isDark,
+    'x-md-animated-word': props.enableAnimate,
+  }">
     <code :style="codeStyle">
       <!-- 无高亮时显示纯文本 -->
       <template v-if="!flatTokens.length">{{ content }}</template>
-      <!-- 有高亮时渲染 token -->
-      <template v-else>
+<!-- 有高亮时渲染 token -->
+<template v-else>
         <span
           v-for="(token, i) in flatTokens"
           :key="i"
@@ -20,13 +17,13 @@
           >{{ token.content }}</span
         >
       </template>
-    </code>
+</code>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, type CSSProperties } from 'vue'
-import { useHighlight } from '../../hooks/useHighlight'
+import { useHighlight, type HighlightToken } from '../../hooks/useHighlight'
 import type { CodeLineProps } from './types'
 
 const SHIKI_CORE_PKG = '@shikijs/core'
@@ -64,12 +61,12 @@ const normalizeStyleKeys = (style: Record<string, string | number>): CSSProperti
   const normalized: CSSProperties = {}
   Object.entries(style).forEach(([key, value]) => {
     const camelKey = key.replace(/-([a-z])/g, (_, char) => char.toUpperCase())
-    ;(normalized as Record<string, string | number>)[camelKey] = value
+      ; (normalized as Record<string, string | number>)[camelKey] = value
   })
   return normalized
 }
 
-const getTokenStyle = (token: ThemedToken): CSSProperties => {
+const getTokenStyle = (token: HighlightToken): CSSProperties => {
   if (token.htmlStyle) {
     return normalizeStyleKeys(token.htmlStyle)
   }
@@ -95,6 +92,7 @@ const getTokenStyle = (token: ThemedToken): CSSProperties => {
 .x-md-inline-code.x-md-inline-code--dark {
   background: rgba(255, 255, 255, 0.13);
 }
+
 .x-md-inline-code code {
   background: transparent !important;
 }
