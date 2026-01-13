@@ -2,14 +2,14 @@
 
 # X-Markdown
 
-一个功能强大的 Vue 3 Markdown 渲染组件库
+一个功能强大的 Vue 3 Markdown 渲染组件库，专注于提供极致的开发体验。
 
-支持流式渲染、代码高亮、LaTeX 数学公式、Mermaid 图表等特性
+> **核心特性**：支持流式渲染、代码高亮、LaTeX 数学公式、Mermaid 图表，并具备优雅的降级策略。
 
-[![NPM version](https://img.shields.io/npm/v/x-markdown-vue.svg)](https://www.npmjs.com/package/x-markdown-vue)
-[![NPM downloads](https://img.shields.io/npm/dm/x-markdown-vue.svg)](https://www.npmjs.com/package/x-markdown-vue)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Vue](https://img.shields.io/badge/vue-3.x-brightgreen.svg)](https://vuejs.org/)
+[![NPM version](https://img.shields.io/npm/v/x-markdown-vue.svg?style=flat-square)](https://www.npmjs.com/package/x-markdown-vue)
+[![NPM downloads](https://img.shields.io/npm/dm/x-markdown-vue.svg?style=flat-square)](https://www.npmjs.com/package/x-markdown-vue)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Vue](https://img.shields.io/badge/vue-3.x-brightgreen.svg?style=flat-square)](https://vuejs.org/)
 
 <div align="center">
 
@@ -17,27 +17,23 @@
 
 </div>
 
-</div>
-
-
 ## ✨ 特性
 
-- 🚀 **Vue 3 组合式 API** - 基于 Vue 3 Composition API 构建
-- 📝 **GitHub Flavored Markdown** - 完整支持 GFM 语法
-- 🎨 **代码高亮** - 基于 Shiki，支持 100+ 语言和多种主题
-  - ⚡ **Highlighter 缓存** - 智能缓存机制，避免重复创建实例
-  - 🌊 **流式高亮** - shiki-stream 支持 AI 流式输出场景
-- 🧮 **LaTeX 数学公式** - 支持行内和块级数学公式渲染
-- 📊 **Mermaid 图表** - 支持流程图、时序图等多种图表
-- 🌗 **深色模式** - 内置深浅色主题切换支持
-- 🔌 **高度可定制** - 支持自定义渲染、插槽和属性
-- 🎭 **灵活的插件系统** - 支持 remark 和 rehype 插件扩展
-- 🔒 **安全可靠** - 可选的 HTML 内容清理和消毒
-- 🔧 **Vite 插件** - 自动检测可选依赖，优雅降级
-- 📦 **Monorepo 架构** - 使用 pnpm workspace 和 Turbo 管理
-- 🎯 **清爽体验** - 优化的控制台输出，无多余调试信息
+- 🚀 **Vue 3 组合式 API** - 基于 Vue 3 Composition API 构建，性能卓越。
+- 📝 **GitHub Flavored Markdown** - 完整支持 GFM 语法标准。
+- 🎨 **智能代码高亮** - 基于 Shiki，支持 100+ 语言和多种主题。
+  - ⚡ **智能缓存** - 避免重复创建实例，提升渲染性能。
+  - 🌊 **流式高亮** - 完美支持 AI 逐字输出场景 (shiki-stream)。
+- 🧮 **科学公式支持** - 内置 LaTeX 数学公式渲染 (KaTeX)。
+- 📊 **图表可视化** - 支持 Mermaid 流程图、时序图、甘特图等。
+- 🌗 **深色模式** - 自动适配深浅色主题切换。
+- 🔌 **高度可定制** - 支持自定义渲染器、插槽和属性配置。
+- �️ **优雅降级** - 自动检测可选依赖，未安装时自动回退，不影响核心功能。
+- 📦 **Monorepo 架构** - 使用 pnpm workspace 和 Turbo 管理，结构清晰。
 
 ## 📦 安装
+
+推荐使用包管理器进行安装：
 
 ```bash
 # pnpm (推荐)
@@ -50,71 +46,53 @@ npm install x-markdown-vue
 yarn add x-markdown-vue
 ```
 
-### 依赖项
+### 依赖项管理
 
-确保安装了对等依赖:
+**核心依赖**:
+确保安装了 Vue 3.3+:
 
 ```bash
 pnpm add vue@^3.3.0
 ```
 
-#### 可选依赖
+#### 按需可选依赖
 
-X-Markdown 采用按需加载策略，以下功能需要安装对应的依赖包：
+X-Markdown 采用**按需加载**策略，你可以根据项目需求安装以下功能包：
 
-**代码高亮功能**（如果需要使用代码块语法高亮）:
+| 功能             | 依赖包                 | 说明                         |
+| ---------------- | ---------------------- | ---------------------------- |
+| **代码高亮**     | `shiki` `shiki-stream` | 支持代码块语法高亮及流式渲染 |
+| **Mermaid 图表** | `mermaid`              | 支持渲染流程图、时序图等     |
+| **数学公式**     | `katex` (样式文件)     | 支持 LaTeX 公式渲染          |
+
+**安装命令示例**:
 
 ```bash
+# 安装代码高亮支持
 pnpm add shiki shiki-stream
-```
 
-**Mermaid 图表功能**（如果需要渲染 Mermaid 图表）:
-
-```bash
+# 安装图表支持
 pnpm add mermaid
 ```
 
-**LaTeX 数学公式**（如果需要渲染数学公式，还需要引入 KaTeX 样式）:
+如果使用数学公式，请在入口文件引入样式：
 
 ```ts
 import 'katex/dist/katex.min.css'
 ```
 
-#### 降级行为说明
+#### 🛡️ 优雅降级说明
 
-X-Markdown 采用优雅降级策略，即使不安装可选依赖，组件也能正常工作：
+我们深知依赖地狱的痛苦，因此 X-Markdown 设计了完善的降级机制：
 
-- **未安装 shiki/shiki-stream**：代码块以纯文本模式显示，无语法高亮
-- **未安装 mermaid**：Mermaid 图表以代码块形式显示原始内容
+- **未安装 shiki**: 代码块将以纯文本形式展示，保留基本格式。
+- **未安装 mermaid**: 图表区域将直接显示原始 Mermaid 代码。
 
-当可选依赖缺失时，浏览器控制台会显示**一次**友好的提示信息：
+> 开发环境下，如果缺少可选依赖，控制台会打印**一次**友好的提示信息，帮助你快速定位。
 
-```
-[x-markdown] 需安装 shiki: pnpm add shiki
-[x-markdown] AI 流式可选: pnpm add shiki-stream (需先装 shiki)
-```
+## 🔧 Vite 配置（强烈推荐）
 
-或
-
-```
-[x-markdown] 图表可选: pnpm add mermaid
-```
-
-**注意事项**：
-
-1. 控制台提示每个功能只会显示一次，不会重复打扰
-2. 安装依赖后**必须重启开发服务器**才能生效
-3. 如果安装后仍看到降级提示，请尝试清除 Vite 缓存：
-   ```bash
-   # 删除 node_modules/.vite 缓存目录
-   rm -rf node_modules/.vite
-   # 然后重启开发服务器
-   pnpm dev
-   ```
-
-## 🔧 Vite 配置（推荐）
-
-使用内置的 Vite 插件自动检测可选依赖，实现优雅降级：
+为了实现最佳的按需加载体验，我们提供了专属的 Vite 插件。它能自动检测项目依赖，并注入虚拟模块。
 
 ```ts
 // vite.config.ts
@@ -125,69 +103,19 @@ import { createXMarkdownVitePlugin } from 'x-markdown-vue/vite-plugin'
 export default defineConfig({
   plugins: [
     vue(),
+    // 自动处理可选依赖的虚拟模块
     createXMarkdownVitePlugin({
-      showConsoleHints: true,
+      showConsoleHints: true, // 是否在控制台显示降级提示
     }),
   ],
 })
 ```
 
-### 插件功能
+### 插件优势
 
-- ✅ **自动检测可选依赖**：检测 shiki、shiki-stream、mermaid 是否已安装
-- ✅ **虚拟模块注入**：未安装的依赖会被替换为虚拟模块
-- ✅ **优雅降级提示**：控制台友好提示用户安装缺失的依赖
-- ✅ **构建优化**：移除未使用的依赖代码，减小打包体积
-
-### 插件配置选项
-
-| 选项 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `showConsoleHints` | `boolean` | `true` | 是否显示控制台提示 |
-
-### 完整配置示例
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import { createXMarkdownVitePlugin } from 'x-markdown-vue/vite-plugin'
-
-export default defineConfig({
-  plugins: [
-    vue(),
-    createXMarkdownVitePlugin({
-      // 开启控制台提示（默认）
-      showConsoleHints: true,
-    }),
-  ],
-  // 其他 Vite 配置...
-})
-```
-
-### 手动配置（不推荐）
-
-如果不使用 Vite 插件，需要手动配置 `resolve.alias`：
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-
-export default defineConfig({
-  plugins: [vue()],
-  resolve: {
-    alias: {
-      // 为可选依赖添加虚拟模块
-      'shiki': 'virtual:shiki',
-      'shiki-stream': 'virtual:shiki-stream',
-      'mermaid': 'virtual:mermaid',
-    },
-  },
-})
-```
-
-**注意**：手动配置需要在代码中处理虚拟模块的导入和错误处理，推荐使用内置 Vite 插件。
+- ✅ **零配置**：自动识别已安装的依赖。
+- ✅ **构建优化**：未使用的依赖代码完全不会被打包，减小体积。
+- ✅ **开发友好**：提供清晰的控制台提示。
 
 ## 🚀 快速开始
 
@@ -238,24 +166,24 @@ const content = ref('# Large Document\n...')
 
 ### Props 属性
 
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `markdown` | `string` | `''` | Markdown 字符串内容 |
-| `allowHtml` | `boolean` | `false` | 是否允许渲染 HTML |
-| `enableLatex` | `boolean` | `true` | 是否启用 LaTeX 数学公式支持 |
-| `enableAnimate` | `boolean` | `false` | 是否启用流式动画效果 |
-| `enableBreaks` | `boolean` | `true` | 是否将换行符转换为 `<br>` |
-| `isDark` | `boolean` | `false` | 是否为深色模式 |
-| `showCodeBlockHeader` | `boolean` | `true` | 是否显示代码块头部 |
-| `codeMaxHeight` | `string` | `undefined` | 代码块最大高度，如 '300px' |
-| `codeBlockActions` | `CodeBlockAction[]` | `[]` | 代码块自定义操作按钮 |
-| `mermaidActions` | `MermaidAction[]` | `[]` | Mermaid 图表自定义操作按钮 |
-| `codeXRender` | `object` | `{}` | 自定义代码块渲染函数 |
-| `customAttrs` | `CustomAttrs` | `{}` | 自定义属性对象 |
-| `remarkPlugins` | `PluggableList` | `[]` | remark 插件列表 |
-| `rehypePlugins` | `PluggableList` | `[]` | rehype 插件列表 |
-| `sanitize` | `boolean` | `false` | 是否启用内容清洗 |
-| `sanitizeOptions` | `SanitizeOptions` | `{}` | 清洗配置选项 |
+| 属性                  | 类型                | 默认值      | 说明                        |
+| --------------------- | ------------------- | ----------- | --------------------------- |
+| `markdown`            | `string`            | `''`        | Markdown 字符串内容         |
+| `allowHtml`           | `boolean`           | `false`     | 是否允许渲染 HTML           |
+| `enableLatex`         | `boolean`           | `true`      | 是否启用 LaTeX 数学公式支持 |
+| `enableAnimate`       | `boolean`           | `false`     | 是否启用流式动画效果        |
+| `enableBreaks`        | `boolean`           | `true`      | 是否将换行符转换为 `<br>`   |
+| `isDark`              | `boolean`           | `false`     | 是否为深色模式              |
+| `showCodeBlockHeader` | `boolean`           | `true`      | 是否显示代码块头部          |
+| `codeMaxHeight`       | `string`            | `undefined` | 代码块最大高度，如 '300px'  |
+| `codeBlockActions`    | `CodeBlockAction[]` | `[]`        | 代码块自定义操作按钮        |
+| `mermaidActions`      | `MermaidAction[]`   | `[]`        | Mermaid 图表自定义操作按钮  |
+| `codeXRender`         | `object`            | `{}`        | 自定义代码块渲染函数        |
+| `customAttrs`         | `CustomAttrs`       | `{}`        | 自定义属性对象              |
+| `remarkPlugins`       | `PluggableList`     | `[]`        | remark 插件列表             |
+| `rehypePlugins`       | `PluggableList`     | `[]`        | rehype 插件列表             |
+| `sanitize`            | `boolean`           | `false`     | 是否启用内容清洗            |
+| `sanitizeOptions`     | `SanitizeOptions`   | `{}`        | 清洗配置选项                |
 
 ## 🎨 主题配置
 
@@ -295,12 +223,12 @@ const toggleTheme = () => {
   :custom-attrs="{
     heading: (node, { level }) => ({
       class: ['heading', `heading-${level}`],
-      id: `heading-${level}`
+      id: `heading-${level}`,
     }),
     a: (node) => ({
       target: '_blank',
-      rel: 'noopener noreferrer'
-    })
+      rel: 'noopener noreferrer',
+    }),
   }"
 />
 ```
@@ -360,7 +288,7 @@ const codeXRender = {
   // 自定义 echarts 代码块渲染
   echarts: (props) => h(EchartsRenderer, { code: props.raw.content }),
   // 自定义行内代码渲染
-  inline: (props) => h('code', { class: 'custom-inline' }, props.raw.content)
+  inline: (props) => h('code', { class: 'custom-inline' }, props.raw.content),
 }
 </script>
 
@@ -435,12 +363,11 @@ const rehypePlugins = [rehypeSlug, rehypeAutolinkHeadings]
   :sanitize-options="{
     allowedTags: ['h1', 'h2', 'p', 'a', 'code', 'pre'],
     allowedAttributes: {
-      a: ['href', 'target']
-    }
+      a: ['href', 'target'],
+    },
   }"
 />
 ```
-
 
 ## 🌟 功能演示
 
@@ -451,7 +378,7 @@ const rehypePlugins = [rehypeSlug, rehypeAutolinkHeadings]
 ````markdown
 ```javascript
 function greet(name) {
-  console.log(`Hello, ${name}!`);
+  console.log(`Hello, ${name}!`)
 }
 ```
 
@@ -471,6 +398,7 @@ def fibonacci(n):
 行内公式: $E = mc^2$
 
 块级公式:
+
 $$
 \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
 $$
@@ -622,12 +550,12 @@ erDiagram
 支持 GFM 表格语法：
 
 ```markdown
-| 特性 | 状态 |
-|------|------|
-| Markdown | ✅ |
-| 代码高亮 | ✅ |
-| LaTeX | ✅ |
-| Mermaid | ✅ |
+| 特性     | 状态 |
+| -------- | ---- |
+| Markdown | ✅   |
+| 代码高亮 | ✅   |
+| LaTeX    | ✅   |
+| Mermaid  | ✅   |
 ```
 
 ### 任务列表

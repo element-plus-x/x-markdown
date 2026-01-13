@@ -1,12 +1,7 @@
-import { resolve, dirname } from 'node:path'
-import { existsSync, readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'module'
 import type { Plugin, UserConfig } from 'vite'
-
-// 在 ES 模块中获取 __dirname
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
 
 /**
  * x-markdown Vite 插件配置选项
@@ -16,10 +11,6 @@ export interface XMarkdownVitePluginOptions {
    * 可选依赖列表（默认：['mermaid', 'shiki', 'shiki-stream']）
    */
   optionalDeps?: string[]
-  /**
-   * 虚拟模块目录（相对于项目根目录）
-   */
-  virtualModulesDir?: string
   /**
    * 是否显示控制台提示（默认：true）
    */
@@ -36,13 +27,9 @@ export interface XMarkdownVitePluginOptions {
  * @returns Vite 插件
  */
 export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = {}): Plugin {
-  const {
-    optionalDeps = ['mermaid', 'shiki', 'shiki-stream'],
-    virtualModulesDir = './node_modules/x-markdown-vue/virtual-modules',
-    showConsoleHints = true,
-  } = options
+  const { optionalDeps = ['mermaid', 'shiki', 'shiki-stream'], showConsoleHints = true } = options
 
-  // 存储虚拟模块的路径映射
+  const VIRTUAL_PREFIX = '\0virtual:x-markdown/'
   const virtualModuleMap = new Map<string, string>()
 
   return {
@@ -55,11 +42,20 @@ export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = 
       if (virtualModuleMap.has(id)) {
         return virtualModuleMap.get(id)
       }
+      if (id.startsWith(VIRTUAL_PREFIX)) {
+        return id
+      }
       return null
     },
 
-    configResolved(config) {
-      console.log('[x-markdown-plugin] Final aliases:', config.resolve.alias)
+    load(id) {
+      if (id.startsWith(VIRTUAL_PREFIX)) {
+        return 'export default null;'
+      }
+    },
+
+    configResolved() {
+      // console.log('[x-markdown-plugin] Final aliases:', config.resolve.alias)
     },
     config(config: UserConfig) {
       // 获取项目根目录
@@ -98,11 +94,11 @@ export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = 
         try {
           if (!isDeclaredInProject(dep)) {
             isInstalled = false
-            console.log(`[x-markdown-plugin] ${dep} NOT declared in package.json`)
+            // console.log(`[x-markdown-plugin] ${dep} NOT declared in package.json`)
           } else {
             projectRequire.resolve(dep)
             isInstalled = true
-            console.log(`[x-markdown-plugin] ${dep} is installed and declared`)
+            // console.log(`[x-markdown-plugin] ${dep} is installed and declared`)
           }
         } catch {
           isInstalled = false
@@ -110,41 +106,20 @@ export function createXMarkdownVitePlugin(options: XMarkdownVitePluginOptions = 
 
         if (!isInstalled) {
           // 依赖未安装，使用虚拟模块
-          // 尝试从多个可能的位置查找虚拟模块
-          const virtualModulePaths = [
-            resolve(projectRoot, virtualModulesDir, `${dep}.js`),
-            resolve(projectRoot, virtualModulesDir, `${dep}.ts`),
-            resolve(projectRoot, 'src/virtual-modules', `${dep}.js`),
-            resolve(projectRoot, 'src/virtual-modules', `${dep}.ts`),
-            // 最后尝试：从 x-markdown 包内部获取
-            resolve(__dirname, 'virtual-modules', `${dep}.js`),
-            // 开发环境兼容：如果是在 monorepo 中运行编译后的插件，尝试从源码目录获取
-            resolve(__dirname, '../src/virtual-modules', `${dep}.js`),
-            resolve(__dirname, '../src/virtual-modules', `${dep}.ts`),
-          ]
+          const virtualId = `${VIRTUAL_PREFIX}${dep}`
 
-          let virtualModulePath: string | null = null
-          for (const path of virtualModulePaths) {
-            if (existsSync(path)) {
-              virtualModulePath = path
-              break
-            }
-          }
+          // 同时添加到 alias 和 resolveId 映射
+          optionalAliases.push({
+            find: dep,
+            replacement: virtualId,
+          })
 
-          if (virtualModulePath) {
-            // 同时添加到 alias 和 resolveId 映射
-            optionalAliases.push({
-              find: dep,
-              replacement: virtualModulePath,
-            })
+          // 添加到 resolveId 映射表（用于动态导入）
+          virtualModuleMap.set(dep, virtualId)
 
-            // 添加到 resolveId 映射表（用于动态导入）
-            virtualModuleMap.set(dep, virtualModulePath)
-
-            // 在开发环境显示提示信息
-            if (config.mode === 'development') {
-              console.log(`\x1b[33m[x-markdown-vue]\x1b[0m ${dep} 未安装，使用虚拟模块: ${virtualModulePath}`)
-            }
+          // 在开发环境显示提示信息
+          if (config.mode === 'development') {
+            console.log(`\x1b[33m[x-markdown-vue]\x1b[0m ${dep} 未安装，使用虚拟模块`)
           }
         }
       }

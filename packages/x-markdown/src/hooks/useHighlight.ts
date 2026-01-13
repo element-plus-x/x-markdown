@@ -86,6 +86,10 @@ const loadShiki = async () => {
         if (mod && (mod as any).default === null) {
           return null
         }
+        // 检查必要的方法是否存在，确保模块可用
+        if (!mod || !(mod.createHighlighter || (mod as any).getHighlighter)) {
+          return null
+        }
         return mod
       } catch {
         // 静默失败，返回 null
@@ -103,6 +107,10 @@ const loadShikiStream = async () => {
         const mod = await import('shiki-stream')
         // 检查是否是虚拟模块（虚拟模块返回 { default: null }）
         if (mod && (mod as any).default === null) {
+          return null
+        }
+        // 检查必要的方法是否存在
+        if (!mod || !(mod as any).ShikiStreamTokenizer) {
           return null
         }
         return mod
@@ -292,7 +300,6 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
 
       // 检查缓存，如果已有相同主题的 highlighter，直接复用
       // 这避免了 Shiki 单例警告并提高了性能
-      console.log('%c[x-markdown] Shiki loaded successfully', 'background: #0b0; color: #fff; padding: 2px 4px;')
       if (!highlighterCache.has(cacheKey)) {
         highlighter = await mod.createHighlighter({
           themes: [currentTheme],

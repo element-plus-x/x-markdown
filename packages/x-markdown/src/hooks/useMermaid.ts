@@ -109,7 +109,7 @@ const showMermaidHint = () => {
     'font-weight: bold; color: #9333ea;',
     'color: #666;',
     'color: #9333ea; font-family: monospace;',
-    'color: #999;'
+    'color: #999;',
   )
 }
 
@@ -143,11 +143,11 @@ export async function checkMermaidAvailable(): Promise<boolean> {
       // 虚拟模块返回 { default: null }，所以需要检查 default 是否存在且有效
       const mermaidInstance = (mod as any)?.default
       // 检查是否有 mermaid 的关键方法或属性
-      const hasMermaidAPI = mermaidInstance && (
-        typeof mermaidInstance.render === 'function' ||
-        typeof mermaidInstance.initialize === 'function' ||
-        typeof mermaidInstance.run === 'function'
-      )
+      const hasMermaidAPI =
+        mermaidInstance &&
+        (typeof mermaidInstance.render === 'function' ||
+          typeof mermaidInstance.initialize === 'function' ||
+          typeof mermaidInstance.run === 'function')
       mermaidAvailableCache = hasMermaidAPI
 
       // 当 mermaid 不可用时，显示提示
@@ -178,7 +178,15 @@ async function loadMermaid() {
           showMermaidHint()
           return null
         }
-        return (mod as any)?.default
+
+        const mermaidInstance = (mod as any)?.default
+        // 检查是否有 mermaid 的关键方法，确保模块可用
+        if (!mermaidInstance || typeof mermaidInstance.initialize !== 'function') {
+          showMermaidHint()
+          return null
+        }
+
+        return mermaidInstance
       } catch {
         // 静默失败，显示友好提示
         showMermaidHint()
