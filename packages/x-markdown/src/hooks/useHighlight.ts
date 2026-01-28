@@ -1,7 +1,17 @@
 import { ref, watch, onUnmounted, computed, isRef, toValue, type Ref, type MaybeRef, type CSSProperties } from 'vue'
 import type { BuiltinTheme, ThemedToken } from 'shiki'
-import { ShikiStreamTokenizer, ShikiStreamTokenizerOptions } from 'shiki-stream'
+import type { ShikiStreamTokenizer as ShikiStreamTokenizerType, ShikiStreamTokenizerOptions } from 'shiki-stream'
 import type { getSingletonHighlighter } from 'shiki'
+
+// 动态导入 shiki-stream（按需加载）
+let shikiStreamModulePromise: Promise<typeof import('shiki-stream') | null> | null = null
+
+const loadShikiStream = () => {
+  if (!shikiStreamModulePromise) {
+    shikiStreamModulePromise = import('shiki-stream').catch(() => null)
+  }
+  return shikiStreamModulePromise
+}
 
 // 流式高亮结果接口
 interface StreamingHighlightResult {
@@ -84,8 +94,8 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
   // 错误状态
   const error = ref<Error | null>(null)
 
-  // 流式 tokenizer 实例
-  let tokenizer: ShikiStreamTokenizer | null = null
+  // 流式 tokenizer 实例（使用类型别名）
+  let tokenizer: ShikiStreamTokenizerType | null = null
   // 上一次处理的文本（用于增量更新）
   let previousText = ''
   // Shiki 高亮器实例
@@ -165,13 +175,18 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
     const currentTheme = effectiveTheme.value
 
     try {
-      const mod = await loadShiki()
-      if (!mod) {
+      // 并行加载 shiki 和 shiki-stream
+      const [shikiMod, shikiStreamMod] = await Promise.all([loadShiki(), loadShikiStream()])
+
+      if (!shikiMod) {
         throw new Error('Failed to load shiki module')
+      }
+      if (!shikiStreamMod) {
+        throw new Error('Failed to load shiki-stream module')
       }
 
       // 获取单例高亮器（先不加载语言）
-      highlighter = await mod.getSingletonHighlighter({
+      highlighter = await shikiMod.getSingletonHighlighter({
         langs: [],
         themes: [currentTheme],
       })
@@ -190,8 +205,8 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
         // plaintext 是内置的，不需要额外加载
       }
 
-      // 创建流式 tokenizer
-      tokenizer = new ShikiStreamTokenizer({
+      // 创建流式 tokenizer（使用动态导入的模块）
+      tokenizer = new shikiStreamMod.ShikiStreamTokenizer({
         highlighter: highlighter as unknown as ShikiStreamTokenizerOptions['highlighter'],
         lang: currentLang,
         theme: currentTheme,
@@ -241,7 +256,7 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
         try {
           await highlighter.loadLanguage(requestedLang as any)
           // 语言加载成功，重新初始化以使用正确的语言
-          console.log(`Language ${requestedLang} loaded successfully, re-highlighting`)
+          // console.log(`Language ${requestedLang} loaded successfully, re-highlighting`)
           initHighlighter()
           return
         } catch {
@@ -269,7 +284,7 @@ export function useHighlight(text: Ref<string>, options: UseHighlightOptions) {
       try {
         await highlighter.loadLanguage(requestedLang as any)
         // 语言加载成功，重新初始化
-        console.log(`Language ${requestedLang} now available, re-highlighting`)
+        // console.log(`Language ${requestedLang} now available, re-highlighting`)
         await initHighlighter()
         return
       } catch {

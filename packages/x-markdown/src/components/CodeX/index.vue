@@ -1,11 +1,18 @@
 <script lang="ts">
-import { defineComponent, h, type PropType } from 'vue'
+import { defineComponent, h, defineAsyncComponent, type PropType } from 'vue'
 import type { BuiltinTheme } from 'shiki'
 import type { CodeBlockAction } from '../CodeBlock/types'
 import type { MermaidAction } from '../Mermaid/types'
-import CodeBlock from '../CodeBlock/index.vue'
-import CodeLine from '../CodeLine/index.vue'
-import Mermaid from '../Mermaid/index.vue'
+// 纯文本组件 - 静态导入（不依赖 Shiki）
+import CodeBlockPlain from '../CodeBlock/CodeBlockPlain.vue'
+import CodeLinePlain from '../CodeLine/CodeLinePlain.vue'
+
+// Shiki 相关组件 - 动态导入（按需加载）
+const CodeBlock = defineAsyncComponent(() => import('../CodeBlock/index.vue'))
+const CodeLine = defineAsyncComponent(() => import('../CodeLine/index.vue'))
+
+// Mermaid 组件 - 动态导入（按需加载）
+const Mermaid = defineAsyncComponent(() => import('../Mermaid/index.vue'))
 
 export default defineComponent({
   props: {
@@ -20,6 +27,8 @@ export default defineComponent({
     stickyCodeBlockHeader: { type: Boolean, default: true },
     codeMaxHeight: { type: String, default: undefined },
     enableAnimate: { type: Boolean, default: false },
+    enableShiki: { type: Boolean, default: true },
+    enableMermaid: { type: Boolean, default: true },
     codeBlockActions: { type: Array as PropType<CodeBlockAction[]>, default: undefined },
     mermaidActions: { type: Array as PropType<MermaidAction[]>, default: undefined },
     mermaidConfig: { type: Object as PropType<Record<string, any>>, default: undefined },
@@ -36,6 +45,14 @@ export default defineComponent({
             return renderer(props)
           }
           return h(renderer, props)
+        }
+        // 如果禁用 Shiki，使用纯文本行内代码组件
+        if (!props.enableShiki) {
+          return h(CodeLinePlain, {
+            raw: props.raw,
+            isDark: props.isDark,
+            enableAnimate: props.enableAnimate,
+          })
         }
         // 传递完整的配置给 CodeLine，包括主题和动画设置
         return h(CodeLine, {
@@ -57,8 +74,8 @@ export default defineComponent({
         return h(renderer, props)
       }
 
-      // 处理 Mermaid 图表
-      if (language === 'mermaid') {
+      // 处理 Mermaid 图表（仅在 enableMermaid 为 true 时）
+      if (language === 'mermaid' && props.enableMermaid) {
         const mermaidSlots: Record<string, any> = {}
         Object.keys(slots).forEach((key) => {
           if (key.startsWith('mermaid')) {
@@ -80,14 +97,29 @@ export default defineComponent({
       }
 
       // 渲染标准代码块
+      // 如果 enableShiki 为 false，使用纯文本代码块
+      if (!props.enableShiki) {
+        return h(
+          CodeBlockPlain,
+          {
+            code: props.raw.content || '',
+            language: props.raw.language || 'text',
+            isDark: props.isDark,
+            showCodeBlockHeader: props.showCodeBlockHeader,
+            stickyCodeBlockHeader: props.stickyCodeBlockHeader,
+            codeMaxHeight: props.codeMaxHeight,
+          },
+          slots,
+        )
+      }
+
       return h(
         CodeBlock,
         {
           code: props.raw.content || '',
           language: props.raw.language || 'text',
           isDark: props.isDark,
-          lightTheme: props.shikiTheme[0],
-          darkTheme: props.shikiTheme[1],
+          shikiTheme: props.shikiTheme,
           showCodeBlockHeader: props.showCodeBlockHeader,
           stickyCodeBlockHeader: props.stickyCodeBlockHeader,
           codeMaxHeight: props.codeMaxHeight,

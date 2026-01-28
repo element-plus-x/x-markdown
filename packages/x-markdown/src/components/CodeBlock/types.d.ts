@@ -3,8 +3,7 @@ import type { BuiltinTheme } from 'shiki'
 export interface SyntaxCodeBlockProps {
   code: string;
   language: string;
-  lightTheme?: BuiltinTheme;
-  darkTheme?: BuiltinTheme;
+  shikiTheme?: [BuiltinTheme, BuiltinTheme];
   isDark?: boolean;
   colorReplacements?: Record<string, string>;
   codeMaxHeight?: string;
@@ -14,8 +13,7 @@ export interface SyntaxCodeBlockProps {
 export interface CodeBlockProps {
   code: string;
   language: string;
-  lightTheme?: BuiltinTheme;
-  darkTheme?: BuiltinTheme;
+  shikiTheme?: [BuiltinTheme, BuiltinTheme];
   isDark?: boolean;
   colorReplacements?: Record<string, string>;
   codeMaxHeight?: string;

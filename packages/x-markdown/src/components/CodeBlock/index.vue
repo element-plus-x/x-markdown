@@ -95,8 +95,7 @@
         ref="syntaxCodeBlockRef"
         :code="code"
         :language="language"
-        :light-theme="props.lightTheme"
-        :dark-theme="props.darkTheme"
+        :shiki-theme="props.shikiTheme"
         :is-dark="props.isDark"
         :color-replacements="props.colorReplacements"
         :code-max-height="props.codeMaxHeight"
@@ -108,6 +107,7 @@
 
 <script setup lang="ts">
 import { computed, ref, h, type VNode } from 'vue'
+import type { BuiltinTheme } from 'shiki'
 import { useClipboard } from '@vueuse/core'
 import type { CodeBlockProps, CodeBlockAction, CodeBlockSlotProps } from './types'
 import SyntaxCodeBlock from './SyntaxCodeBlock.vue'
@@ -127,8 +127,7 @@ const toggleCollapse = () => {
 }
 
 const props = withDefaults(defineProps<CodeBlockProps>(), {
-  lightTheme: 'vitesse-light', // 默认亮色主题
-  darkTheme: 'vitesse-dark',   // 默认暗色主题
+  shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
   isDark: false,               // 默认亮色模式
   showCodeBlockHeader: true,   // 默认显示代码块头部
   enableAnimate: false,        // 默认不启用动画

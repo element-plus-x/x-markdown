@@ -45,7 +45,7 @@ export function downloadSvgAsPng(svg: string): void {
             0.95,
           )
         } catch (toBlobError) {
-          console.error('toBlobError:', toBlobError)
+          // console.error('toBlobError:', toBlobError)
           try {
             const dataUrl = canvas.toDataURL('image/png', 0.95)
             const link = document.createElement('a')
@@ -55,7 +55,7 @@ export function downloadSvgAsPng(svg: string): void {
             link.click()
             document.body.removeChild(link)
           } catch (dataUrlError) {
-            console.error('dataUrlError:', dataUrlError)
+            // console.error('dataUrlError:', dataUrlError)
           }
         }
       } catch (canvasError) {
@@ -108,7 +108,7 @@ async function processRenderQueue() {
       try {
         await task()
       } catch (err) {
-        console.error('Mermaid render queue error:', err)
+        // console.error('Mermaid render queue error:', err)
       }
     }
   }
@@ -172,7 +172,7 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
           // 使用 parse 验证语法
           const isValid = await mermaidInstance.parse(contentValue.trim())
           if (!isValid) {
-            console.log('Mermaid parse error: Invalid syntax')
+            // console.log('Mermaid parse error: Invalid syntax')
             data.value = ''
             error.value = new Error('Mermaid parse error: Invalid syntax')
             isLoading.value = false
@@ -182,7 +182,7 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
           const renderId = `${optionsRef.value.id || 'mermaid'}-${Math.random().toString(36).substring(2, 11)}`
           const container = getRenderContainer()
           if (!container) {
-            console.warn('Mermaid render container not found')
+            // console.warn('Mermaid render container not found')
             isLoading.value = false
             return
           }
@@ -192,7 +192,7 @@ export function useMermaid(content: string | Ref<string>, options: UseMermaidOpt
           error.value = null
           isLoading.value = false
         } catch (err) {
-          console.log('Mermaid render error:', err)
+          // console.log('Mermaid render error:', err)
           data.value = ''
           error.value = err
           isLoading.value = false

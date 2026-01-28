@@ -26,16 +26,25 @@
 
 <script setup lang="ts">
 import { computed, type CSSProperties } from 'vue'
-import type { ThemedToken } from 'shiki'
+import type { ThemedToken, BuiltinTheme } from 'shiki'
 import { getTokenStyleObject } from '@shikijs/core'
 import { useHighlight } from '../../hooks/useHighlight'
-import type { CodeLineProps } from './types'
+
+interface CodeLineProps {
+  raw?: {
+    content?: string
+    language?: string
+  }
+  isDark?: boolean
+  shikiTheme?: [BuiltinTheme, BuiltinTheme]
+  enableAnimate?: boolean
+}
 
 // 定义组件 props，支持行内代码的原始数据、主题配置和动画开关
 const props = withDefaults(defineProps<CodeLineProps>(), {
   raw: () => ({}),
   isDark: false, // 默认亮色模式
-  shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [import('shiki').BuiltinTheme, import('shiki').BuiltinTheme], // 默认主题
+  shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme], // 默认主题
   enableAnimate: false, // 默认不启用动画
 })
 

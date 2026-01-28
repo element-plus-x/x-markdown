@@ -16,6 +16,8 @@ const markdownRendererProps = {
   enableAnimate: { type: Boolean, default: false },
   enableBreaks: { type: Boolean, default: true },
   enableGfm: { type: Boolean, default: true },
+  enableShiki: { type: Boolean, default: true },
+  enableMermaid: { type: Boolean, default: true },
   isDark: { type: Boolean, default: false },
   shikiTheme: {
     type: Array as unknown as PropType<[BuiltinTheme, BuiltinTheme]>,

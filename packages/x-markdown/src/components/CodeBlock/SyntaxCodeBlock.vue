@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { computed, type CSSProperties } from 'vue'
-import type { ThemedToken } from 'shiki'
+import type { ThemedToken, BuiltinTheme } from 'shiki'
 import { getTokenStyleObject } from '@shikijs/core'
 import { useHighlight } from '../../hooks/useHighlight'
 import type { SyntaxCodeBlockProps } from './types'
@@ -30,8 +30,7 @@ defineOptions({
 })
 
 const props = withDefaults(defineProps<SyntaxCodeBlockProps>(), {
-  lightTheme: 'vitesse-light',
-  darkTheme: 'vitesse-dark',
+  shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
   isDark: false,
   enableAnimate: false,
 })
@@ -40,7 +39,7 @@ const code = computed(() => props.code.trim())
 
 const language = computed(() => props.language || 'text')
 
-const actualTheme = computed(() => (props.isDark ? props.darkTheme : props.lightTheme))
+const actualTheme = computed(() => (props.isDark ? props.shikiTheme[1] : props.shikiTheme[0]))
 
 const { lines, preStyle } = useHighlight(code, {
   language,

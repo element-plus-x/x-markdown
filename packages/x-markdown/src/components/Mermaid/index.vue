@@ -326,8 +326,7 @@ const exposedMethods = computed(
       <SyntaxCodeBlock
         :code="props.raw?.content || ''"
         language="mermaid"
-        :light-theme="props.shikiTheme[0]"
-        :dark-theme="props.shikiTheme[1]"
+        :shiki-theme="props.shikiTheme"
         :is-dark="props.isDark"
       />
     </div>

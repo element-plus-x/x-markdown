@@ -23,6 +23,8 @@ export default defineConfig({
           'element-plus': 'ElementPlus',
           mermaid: 'mermaid',
           shiki: 'shiki',
+          'shiki-stream': 'shikiStream',
+          '@shikijs/core': 'shikijsCore',
         },
       },
     },

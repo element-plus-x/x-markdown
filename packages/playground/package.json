@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vueuse/core": "^10.0.0",
     "echarts": "^6.0.0",
     "github-markdown-css": "^5.8.1",
     "katex": "^0.16.25",

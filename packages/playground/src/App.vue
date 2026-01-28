@@ -16,6 +16,18 @@
         <button @click="toggleTheme" class="theme-toggle">
           {{ isDark ? '🌞 亮色' : '🌙 暗色' }}
         </button>
+        <!-- GitHub 链接 -->
+        <a
+          href="https://github.com/element-plus-x/x-markdown"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="github-link"
+          title="GitHub"
+        >
+          <svg viewBox="0 0 16 16" width="24" height="24" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+        </a>
       </div>
     </header>
 
@@ -71,6 +83,14 @@
              <input type="checkbox" v-model="enableCodeBlockHeaderSticky" />
                 代码块头部开启sticky
           </label>
+          <label>
+            <input type="checkbox" v-model="enableShiki" />
+            Shiki 高亮
+          </label>
+          <label>
+            <input type="checkbox" v-model="enableMermaid" />
+            Mermaid 图表
+          </label>
           <label class="code-max-height-label">
             代码块最大高度
             <input type="text" v-model="codeMaxHeight" placeholder="如: 300px" class="code-max-height-input" />
@@ -118,6 +138,8 @@
             :allow-html="allowHtml"
             :enable-breaks="enableBreaks"
             :enable-animate="enableAnimate"
+            :enable-shiki="enableShiki"
+            :enable-mermaid="enableMermaid"
             :is-dark="isDark"
             :show-code-block-header="showCodeBlockHeader"
             :sticky-code-block-header="enableCodeBlockHeaderSticky"
@@ -144,20 +166,21 @@
 import 'katex/dist/katex.min.css'
 import 'github-markdown-css/github-markdown.css'
 import { ref, computed, onUnmounted, watch, h } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
 import { MarkdownRenderer } from 'x-markdown-vue'
 import type * as echarts from 'echarts'
 
 // ==================== 状态管理 ====================
 
 // 主题状态
-const isDark = ref(false)
+const isDark = useLocalStorage('x-md-playground-isDark', false)
 
 // ECharts 实例管理 - 存储所有 ECharts 图表实例
 const echartsInstances = new Map<string, echarts.ECharts>()
 
 // 示例选择
 type ExampleType = 'basic' | 'code' | 'mermaid' | 'formula'
-const currentExample = ref<ExampleType>('basic')
+const currentExample = useLocalStorage<ExampleType>('x-md-playground-currentExample', 'basic')
 
 // 示例列表
 const exampleList = [
@@ -168,19 +191,21 @@ const exampleList = [
 ]
 
 // Markdown 渲染选项
-const enableLatex = ref(true)
-const allowHtml = ref(true)
-const enableBreaks = ref(true)
-const enableAnimate = ref(false) // 是否启用动画效果
+const enableLatex = useLocalStorage('x-md-playground-enableLatex', true)
+const allowHtml = useLocalStorage('x-md-playground-allowHtml', true)
+const enableBreaks = useLocalStorage('x-md-playground-enableBreaks', true)
+const enableAnimate = useLocalStorage('x-md-playground-enableAnimate', false)
 
 // 代码块配置选项
-const showCodeBlockHeader = ref(true) // 是否显示代码块头部
-const enableCodeBlockHeaderSticky = ref(true) // 是否显示代码块头部sticky定位
-const codeMaxHeight = ref('') // 代码块最大高度（如 '300px'）
+const showCodeBlockHeader = useLocalStorage('x-md-playground-showCodeBlockHeader', true)
+const enableCodeBlockHeaderSticky = useLocalStorage('x-md-playground-enableCodeBlockHeaderSticky', true)
+const codeMaxHeight = useLocalStorage('x-md-playground-codeMaxHeight', '')
+const enableShiki = useLocalStorage('x-md-playground-enableShiki', true)
+const enableMermaid = useLocalStorage('x-md-playground-enableMermaid', true)
 
 // 流式演示状态
 const isStreaming = ref(false)
-const streamSpeed = ref(30)
+const streamSpeed = useLocalStorage('x-md-playground-streamSpeed', 30)
 let streamTimer: ReturnType<typeof setInterval> | null = null
 let streamIndex = 0
 
@@ -945,10 +970,10 @@ const exampleContents: Record<ExampleType, string> = {
 }
 
 // 完整的演示内容 - 默认使用基础示例
-const fullContent = computed(() => exampleContents[currentExample.value])
+const fullContent = computed(() => exampleContents[currentExample.value as ExampleType])
 
-// 当前显示的 markdown 内容
-const markdown = ref(basicExample)
+// 当前显示的 markdown 内容（根据 localStorage 中的示例初始化）
+const markdown = ref(exampleContents[currentExample.value as ExampleType] || basicExample)
 
 // 切换示例的方法
 const switchExample = (example: ExampleType) => {
@@ -1427,6 +1452,22 @@ body {
 
 .theme-toggle:hover {
   background: rgba(0, 0, 0, 0.3);
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  color: white;
+  border-radius: 8px;
+  transition: all 0.2s;
+  opacity: 0.9;
+}
+
+.github-link:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* ==================== 配置栏样式 ==================== */
