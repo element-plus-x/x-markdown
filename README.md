@@ -135,6 +135,8 @@ const content = ref('# Large Document\n...')
 | `enableBreaks` | `boolean` | `true` | 是否将换行符转换为 `<br>` |
 | `isDark` | `boolean` | `false` | 是否为深色模式 |
 | `showCodeBlockHeader` | `boolean` | `true` | 是否显示代码块头部 |
+| `enableCodeLineNumber` | `boolean` | `true` | 是否显示代码块行号 |
+| `codeLineNumberStart` | `number` | `1` | 代码块行号起始值 |
 | `codeMaxHeight` | `string` | `undefined` | 代码块最大高度，如 '300px' |
 | `codeBlockActions` | `CodeBlockAction[]` | `[]` | 代码块自定义操作按钮 |
 | `mermaidActions` | `MermaidAction[]` | `[]` | Mermaid 图表自定义操作按钮 |

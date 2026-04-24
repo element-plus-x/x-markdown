@@ -15,6 +15,7 @@ interface UseComponentsOptions {
   stickyCodeBlockHeader?: boolean
   codeMaxHeight?: string
   enableCodeLineNumber?: boolean
+  codeLineNumberStart?: number
   codeBlockActions?: CodeBlockAction[]
   mermaidActions?: MermaidAction[]
   mermaidConfig?: Record<string, any>
@@ -35,6 +36,7 @@ function useComponents(props?: UseComponentsOptions) {
         stickyCodeBlockHeader: props?.stickyCodeBlockHeader,
         codeMaxHeight: props?.codeMaxHeight,
         enableCodeLineNumber: props?.enableCodeLineNumber,
+        codeLineNumberStart: props?.codeLineNumberStart,
         codeBlockActions: props?.codeBlockActions,
         mermaidActions: props?.mermaidActions,
         mermaidConfig: props?.mermaidConfig,

@@ -1,17 +1,17 @@
 <template>
   <div class="x-md-syntax-code-block" :class="{ 'x-md-syntax-code-block--dark': props.isDark }">
     <pre v-if="showFallback" :style="codeContainerStyle" tabindex="0">
-      <code class="x-md-code-content">
+      <code class="x-md-code-content" :style="codeContentStyle">
         <span v-for="(line, i) in fallbackLines" :key="i" class="x-md-code-line">
           <span v-if="props.enableCodeLineNumber" class="x-md-code-line-number" aria-hidden="true">{{
             i + codeLineNumberStartResolved
           }}</span>
-          <span class="x-md-code-line-code">{{ line}}</span>
+          <span class="x-md-code-line-code">{{ line || '\u00a0' }}</span>
         </span>
       </code>
     </pre>
     <pre v-else :class="['shiki', actualTheme]" :style="codeContainerStyle" tabindex="0">
-      <code class="x-md-code-content">
+      <code class="x-md-code-content" :style="codeContentStyle">
         <span v-for="(line, i) in lines" :key="i" class="x-md-code-line">
           <span v-if="props.enableCodeLineNumber" class="x-md-code-line-number" aria-hidden="true">{{
             i + codeLineNumberStartResolved
@@ -99,7 +99,7 @@ const getTokenStyle = (token: ThemedToken): CSSProperties => {
 const showFallback = computed(() => !lines.value?.length)
 
 const codeLineNumberStartResolved = computed(() => {
-  if(typeof props.codeLineNumberStart !== 'number' || Number.isNaN(props.codeLineNumberStart)) return 1
+  if (typeof props.codeLineNumberStart !== 'number' || Number.isNaN(props.codeLineNumberStart)) return 1
 
   return Math.floor(props.codeLineNumberStart)
 })
@@ -114,6 +114,22 @@ const codeContainerStyle = computed(() => ({
   ...preStyle.value,
   maxHeight: props.codeMaxHeight,
 }))
+
+const displayLineCount = computed(() => (showFallback.value ? fallbackLines.value.length : lines.value.length))
+
+const lineNumberWidth = computed(() => {
+  const firstLineNumber = codeLineNumberStartResolved.value
+  const lastLineNumber = firstLineNumber + Math.max(displayLineCount.value, 1) - 1
+  const maxLineNumberLength = Math.max(String(firstLineNumber).length, String(lastLineNumber).length)
+  return `${maxLineNumberLength}ch`
+})
+
+const codeContentStyle = computed<CSSProperties>(
+  () =>
+    ({
+      '--x-md-code-line-number-width': lineNumberWidth.value,
+    }) as CSSProperties,
+)
 
 defineExpose({
   lines,
@@ -150,7 +166,7 @@ defineExpose({
 
 .x-md-code-line-number {
   flex-shrink: 0;
-  min-width: 3ch;
+  min-width: var(--x-md-code-line-number-width, 3ch);
   padding-right: 1em;
   margin-right: 0.25em;
   text-align: right;

@@ -99,6 +99,10 @@
             <input type="checkbox" v-model="enableCodeLineNumber" />
             代码块行号
           </label>
+          <label class="code-max-height-label">
+            行号起始值
+            <input type="number" v-model.number="codeLineNumberStart" min="0" class="code-max-height-input" />
+          </label>
         </div>
       </div>
 
@@ -145,6 +149,7 @@
             :enable-shiki="enableShiki"
             :enable-mermaid="enableMermaid"
             :enable-code-line-number="enableCodeLineNumber"
+            :code-line-number-start="codeLineNumberStart"
             :is-dark="isDark"
             :show-code-block-header="showCodeBlockHeader"
             :sticky-code-block-header="enableCodeBlockHeaderSticky"
@@ -209,6 +214,7 @@ const codeMaxHeight = useLocalStorage('x-md-playground-codeMaxHeight', '')
 const enableShiki = useLocalStorage('x-md-playground-enableShiki', true)
 const enableMermaid = useLocalStorage('x-md-playground-enableMermaid', true)
 const enableCodeLineNumber = useLocalStorage('x-md-playground-enableCodeLineNumber', true)
+const codeLineNumberStart = useLocalStorage('x-md-playground-codeLineNumberStart', 1)
 
 // 流式演示状态
 const isStreaming = ref(false)

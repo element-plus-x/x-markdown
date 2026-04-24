@@ -14,6 +14,7 @@ export interface MarkdownContext {
   showCodeBlockHeader?: boolean
   stickyCodeBlockHeader?: boolean
   enableCodeLineNumber?: boolean
+  codeLineNumberStart?: number
   codeMaxHeight?: string
   codeBlockActions?: CodeBlockAction[]
   mermaidActions?: MermaidAction[]

@@ -26,6 +26,7 @@ export default defineComponent({
     showCodeBlockHeader: { type: Boolean, default: true },
     stickyCodeBlockHeader: { type: Boolean, default: true },
     enableCodeLineNumber: { type: Boolean, default: true },
+    codeLineNumberStart: { type: Number, default: 1 },
     codeMaxHeight: { type: String, default: undefined },
     enableAnimate: { type: Boolean, default: false },
     enableShiki: { type: Boolean, default: true },
@@ -115,6 +116,7 @@ export default defineComponent({
             stickyCodeBlockHeader: props.stickyCodeBlockHeader,
             codeMaxHeight: props.codeMaxHeight,
             enableCodeLineNumber: blockEnableCodeLineNumber.value,
+            codeLineNumberStart: props.codeLineNumberStart,
           },
           slots,
         )
@@ -133,6 +135,7 @@ export default defineComponent({
           enableAnimate: props.enableAnimate,
           codeBlockActions: props.codeBlockActions,
           enableCodeLineNumber: blockEnableCodeLineNumber.value,
+          codeLineNumberStart: props.codeLineNumberStart,
         },
         slots,
       )

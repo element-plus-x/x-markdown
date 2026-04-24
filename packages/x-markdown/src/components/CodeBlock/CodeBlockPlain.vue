@@ -78,8 +78,12 @@
       </div>
     </div>
     <div class="x-md-code-body" :class="{ 'x-md-code-body--collapsed': collapsed }">
-      <pre class="x-md-plain-pre" :style="codeContainerStyle">
-        <code class="x-md-code-content" :class="{ 'x-md-code-content--lines': enableCodeLineNumber }">
+      <pre class="x-md-plain-pre" :style="codeContainerStyle" tabindex="0">
+        <code
+          class="x-md-code-content"
+          :class="{ 'x-md-code-content--lines': enableCodeLineNumber }"
+          :style="codeContentStyle"
+        >
           <template v-if="enableCodeLineNumber">
             <span v-for="(line, i) in textLines" :key="i" class="x-md-plain-line">
               <span class="x-md-code-line-number" aria-hidden="true">{{ i + codeLineNumberStartResolved }}</span>
@@ -94,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, type CSSProperties } from 'vue'
 import { useClipboard } from '@vueuse/core'
 
 interface CodeBlockPlainProps {
@@ -131,7 +135,7 @@ const props = withDefaults(defineProps<CodeBlockPlainProps>(), {
 const code = computed(() => props.code.trim())
 
 const codeLineNumberStartResolved = computed(() => {
-  if(typeof props.codeLineNumberStart !== 'number' || Number.isNaN(props.codeLineNumberStart)) return 1
+  if (typeof props.codeLineNumberStart !== 'number' || Number.isNaN(props.codeLineNumberStart)) return 1
 
   return Math.floor(props.codeLineNumberStart)
 })
@@ -147,6 +151,20 @@ const language = computed(() => props.language || 'text')
 const codeContainerStyle = computed(() => ({
   maxHeight: props.codeMaxHeight,
 }))
+
+const lineNumberWidth = computed(() => {
+  const firstLineNumber = codeLineNumberStartResolved.value
+  const lastLineNumber = firstLineNumber + Math.max(textLines.value.length, 1) - 1
+  const maxLineNumberLength = Math.max(String(firstLineNumber).length, String(lastLineNumber).length)
+  return `${maxLineNumberLength}ch`
+})
+
+const codeContentStyle = computed<CSSProperties>(
+  () =>
+    ({
+      '--x-md-code-line-number-width': lineNumberWidth.value,
+    }) as CSSProperties,
+)
 
 defineExpose({
   copy,
@@ -334,7 +352,7 @@ defineExpose({
 
 .x-md-code-line-number {
   flex-shrink: 0;
-  min-width: 3ch;
+  min-width: var(--x-md-code-line-number-width, 3ch);
   padding-right: 1em;
   margin-right: 0.25em;
   text-align: right;
