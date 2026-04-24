@@ -81,13 +81,13 @@
       <pre class="x-md-plain-pre" :style="codeContainerStyle" tabindex="0">
         <code
           class="x-md-code-content"
-          :class="{ 'x-md-code-content--lines': enableCodeLineNumber }"
+          :class="{ 'x-md-code-content--with-line-numbers': enableCodeLineNumber }"
           :style="codeContentStyle"
         >
           <template v-if="enableCodeLineNumber">
-            <span v-for="(line, i) in textLines" :key="i" class="x-md-plain-line">
+            <span v-for="(line, i) in textLines" :key="i" class="x-md-code-line">
               <span class="x-md-code-line-number" aria-hidden="true">{{ i + codeLineNumberStartResolved }}</span>
-              <span class="x-md-plain-line-text">{{ line }}</span>
+              <span class="x-md-code-line-code">{{ line }}</span>
             </span>
           </template>
           <template v-else>{{ code }}</template>
@@ -339,15 +339,15 @@ defineExpose({
   white-space: pre;
 }
 
-.x-md-code-content--lines {
+.x-md-code-content--with-line-numbers {
+  display: flex;
+  flex-direction: column;
   white-space: normal;
 }
 
-.x-md-plain-line {
+.x-md-code-line {
   display: flex;
   align-items: flex-start;
-  font-size: 14px;
-  line-height: 1.5;
 }
 
 .x-md-code-line-number {
@@ -365,10 +365,10 @@ defineExpose({
   color: rgba(200, 200, 200, 0.55);
 }
 
-.x-md-plain-line-text {
+.x-md-code-line-code {
   flex: 1;
   min-width: 0;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 </style>
