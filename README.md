@@ -596,12 +596,11 @@ cd x-markdown
 
 # 安装依赖
 pnpm install
+# 构建项目
+pnpm build
 
 # 启动开发服务器
 pnpm dev
-
-# 构建项目
-pnpm build
 
 # 格式化代码
 pnpm format
