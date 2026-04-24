@@ -183,6 +183,5 @@ defineExpose({
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-wrap: wrap;
 }
 </style>
