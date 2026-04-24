@@ -1,6 +1,6 @@
 {
   "name": "x-markdown-vue",
-  "version": "0.0.1-beta.108",
+  "version": "0.0.200",
   "description": "A markdown component library for Vue",
   "type": "module",
   "main": "./dist/index.js",
