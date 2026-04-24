@@ -13,6 +13,7 @@ export interface MarkdownContext {
   codeXRender?: Record<string, any>
   showCodeBlockHeader?: boolean
   stickyCodeBlockHeader?: boolean
+  enableCodeLineNumber?: boolean
   codeMaxHeight?: string
   codeBlockActions?: CodeBlockAction[]
   mermaidActions?: MermaidAction[]

@@ -78,7 +78,17 @@
       </div>
     </div>
     <div class="x-md-code-body" :class="{ 'x-md-code-body--collapsed': collapsed }">
-      <pre class="x-md-plain-pre" :style="codeContainerStyle"><code class="x-md-code-content">{{ code }}</code></pre>
+      <pre class="x-md-plain-pre" :style="codeContainerStyle">
+        <code class="x-md-code-content" :class="{ 'x-md-code-content--lines': enableCodeLineNumber }">
+          <template v-if="enableCodeLineNumber">
+            <span v-for="(line, i) in textLines" :key="i" class="x-md-plain-line">
+              <span class="x-md-code-line-number" aria-hidden="true">{{ i + codeLineNumberStartResolved }}</span>
+              <span class="x-md-plain-line-text">{{ line }}</span>
+            </span>
+          </template>
+          <template v-else>{{ code }}</template>
+        </code>
+      </pre>
     </div>
   </div>
 </template>
@@ -94,6 +104,8 @@ interface CodeBlockPlainProps {
   showCodeBlockHeader?: boolean
   stickyCodeBlockHeader?: boolean
   codeMaxHeight?: string
+  enableCodeLineNumber?: boolean
+  codeLineNumberStart?: number
 }
 
 defineOptions({
@@ -112,9 +124,23 @@ const props = withDefaults(defineProps<CodeBlockPlainProps>(), {
   isDark: false,
   showCodeBlockHeader: true,
   stickyCodeBlockHeader: true,
+  enableCodeLineNumber: true,
+  codeLineNumberStart: 1,
 })
 
 const code = computed(() => props.code.trim())
+
+const codeLineNumberStartResolved = computed(() => {
+  if(typeof props.codeLineNumberStart !== 'number' || Number.isNaN(props.codeLineNumberStart)) return 1
+
+  return Math.floor(props.codeLineNumberStart)
+})
+
+const textLines = computed(() => {
+  const t = code.value
+  if (!t) return ['']
+  return t.split('\n')
+})
 
 const language = computed(() => props.language || 'text')
 
@@ -293,5 +319,38 @@ defineExpose({
 .x-md-code-content {
   display: block;
   white-space: pre;
+}
+
+.x-md-code-content--lines {
+  white-space: normal;
+}
+
+.x-md-plain-line {
+  display: flex;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.x-md-code-line-number {
+  flex-shrink: 0;
+  min-width: 3ch;
+  padding-right: 1em;
+  margin-right: 0.25em;
+  text-align: right;
+  user-select: none;
+  color: rgba(100, 100, 100, 0.85);
+  font-variant-numeric: tabular-nums;
+}
+
+.x-md-code-block.x-md-code-block--dark .x-md-code-line-number {
+  color: rgba(200, 200, 200, 0.55);
+}
+
+.x-md-plain-line-text {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>

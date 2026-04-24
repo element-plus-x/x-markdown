@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, h, defineAsyncComponent, type PropType } from 'vue'
+import { defineComponent, h, defineAsyncComponent, type PropType, computed } from 'vue'
 import type { BuiltinTheme } from 'shiki'
 import type { CodeBlockAction } from '../CodeBlock/types'
 import type { MermaidAction } from '../Mermaid/types'
@@ -25,6 +25,7 @@ export default defineComponent({
     },
     showCodeBlockHeader: { type: Boolean, default: true },
     stickyCodeBlockHeader: { type: Boolean, default: true },
+    enableCodeLineNumber: { type: Boolean, default: true },
     codeMaxHeight: { type: String, default: undefined },
     enableAnimate: { type: Boolean, default: false },
     enableShiki: { type: Boolean, default: true },
@@ -35,6 +36,11 @@ export default defineComponent({
   },
   setup(props, { slots }) {
     const { codeXRender } = props
+
+    const blockEnableCodeLineNumber = computed(() => {
+      if (props.raw?.inline) return false
+      return !!props.enableCodeLineNumber
+    })
 
     return (): ReturnType<typeof h> | null => {
       // 处理行内代码
@@ -108,6 +114,7 @@ export default defineComponent({
             showCodeBlockHeader: props.showCodeBlockHeader,
             stickyCodeBlockHeader: props.stickyCodeBlockHeader,
             codeMaxHeight: props.codeMaxHeight,
+            enableCodeLineNumber: blockEnableCodeLineNumber.value,
           },
           slots,
         )
@@ -125,6 +132,7 @@ export default defineComponent({
           codeMaxHeight: props.codeMaxHeight,
           enableAnimate: props.enableAnimate,
           codeBlockActions: props.codeBlockActions,
+          enableCodeLineNumber: blockEnableCodeLineNumber.value,
         },
         slots,
       )

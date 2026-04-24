@@ -25,6 +25,7 @@ const markdownRendererProps = {
   },
   showCodeBlockHeader: { type: Boolean, default: true },
   stickyCodeBlockHeader: { type: Boolean, default: false },
+  enableCodeLineNumber: { type: Boolean, default: true },
   codeMaxHeight: { type: String, default: undefined },
   codeBlockActions: { type: Array as PropType<CodeBlockAction[]>, default: undefined },
   mermaidActions: { type: Array as PropType<MermaidAction[]>, default: undefined },

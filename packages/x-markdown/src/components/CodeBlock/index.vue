@@ -100,6 +100,8 @@
         :color-replacements="props.colorReplacements"
         :code-max-height="props.codeMaxHeight"
         :enable-animate="props.enableAnimate"
+        :enable-code-line-number="props.enableCodeLineNumber"
+        :code-line-number-start="props.codeLineNumberStart"
       />
     </div>
   </div>
@@ -133,6 +135,8 @@ const props = withDefaults(defineProps<CodeBlockProps>(), {
   enableAnimate: false,        // 默认不启用动画
   codeBlockActions: undefined, // 默认无自定义操作按钮
   stickyCodeBlockHeader: true, // 默认启用sticky
+  enableCodeLineNumber: true, // 默认启用行号
+  codeLineNumberStart: 1, // 默认行号从1开始
 })
 
 const code = computed(() => props.code.trim())

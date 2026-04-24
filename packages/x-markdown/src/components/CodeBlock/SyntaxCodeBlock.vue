@@ -1,17 +1,32 @@
 <template>
-  <div class="x-md-syntax-code-block">
-    <pre v-if="showFallback" :style="codeContainerStyle"><code>{{ code }}</code></pre>
+  <div class="x-md-syntax-code-block" :class="{ 'x-md-syntax-code-block--dark': props.isDark }">
+    <pre v-if="showFallback" :style="codeContainerStyle" tabindex="0">
+      <code class="x-md-code-content">
+        <span v-for="(line, i) in fallbackLines" :key="i" class="x-md-code-line">
+          <span v-if="props.enableCodeLineNumber" class="x-md-code-line-number" aria-hidden="true">{{
+            i + codeLineNumberStartResolved
+          }}</span>
+          <span class="x-md-code-line-code">{{ line}}</span>
+        </span>
+      </code>
+    </pre>
     <pre v-else :class="['shiki', actualTheme]" :style="codeContainerStyle" tabindex="0">
       <code class="x-md-code-content">
         <span v-for="(line, i) in lines" :key="i" class="x-md-code-line">
-          <span v-if="!line.length">&nbsp;</span>
-          <span  
-            v-else 
-            v-for="(token, j) in line" 
-            :key="j" 
-            :style="getTokenStyle(token)"
-            :class="{ 'x-md-animated-word': props.enableAnimate }"
-          >{{ token.content }}</span>
+          <span v-if="props.enableCodeLineNumber" class="x-md-code-line-number" aria-hidden="true">{{
+            i + codeLineNumberStartResolved
+          }}</span>
+          <span class="x-md-code-line-code">
+            <span v-if="!line.length">&nbsp;</span>
+            <span
+              v-else
+              v-for="(token, j) in line"
+              :key="j"
+              :style="getTokenStyle(token)"
+              :class="{ 'x-md-animated-word': props.enableAnimate }"
+              >{{ token.content }}</span
+            >
+          </span>
         </span>
       </code>
     </pre>
@@ -33,6 +48,8 @@ const props = withDefaults(defineProps<SyntaxCodeBlockProps>(), {
   shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
   isDark: false,
   enableAnimate: false,
+  enableCodeLineNumber: true,
+  codeLineNumberStart: 1,
 })
 
 const code = computed(() => props.code.trim())
@@ -81,6 +98,18 @@ const getTokenStyle = (token: ThemedToken): CSSProperties => {
 
 const showFallback = computed(() => !lines.value?.length)
 
+const codeLineNumberStartResolved = computed(() => {
+  if(typeof props.codeLineNumberStart !== 'number' || Number.isNaN(props.codeLineNumberStart)) return 1
+
+  return Math.floor(props.codeLineNumberStart)
+})
+
+const fallbackLines = computed(() => {
+  const t = code.value
+  if (!t) return ['']
+  return t.split('\n')
+})
+
 const codeContainerStyle = computed(() => ({
   ...preStyle.value,
   maxHeight: props.codeMaxHeight,
@@ -116,5 +145,28 @@ defineExpose({
   font-size: 14px;
   line-height: 1.5;
   display: flex;
+  align-items: flex-start;
+}
+
+.x-md-code-line-number {
+  flex-shrink: 0;
+  min-width: 3ch;
+  padding-right: 1em;
+  margin-right: 0.25em;
+  text-align: right;
+  user-select: none;
+  color: rgba(100, 100, 100, 0.85);
+  font-variant-numeric: tabular-nums;
+}
+
+.x-md-syntax-code-block--dark .x-md-code-line-number {
+  color: rgba(200, 200, 200, 0.55);
+}
+
+.x-md-code-line-code {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
 }
 </style>

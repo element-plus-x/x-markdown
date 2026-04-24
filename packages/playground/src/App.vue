@@ -95,6 +95,10 @@
             代码块最大高度
             <input type="text" v-model="codeMaxHeight" placeholder="如: 300px" class="code-max-height-input" />
           </label>
+          <label>
+            <input type="checkbox" v-model="enableCodeLineNumber" />
+            代码块行号
+          </label>
         </div>
       </div>
 
@@ -140,6 +144,7 @@
             :enable-animate="enableAnimate"
             :enable-shiki="enableShiki"
             :enable-mermaid="enableMermaid"
+            :enable-code-line-number="enableCodeLineNumber"
             :is-dark="isDark"
             :show-code-block-header="showCodeBlockHeader"
             :sticky-code-block-header="enableCodeBlockHeaderSticky"
@@ -147,6 +152,7 @@
             :code-block-actions="codeBlockActions"
             :mermaid-actions="mermaidActions"
             :code-x-render="codeXRender"
+            
           >
             <!-- 自定义 HTML 标签插槽 -->
             <template #self-btn>
@@ -202,6 +208,7 @@ const enableCodeBlockHeaderSticky = useLocalStorage('x-md-playground-enableCodeB
 const codeMaxHeight = useLocalStorage('x-md-playground-codeMaxHeight', '')
 const enableShiki = useLocalStorage('x-md-playground-enableShiki', true)
 const enableMermaid = useLocalStorage('x-md-playground-enableMermaid', true)
+const enableCodeLineNumber = useLocalStorage('x-md-playground-enableCodeLineNumber', true)
 
 // 流式演示状态
 const isStreaming = ref(false)

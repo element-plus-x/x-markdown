@@ -8,6 +8,9 @@ export interface SyntaxCodeBlockProps {
   colorReplacements?: Record<string, string>;
   codeMaxHeight?: string;
   enableAnimate?: boolean;
+
+  enableCodeLineNumber?: boolean;
+  codeLineNumberStart?: number;
 }
 
 export interface CodeBlockProps {
@@ -21,6 +24,8 @@ export interface CodeBlockProps {
   enableAnimate?: boolean;
   codeBlockActions?: CodeBlockAction[];
   stickyCodeBlockHeader?: boolean;
+  enableCodeLineNumber?: boolean;
+  codeLineNumberStart?: number;
 }
 
 export interface CodeBlockRaw {
