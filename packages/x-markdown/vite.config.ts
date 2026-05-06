@@ -16,7 +16,7 @@ export default defineConfig({
       fileName: 'index',
     },
     rollupOptions: {
-      external: ['vue', 'element-plus', 'mermaid', 'shiki', 'shiki-stream', '@shikijs/core'],
+      external: ['vue', 'element-plus', 'mermaid', 'shiki', 'shiki-stream'],
       output: {
         globals: {
           vue: 'Vue',
@@ -24,7 +24,6 @@ export default defineConfig({
           mermaid: 'mermaid',
           shiki: 'shiki',
           'shiki-stream': 'shikiStream',
-          '@shikijs/core': 'shikijsCore',
         },
       },
     },
