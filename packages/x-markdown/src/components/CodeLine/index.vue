@@ -26,9 +26,9 @@
 
 <script setup lang="ts">
 import { computed, type CSSProperties } from 'vue'
-import type { ThemedToken, BuiltinTheme } from 'shiki'
-import { getTokenStyleObject } from '@shikijs/core'
+import type { BuiltinTheme } from 'shiki'
 import { useHighlight } from '../../hooks/useHighlight'
+import { getTokenStyle } from '../../utils/tokenStyle'
 
 interface CodeLineProps {
   raw?: {
@@ -69,21 +69,6 @@ const flatTokens = computed(() => lines.value.flat())
 // 代码背景样式 - 从 preStyle 中获取
 const codeStyle = computed<CSSProperties>(() => preStyle.value || {})
 
-// 将 CSS 属性名从 kebab-case 转为 camelCase
-const normalizeStyleKeys = (style: Record<string, string | number>): CSSProperties => {
-  const normalized: CSSProperties = {}
-  Object.entries(style).forEach(([key, value]) => {
-    const camelKey = key.replace(/-([a-z])/g, (_, char) => char.toUpperCase())
-    ;(normalized as Record<string, string | number>)[camelKey] = value
-  })
-  return normalized
-}
-
-// 获取 token 样式
-const getTokenStyle = (token: ThemedToken): CSSProperties => {
-  const rawStyle = token.htmlStyle || getTokenStyleObject(token)
-  return normalizeStyleKeys(rawStyle)
-}
 </script>
 <style scoped>
 /* 代码块容器 */
