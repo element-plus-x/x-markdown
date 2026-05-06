@@ -1,4 +1,5 @@
 import type { PluggableList } from 'unified'
+import type { BuiltinTheme } from 'shiki'
 import type { CustomAttrs, SanitizeOptions } from '../core/types'
 import type { CodeBlockAction } from '../components/CodeBlock/types'
 import type { MermaidAction } from '../components/Mermaid/types'
@@ -10,6 +11,10 @@ export interface MarkdownContext {
   enableAnimate?: boolean
   enableBreaks?: boolean
   enableGfm?: boolean
+  enableShiki?: boolean
+  enableMermaid?: boolean
+  isDark?: boolean
+  shikiTheme?: [BuiltinTheme, BuiltinTheme]
   codeXRender?: Record<string, any>
   showCodeBlockHeader?: boolean
   stickyCodeBlockHeader?: boolean

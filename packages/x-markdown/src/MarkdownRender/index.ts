@@ -1,4 +1,4 @@
-import type { PropType } from 'vue'
+import type { ExtractPropTypes, PropType } from 'vue'
 import type { PluggableList } from 'unified'
 import type { BuiltinTheme } from 'shiki'
 import type { CodeBlockAction } from '../components/CodeBlock/types'
@@ -41,6 +41,8 @@ const markdownRendererProps = {
   sanitize: { type: Boolean, default: false },
   sanitizeOptions: { type: Object as PropType<SanitizeOptions>, default: () => ({}) },
 }
+
+export type MarkdownRendererProps = ExtractPropTypes<typeof markdownRendererProps>
 
 /**
  * 创建 Markdown 渲染器组件的工厂函数
