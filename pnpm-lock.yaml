@@ -106,9 +106,6 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
     devDependencies:
-      '@shikijs/core':
-        specifier: ^3.17.1
-        version: 3.20.0
       '@types/dompurify':
         specifier: ^3.0.0
         version: 3.2.0

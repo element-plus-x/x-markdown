@@ -15,7 +15,7 @@
         <span
           v-for="(token, i) in flatTokens"
           :key="i"
-          :style="getTokenStyle(token)"
+          :style="resolveTokenStyle(token)"
           :class="{ 'x-md-animated-word': props.enableAnimate }"
           >{{ token.content }}</span
         >
@@ -26,8 +26,8 @@
 
 <script setup lang="ts">
 import { computed, type CSSProperties } from 'vue'
-import type { ThemedToken, BuiltinTheme } from 'shiki'
-import { getTokenStyleObject } from '@shikijs/core'
+import type { BuiltinTheme } from 'shiki'
+import { getTokenStyle } from '../../utils/tokenStyle'
 import { useHighlight } from '../../hooks/useHighlight'
 
 interface CodeLineProps {
@@ -40,49 +40,30 @@ interface CodeLineProps {
   enableAnimate?: boolean
 }
 
-// 定义组件 props，支持行内代码的原始数据、主题配置和动画开关
 const props = withDefaults(defineProps<CodeLineProps>(), {
   raw: () => ({}),
-  isDark: false, // 默认亮色模式
-  shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme], // 默认主题
-  enableAnimate: false, // 默认不启用动画
+  isDark: false,
+  shikiTheme: () => ['vitesse-light', 'vitesse-dark'] as [BuiltinTheme, BuiltinTheme],
+  enableAnimate: false,
 })
 
-// 获取实际内容 - 从 raw 对象中提取代码内容
 const content = computed(() => props.raw?.content ?? '')
 
-// 获取代码语言
 const language = computed(() => props.raw?.language || 'ts')
 
-// 当前使用的主题
 const actualTheme = computed(() => (props.isDark ? props.shikiTheme[1] : props.shikiTheme[0]))
 
-// 使用 useHighlight hook 进行语法高亮
 const { lines, preStyle } = useHighlight(content, {
   language,
   theme: actualTheme,
 })
 
-// 扁平化 tokens（行内代码只有一行，将二维数组拍平）
 const flatTokens = computed(() => lines.value.flat())
 
-// 代码背景样式 - 从 preStyle 中获取
 const codeStyle = computed<CSSProperties>(() => preStyle.value || {})
 
-// 将 CSS 属性名从 kebab-case 转为 camelCase
-const normalizeStyleKeys = (style: Record<string, string | number>): CSSProperties => {
-  const normalized: CSSProperties = {}
-  Object.entries(style).forEach(([key, value]) => {
-    const camelKey = key.replace(/-([a-z])/g, (_, char) => char.toUpperCase())
-    ;(normalized as Record<string, string | number>)[camelKey] = value
-  })
-  return normalized
-}
-
-// 获取 token 样式
-const getTokenStyle = (token: ThemedToken): CSSProperties => {
-  const rawStyle = token.htmlStyle || getTokenStyleObject(token)
-  return normalizeStyleKeys(rawStyle)
+const resolveTokenStyle = (token: Parameters<typeof getTokenStyle>[0]): CSSProperties => {
+  return getTokenStyle(token)
 }
 </script>
 <style scoped>
