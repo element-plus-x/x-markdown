@@ -68,7 +68,6 @@ const flatTokens = computed(() => lines.value.flat())
 
 // 代码背景样式 - 从 preStyle 中获取
 const codeStyle = computed<CSSProperties>(() => preStyle.value || {})
-
 </script>
 <style scoped>
 /* 代码块容器 */
