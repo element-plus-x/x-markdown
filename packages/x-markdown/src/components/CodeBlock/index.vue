@@ -118,7 +118,7 @@ defineOptions({
   name: 'CodeBlock',
 })
 
-const { copy, copied } = useClipboard({ copiedDuring: 2000 })
+const { copy, copied } = useClipboard({ copiedDuring: 2000, legacy: true })
 
 const collapsed = ref(false)
 
