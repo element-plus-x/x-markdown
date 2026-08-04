@@ -64,7 +64,7 @@ function handleToggleCode() {
   showSourceCode.value = !showSourceCode.value
 }
 
-const { copy: copyCode, copied } = useClipboard({ copiedDuring: 1500 })
+const { copy: copyCode, copied } = useClipboard({ copiedDuring: 1500, legacy: true })
 
 function handleTabClick(tabName: string) {
   if (tabName === 'code' && !showSourceCode.value) {
