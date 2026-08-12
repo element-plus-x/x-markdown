@@ -68,7 +68,11 @@ const resolveTokenStyle = (token: Parameters<typeof getTokenStyle>[0]): CSSPrope
   return getTokenStyle(token, props.colorReplacements)
 }
 
-const showFallback = computed(() => !lines.value?.length)
+// 与行内代码 (CodeLine) 保持一致：当高亮未产生任何 token 时（例如未安装 shiki /
+// shiki-stream 导致 useHighlight 动态 import 失败并回退为 [[]]）回退到纯文本渲染。
+// 原判断 !lines.value?.length 检查的是外层数组长度，而 [[]].length 为 1，
+// 导致 fallback 永远不触发、代码块内容显示为空（仅一个 &nbsp;）。
+const showFallback = computed(() => !lines.value.flat().length)
 
 const codeLineNumberStartResolved = computed(() => {
   if (typeof props.codeLineNumberStart !== 'number' || Number.isNaN(props.codeLineNumberStart)) return 1
