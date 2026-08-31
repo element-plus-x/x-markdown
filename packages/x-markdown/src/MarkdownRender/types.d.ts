@@ -3,6 +3,7 @@ import type { BuiltinTheme } from 'shiki'
 import type { CustomAttrs, SanitizeOptions } from '../core/types'
 import type { CodeBlockAction } from '../components/CodeBlock/types'
 import type { MermaidAction } from '../components/Mermaid/types'
+import type { MarkdownLocalePartial } from '../locale'
 
 export interface MarkdownContext {
   markdown?: string
@@ -24,6 +25,7 @@ export interface MarkdownContext {
   codeBlockActions?: CodeBlockAction[]
   mermaidActions?: MermaidAction[]
   mermaidConfig?: Record<string, any>
+  locale?: MarkdownLocalePartial
   customAttrs?: CustomAttrs
   remarkPlugins?: PluggableList
   remarkPluginsAhead?: PluggableList

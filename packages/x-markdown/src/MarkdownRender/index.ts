@@ -4,9 +4,10 @@ import type { BuiltinTheme } from 'shiki'
 import type { CodeBlockAction } from '../components/CodeBlock/types'
 import type { MermaidAction } from '../components/Mermaid/types'
 import type { CustomAttrs, SanitizeOptions } from '../core/types'
+import type { MarkdownLocalePartial } from '../locale'
 import { computed, defineComponent, h, toValue } from 'vue'
 import { VueMarkdown, VueMarkdownAsync } from '../core'
-import { useComponents, usePlugins } from '../hooks'
+import { provideMarkdownLocale, useComponents, usePlugins } from '../hooks'
 import './index.css'
 
 const markdownRendererProps = {
@@ -31,6 +32,7 @@ const markdownRendererProps = {
   codeBlockActions: { type: Array as PropType<CodeBlockAction[]>, default: undefined },
   mermaidActions: { type: Array as PropType<MermaidAction[]>, default: undefined },
   mermaidConfig: { type: Object as PropType<Record<string, any>>, default: undefined },
+  locale: { type: Object as PropType<MarkdownLocalePartial>, default: undefined },
   codeXRender: { type: Object, default: () => ({}) },
   customAttrs: { type: Object as PropType<CustomAttrs>, default: () => ({}) },
   remarkPlugins: { type: Array as PropType<PluggableList>, default: () => [] },
@@ -55,6 +57,7 @@ function createMarkdownRenderer(name: string, coreComponent: typeof VueMarkdown 
     name,
     props: markdownRendererProps,
     setup(props, { slots, attrs }) {
+      provideMarkdownLocale(() => props.locale)
       // 获取 remark/rehype 插件列表
       const { rehypePlugins, remarkPlugins } = usePlugins(props)
       // 获取自定义组件映射
