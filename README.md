@@ -140,6 +140,7 @@ const content = ref('# Large Document\n...')
 | `codeMaxHeight` | `string` | `undefined` | 代码块最大高度，如 '300px' |
 | `codeBlockActions` | `CodeBlockAction[]` | `[]` | 代码块自定义操作按钮 |
 | `mermaidActions` | `MermaidAction[]` | `[]` | Mermaid 图表自定义操作按钮 |
+| `locale` | `MarkdownLocalePartial` | `zhCN` | 代码块 / Mermaid 等 UI 文案 |
 | `codeXRender` | `object` | `{}` | 自定义代码块渲染函数 |
 | `customAttrs` | `CustomAttrs` | `{}` | 自定义属性对象 |
 | `remarkPlugins` | `PluggableList` | `[]` | remark 插件列表 |
@@ -172,6 +173,67 @@ const toggleTheme = () => {
 ### 代码高亮主题
 
 支持所有 [Shiki 内置主题](https://shiki.style/themes)。
+
+## 🌐 国际化
+
+通过 `locale` 覆盖代码块、Mermaid 等内置按钮文案。库内只提供 `zhCN`（默认）和 `enUS`；其他语言不需要改库，按 `MarkdownLocale` 写一份对象传入即可。未填写的字段会回落到中文。
+
+使用内置英文：
+
+```vue
+<script setup>
+import { MarkdownRenderer, enUS } from 'x-markdown-vue'
+</script>
+
+<template>
+  <MarkdownRenderer :markdown="content" :locale="enUS" />
+</template>
+```
+
+添加其他语言（以日语为例，对象由接入方维护）：
+
+```vue
+<script setup>
+import { MarkdownRenderer } from 'x-markdown-vue'
+import type { MarkdownLocale } from 'x-markdown-vue'
+
+const jaJP: MarkdownLocale = {
+  codeBlock: {
+    expand: 'コードを展開',
+    collapse: 'コードを折りたたむ',
+    copy: 'コードをコピー',
+    copied: 'コピーしました',
+  },
+  mermaid: {
+    preview: 'プレビュー',
+    code: 'コード',
+    copyCode: 'コードをコピー',
+    copied: 'コピーしました',
+    zoomOut: '縮小',
+    zoomIn: '拡大',
+    reset: 'リセット',
+    download: 'ダウンロード',
+    loading: '読み込み中...',
+  },
+}
+</script>
+
+<template>
+  <MarkdownRenderer :markdown="content" :locale="jaJP" />
+</template>
+```
+
+也可以基于 `enUS` 展开后只改部分字段，或直接传部分覆盖：
+
+```vue
+<MarkdownRenderer
+  :markdown="content"
+  :locale="{
+    mermaid: { preview: 'Chart', code: 'Source' },
+    codeBlock: { copy: 'Copy' },
+  }"
+/>
+```
 
 ## 🔧 自定义渲染
 

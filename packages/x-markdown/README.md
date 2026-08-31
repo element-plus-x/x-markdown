@@ -123,6 +123,7 @@ const content = ref('# Large Document\n...')
 | `codeMaxHeight`       | `string`            | `undefined` | 代码块最大高度，如 '300px'  |
 | `codeBlockActions`    | `CodeBlockAction[]` | `[]`        | 代码块自定义操作按钮        |
 | `mermaidActions`      | `MermaidAction[]`   | `[]`        | Mermaid 图表自定义操作按钮  |
+| `locale`              | `MarkdownLocalePartial` | `zhCN`  | 代码块 / Mermaid 等 UI 文案 |
 | `codeXRender`         | `object`            | `{}`        | 自定义代码块渲染函数        |
 | `customAttrs`         | `CustomAttrs`       | `{}`        | 自定义属性对象              |
 | `remarkPlugins`       | `PluggableList`     | `[]`        | remark 插件列表             |
@@ -155,6 +156,121 @@ const toggleTheme = () => {
 ### 代码高亮主题
 
 支持所有 [Shiki 内置主题](https://shiki.style/themes)。
+
+## 🌐 国际化
+
+代码块折叠/复制、Mermaid 工具栏等内置按钮文案可通过 `locale` 传入。内部通过 provide/inject 下发，不必再往子组件逐层传 prop。
+
+**内置语言包只有 `zhCN`（默认）和 `enUS`。** 其他语言无需改库，按下方 `MarkdownLocale` 自行维护一份对象传入即可；未填写的字段会回落到中文。
+
+### 使用内置语言包
+
+```vue
+<script setup>
+import { MarkdownRenderer, enUS } from 'x-markdown-vue'
+
+const content = '```js\nconsole.log(1)\n```'
+</script>
+
+<template>
+  <MarkdownRenderer :markdown="content" :locale="enUS" />
+</template>
+```
+
+### 添加其他语言
+
+以日语为例，语言包由接入方维护：
+
+```vue
+<script setup>
+import { MarkdownRenderer } from 'x-markdown-vue'
+import type { MarkdownLocale } from 'x-markdown-vue'
+
+const jaJP: MarkdownLocale = {
+  codeBlock: {
+    expand: 'コードを展開',
+    collapse: 'コードを折りたたむ',
+    copy: 'コードをコピー',
+    copied: 'コピーしました',
+  },
+  mermaid: {
+    preview: 'プレビュー',
+    code: 'コード',
+    copyCode: 'コードをコピー',
+    copied: 'コピーしました',
+    zoomOut: '縮小',
+    zoomIn: '拡大',
+    reset: 'リセット',
+    download: 'ダウンロード',
+    loading: '読み込み中...',
+  },
+}
+</script>
+
+<template>
+  <MarkdownRenderer :markdown="content" :locale="jaJP" />
+</template>
+```
+
+也可以基于内置包展开后再改，或只覆盖部分字段：
+
+```vue
+<script setup>
+import { MarkdownRenderer, enUS } from 'x-markdown-vue'
+
+const jaJP = {
+  ...enUS,
+  mermaid: {
+    ...enUS.mermaid,
+    preview: 'プレビュー',
+    loading: '読み込み中...',
+  },
+}
+</script>
+
+<template>
+  <MarkdownRenderer
+    :markdown="content"
+    :locale="jaJP"
+  />
+</template>
+```
+
+```vue
+<MarkdownRenderer
+  :markdown="content"
+  :locale="{
+    mermaid: { preview: 'Chart', code: 'Source' },
+    codeBlock: { copy: 'Copy' },
+  }"
+/>
+```
+
+### `MarkdownLocale` 结构
+
+```ts
+interface MarkdownLocale {
+  codeBlock: {
+    expand: string
+    collapse: string
+    copy: string
+    copied: string
+  }
+  mermaid: {
+    preview: string
+    code: string
+    copyCode: string
+    copied: string
+    zoomOut: string
+    zoomIn: string
+    reset: string
+    download: string
+    loading: string
+  }
+}
+```
+
+若通过 `codeHeader` / `mermaidHeader` 等插槽完全自定义 UI，则由插槽自行处理文案，`locale` 只作用于默认按钮。
 
 ## 🔧 自定义渲染
 

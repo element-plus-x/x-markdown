@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch, onMounted } from 'vue'
 import { debounce } from 'lodash-es'
-import { useMermaid, useMermaidZoom, downloadSvgAsPng } from '../../hooks'
+import { useMermaid, useMermaidZoom, downloadSvgAsPng, useLocale } from '../../hooks'
 
 interface SyntaxMermaidProps {
   content: string
@@ -16,6 +16,8 @@ const props = withDefaults(defineProps<SyntaxMermaidProps>(), {
   isDark: false,
   config: () => ({}),
 })
+
+const locale = useLocale()
 
 const renderContainerRef = ref<HTMLElement | null>(null)
 
@@ -125,7 +127,7 @@ defineExpose({
 
     <div v-if="isLoading" class="syntax-mermaid__loading">
       <slot name="loading">
-        <span class="syntax-mermaid__loading-text">加载中...</span>
+        <span class="syntax-mermaid__loading-text">{{ locale.mermaid.loading }}</span>
       </slot>
     </div>
     <div v-else class="syntax-mermaid__content" v-html="svg" />

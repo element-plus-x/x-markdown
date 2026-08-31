@@ -103,6 +103,14 @@
             行号起始值
             <input type="number" v-model.number="codeLineNumberStart" min="0" class="code-max-height-input" />
           </label>
+          <label class="code-max-height-label">
+            UI 语言
+            <select v-model="uiLocale" class="code-max-height-input locale-select">
+              <option value="zh-CN">中文</option>
+              <option value="en-US">English</option>
+              <option value="ja-JP">日本語 (自定义)</option>
+            </select>
+          </label>
         </div>
       </div>
 
@@ -157,6 +165,7 @@
             :code-block-actions="codeBlockActions"
             :mermaid-actions="mermaidActions"
             :code-x-render="codeXRender"
+            :locale="locale"
             
           >
             <!-- 自定义 HTML 标签插槽 -->
@@ -178,7 +187,8 @@ import 'katex/dist/katex.min.css'
 import 'github-markdown-css/github-markdown.css'
 import { ref, computed, onUnmounted, watch, h } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
-import { MarkdownRenderer } from 'x-markdown-vue'
+import { MarkdownRenderer, zhCN, enUS } from 'x-markdown-vue'
+import type { MarkdownLocale } from 'x-markdown-vue'
 import type * as echarts from 'echarts'
 
 // ==================== 状态管理 ====================
@@ -215,6 +225,34 @@ const enableShiki = useLocalStorage('x-md-playground-enableShiki', true)
 const enableMermaid = useLocalStorage('x-md-playground-enableMermaid', true)
 const enableCodeLineNumber = useLocalStorage('x-md-playground-enableCodeLineNumber', true)
 const codeLineNumberStart = useLocalStorage('x-md-playground-codeLineNumberStart', 1)
+const jaJP: MarkdownLocale = {
+  codeBlock: {
+    expand: 'コードを展開',
+    collapse: 'コードを折りたたむ',
+    copy: 'コードをコピー',
+    copied: 'コピーしました',
+  },
+  mermaid: {
+    preview: 'プレビュー',
+    code: 'コード',
+    copyCode: 'コードをコピー',
+    copied: 'コピーしました',
+    zoomOut: '縮小',
+    zoomIn: '拡大',
+    reset: 'リセット',
+    download: 'ダウンロード',
+    loading: '読み込み中...',
+  },
+}
+
+type UiLocale = 'zh-CN' | 'en-US' | 'ja-JP'
+const uiLocale = useLocalStorage<UiLocale>('x-md-playground-uiLocale', 'zh-CN')
+const localePacks: Record<UiLocale, MarkdownLocale> = {
+  'zh-CN': zhCN,
+  'en-US': enUS,
+  'ja-JP': jaJP,
+}
+const locale = computed(() => localePacks[uiLocale.value] ?? zhCN)
 
 // 流式演示状态
 const isStreaming = ref(false)
@@ -1641,6 +1679,12 @@ body {
 .config-content .code-max-height-input:focus {
   outline: none;
   border-color: #42b883;
+}
+
+.config-content .locale-select {
+  width: auto;
+  min-width: 132px;
+  cursor: pointer;
 }
 
 .speed-section {

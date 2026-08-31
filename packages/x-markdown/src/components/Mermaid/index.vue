@@ -4,6 +4,7 @@ import type { BuiltinTheme } from 'shiki'
 import type { VNode } from 'vue'
 import { computed, ref, h } from 'vue'
 import { useClipboard } from '@vueuse/core'
+import { useLocale } from '../../hooks/useLocale'
 import SyntaxMermaid from './SyntaxMermaid.vue'
 import SyntaxCodeBlock from '../CodeBlock/SyntaxCodeBlock.vue'
 
@@ -23,6 +24,7 @@ const props = withDefaults(defineProps<MermaidProps>(), {
 })
 
 const syntaxMermaidRef = ref<InstanceType<typeof SyntaxMermaid> | null>(null)
+const locale = useLocale()
 const showSourceCode = ref(false)
 const mermaidContent = computed(() => props.raw?.content || '')
 const mermaidId = computed(() => `mermaid-${props.raw?.key || 'default'}`)
@@ -204,7 +206,7 @@ const exposedMethods = computed(
                       stroke-linejoin="round"
                     />
                   </svg>
-                  <span>预览</span>
+                  <span>{{ locale.mermaid.preview }}</span>
                 </div>
                 <div class="segment-item" :class="{ active: activeTab === 'code' }" @click="handleTabClick('code')">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -223,7 +225,7 @@ const exposedMethods = computed(
                       stroke-linejoin="round"
                     />
                   </svg>
-                  <span>代码</span>
+                  <span>{{ locale.mermaid.code }}</span>
                 </div>
               </div>
             </div>
@@ -246,7 +248,7 @@ const exposedMethods = computed(
                   <div
                     class="toolbar-action-btn"
                     :class="{ 'copy-success': copied }"
-                    title="复制代码"
+                    :title="copied ? locale.mermaid.copied : locale.mermaid.copyCode"
                     @click="handleCopyCode($event)"
                   >
                     <svg
@@ -275,7 +277,7 @@ const exposedMethods = computed(
                 </template>
 
                 <template v-else>
-                  <div class="toolbar-action-btn" title="缩小" @click="handleZoomOut($event)">
+                  <div class="toolbar-action-btn" :title="locale.mermaid.zoomOut" @click="handleZoomOut($event)">
                     <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                       <path
                         fill="currentColor"
@@ -284,7 +286,7 @@ const exposedMethods = computed(
                     </svg>
                   </div>
 
-                  <div class="toolbar-action-btn" title="放大" @click="handleZoomIn($event)">
+                  <div class="toolbar-action-btn" :title="locale.mermaid.zoomIn" @click="handleZoomIn($event)">
                     <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                       <path
                         fill="currentColor"
@@ -293,7 +295,7 @@ const exposedMethods = computed(
                     </svg>
                   </div>
 
-                  <div class="toolbar-action-btn" title="重置" @click="handleReset($event)">
+                  <div class="toolbar-action-btn" :title="locale.mermaid.reset" @click="handleReset($event)">
                     <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                       <path
                         fill="currentColor"
@@ -306,7 +308,7 @@ const exposedMethods = computed(
                     </svg>
                   </div>
 
-                  <div class="toolbar-action-btn" title="下载" @click="handleDownload">
+                  <div class="toolbar-action-btn" :title="locale.mermaid.download" @click="handleDownload">
                     <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                       <path
                         fill="currentColor"

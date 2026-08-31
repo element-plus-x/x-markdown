@@ -1,5 +1,6 @@
 export * from './useComponents'
 export * from './useHighlight'
+export * from './useLocale'
 export * from './useMarkdown'
 export * from './useMermaid'
 export * from './usePlugins'

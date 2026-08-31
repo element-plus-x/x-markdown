@@ -21,7 +21,7 @@
               class="x-md-collapse-btn"
               :class="{ 'x-md-collapse-btn--collapsed': collapsed }"
               @click="toggleCollapse"
-              :title="collapsed ? '展开代码' : '折叠代码'"
+              :title="collapsed ? locale.codeBlock.expand : locale.codeBlock.collapse"
             >
               <svg
                 class="x-md-collapse-icon"
@@ -53,7 +53,7 @@
               >
                 <component :is="renderActionIcon(action)" v-if="action.icon" />
               </button>
-                <button class="x-md-copy-btn" :class="{ 'x-md-copy-btn--copied': copied }" @click="copy(code)">
+                <button class="x-md-copy-btn" :class="{ 'x-md-copy-btn--copied': copied }" :title="copied ? locale.codeBlock.copied : locale.codeBlock.copy" @click="copy(code)">
                   <svg
                     v-if="copied"
                     class="x-md-copy-icon"
@@ -111,6 +111,7 @@
 import { computed, ref, h, type VNode } from 'vue'
 import type { BuiltinTheme } from 'shiki'
 import { useClipboard } from '@vueuse/core'
+import { useLocale } from '../../hooks/useLocale'
 import type { CodeBlockProps, CodeBlockAction, CodeBlockSlotProps } from './types'
 import SyntaxCodeBlock from './SyntaxCodeBlock.vue'
 
@@ -119,6 +120,7 @@ defineOptions({
 })
 
 const { copy, copied } = useClipboard({ copiedDuring: 2000, legacy: true })
+const locale = useLocale()
 
 const collapsed = ref(false)
 
