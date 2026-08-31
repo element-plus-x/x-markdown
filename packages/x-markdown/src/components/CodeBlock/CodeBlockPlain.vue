@@ -20,7 +20,7 @@
               class="x-md-collapse-btn"
               :class="{ 'x-md-collapse-btn--collapsed': collapsed }"
               @click="toggleCollapse"
-              :title="collapsed ? '展开代码' : '折叠代码'"
+              :title="collapsed ? locale.codeBlock.expand : locale.codeBlock.collapse"
             >
               <svg
                 class="x-md-collapse-icon"
@@ -40,7 +40,7 @@
           </div>
           <div class="x-md-code-header__right">
             <slot name="codeActions" :code="code" :copy="copy" :copied="copied">
-              <button class="x-md-copy-btn" :class="{ 'x-md-copy-btn--copied': copied }" @click="copy(code)">
+              <button class="x-md-copy-btn" :class="{ 'x-md-copy-btn--copied': copied }" :title="copied ? locale.codeBlock.copied : locale.codeBlock.copy" @click="copy(code)">
                 <svg
                   v-if="copied"
                   class="x-md-copy-icon"
@@ -100,6 +100,7 @@
 <script setup lang="ts">
 import { computed, ref, type CSSProperties } from 'vue'
 import { useClipboard } from '@vueuse/core'
+import { useLocale } from '../../hooks/useLocale'
 
 interface CodeBlockPlainProps {
   code: string
@@ -117,6 +118,7 @@ defineOptions({
 })
 
 const { copy, copied } = useClipboard({ copiedDuring: 2000, legacy: true })
+const locale = useLocale()
 
 const collapsed = ref(false)
 
